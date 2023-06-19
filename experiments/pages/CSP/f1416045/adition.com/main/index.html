@@ -1,0 +1,12 @@
+--boundary
+Content-type: text/html
+Content-Security-Policy: default-src 'self'
+
+Page 1: <script>alert(1);</script>
+--boundary
+Content-type: text/html
+Content-Security-Policy: default-src 'self'
+
+<img id="123">
+Page 2: <script>document.getElementById("123").src = "https://adition.com/report/?leak=f1416045";</script>
+--boundary

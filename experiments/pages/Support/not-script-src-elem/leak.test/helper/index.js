@@ -1,0 +1,1 @@
+document.location.href = "https://adition.com/report/?leak=not-script-src-elem"

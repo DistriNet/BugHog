@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.dropdown {
+  @apply text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800
+}
+
+.dropdown-head {
+  @apply z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700
+}
+
+.dropdown-item {
+  @apply block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white
+}
+
+.large-text-input {
+  @apply block p-2.5 w-full text-sm text-gray-900 bg-gray-50 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500
+}
+
+.horizontal-select {
+  @apply flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white
+}
+
+.horizontal-select li {
+  @apply w-auto border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-600
+}
+
+.horizontal-select div {
+  @apply flex px-2 items-center
+}
+
+.horizontal-select input {
+  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500
+}
+
+.horizontal-select label {
+  @apply w-full py-3 ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+}
+
+label {
+  @apply block text-gray-700 text-sm font-bold mb-2
+}
+
+.banner-generic {
+  @apply flex z-50 mt-0 justify-between items-start w-full border border-b border-gray-200 sm:items-center dark:border-gray-700 lg:py-4 dark:bg-gray-800
+}
+
+.banner-generic button {
+  @apply text-sm
+}
+
+.banner-page {
+  @apply banner-generic bg-gray-50 p-3
+}
+
+.banner-page p {
+  @apply text-sm font-light text-gray-500 dark:text-gray-400
+}
+
+.results-section {
+  @apply text-left p-3 m-2 bg-slate-200 rounded overflow-hidden shadow-lg
+}
+
+.column {
+  @apply w-auto
+}
+
+.form-section {
+  @apply text-left p-3 m-2 bg-slate-200 rounded overflow-hidden shadow-lg
+}
+
+.form-subsection {
+  @apply text-left p-2 m-1 mb-4 mt-4 bg-slate-300 max-w-sm rounded overflow-hidden shadow-lg
+}
+
+.form-section-title {
+  @apply font-bold mb-2
+}
+
+.form-subsection-title {
+  @apply font-bold mb-2 w-full
+}
+
+.number-input {
+  @apply text-center
+}
+
+.radio-item {
+  @apply flex items-center mb-4
+}
+
+.radio-item input {
+  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600
+}
+
+.radio-item label {
+  @apply ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+}
+
+.checkbox-item {
+  @apply flex items-center w-full
+}
+
+.checkbox-item input {
+  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600
+}
+
+.checkbox-item label {
+  @apply ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+.card {
+  padding: 2em;
+}
+
+#app {
+  /* max-width: 1280px; */
+  margin: 0 auto;
+  /* padding: 2rem; */
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}

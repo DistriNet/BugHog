@@ -1,0 +1,6 @@
+[
+    {
+        "key": "Content-Security-Policy",
+        "value": "script-src none;"
+    }
+]

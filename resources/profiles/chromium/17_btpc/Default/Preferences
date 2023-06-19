@@ -1,0 +1,73 @@
+{
+   "browser": {
+      "clear_lso_data_enabled": false,
+      "window_placement": {
+         "bottom": 1050,
+         "left": 67,
+         "maximized": false,
+         "right": 978,
+         "top": 27,
+         "work_area_bottom": 1080,
+         "work_area_left": 67,
+         "work_area_right": 1920,
+         "work_area_top": 27
+      }
+   },
+   "cloud_print": {
+      "email": ""
+   },
+   "countryid_at_install": 21843,
+   "default_apps_install_state": 1,
+   "default_search_provider": {
+      "enabled": true,
+      "encodings": "UTF-8",
+      "icon_url": "http://www.google.com/favicon.ico",
+      "id": "2",
+      "instant_url": "{google:baseURL}webhp?{google:RLZ}sourceid=chrome-instant&{google:instantFieldTrialGroupParameter}ie={inputEncoding}&ion=1{searchTerms}&nord=1",
+      "keyword": "google.com",
+      "name": "Google",
+      "prepopulate_id": "1",
+      "search_url": "{google:baseURL}search?{google:RLZ}{google:acceptedSuggestion}{google:originalQueryForSuggestion}{google:searchFieldtrialParameter}{google:instantFieldTrialGroupParameter}sourceid=chrome&ie={inputEncoding}&q={searchTerms}",
+      "suggest_url": "{google:baseSuggestURL}search?{google:searchFieldtrialParameter}{google:instantFieldTrialGroupParameter}client=chrome&hl={language}&q={searchTerms}"
+   },
+   "dns_prefetching": {
+      "host_referral_list": [ 2, [ "https://www.google.com/", [ "https://fonts.googleapis.com/", 2.2086570657060003, "https://fonts.gstatic.com/", 3.1714050174239996, "https://stats.g.doubleclick.net/", 2.529573049612, "https://tools.google.com/", 2.2086570657060003, "https://www.google-analytics.com/", 3.1714050174239996, "https://www.google.be/", 2.2086570657060003, "https://www.google.com/", 7.022396824295997, "https://www.googletagmanager.com/", 2.529573049612, "https://www.gstatic.com/", 3.1714050174239996 ] ] ],
+      "startup_list": [ 1 ]
+   },
+   "download": {
+      "directory_upgrade": true,
+      "extensions_to_open": ""
+   },
+   "extensions": {
+      "autoupdate": {
+         "next_check": "13260552007914823"
+      },
+      "chrome_url_overrides": {
+         "bookmarks": [ "chrome-extension://eemcgdkfndhakfknompkggombfjjjeno/main.html" ]
+      }
+   },
+   "homepage": "http://www.google.com/",
+   "homepage_is_newtabpage": true,
+   "http_throttling": {
+      "enabled": true
+   },
+   "ntp": {
+      "promo_resource_cache_update": "1616077731.846216"
+   },
+   "plugins": {
+      "enabled_internal_pdf3": true,
+      "enabled_nacl": true
+   },
+   "profile": {
+      "block_third_party_cookies": true,
+      "content_settings": {
+         "pref_version": 1
+      },
+      "exited_cleanly": true,
+      "local_profile_id": 10413140
+   },
+   "sync_promo": {
+      "startup_count": 2,
+      "view_count": 2
+   }
+}

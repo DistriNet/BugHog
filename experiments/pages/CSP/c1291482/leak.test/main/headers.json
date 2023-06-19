@@ -1,0 +1,10 @@
+[
+    {
+        "key": "status",
+        "value": "100"
+    },
+    {
+        "key": "Content-Security-Policy",
+        "value": "frame-src 'none'; img-src 'none'; script-src 'none'"
+    }
+]

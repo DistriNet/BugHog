@@ -1,0 +1,4 @@
+[{
+    "key": "Content-Security-Policy-Report-Only",
+    "value": "script-src 'nonce-foobar'; report-uri /report/?leak=f1505412"
+}]

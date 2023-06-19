@@ -1,0 +1,9 @@
+<body>
+    <script>
+        var blob = new Blob(['<script>\neval(\'location.href = "https://adition.com/report/?leak=c990581"\');\n<\/script>'], {
+            type: "text/html"
+        });
+        var url = URL.createObjectURL(blob);
+        location.href = url
+    </script>
+</body>

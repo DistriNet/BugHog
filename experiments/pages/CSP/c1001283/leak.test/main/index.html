@@ -1,0 +1,13 @@
+<body>
+<script>
+  if(location.ancestorOrigins.length !== 0){
+    location.href = "about:srcdoc";
+  }else{
+    f = document.body.appendChild(document.createElement("iframe"));
+    f.onload = () => {
+      frames[0][0].location.href = location.href;
+    };
+    f.src = 'https://adition.com/custom/c1001283/helper';
+  }
+</script>
+</body>

@@ -1,0 +1,10 @@
+[
+  {
+    "key": "Content-Security-Policy",
+    "value": "default-src 'self'"
+  },
+  {
+    "key": "Content-Type",
+    "value": "multipart/x-mixed-replace;boundary=boundary"
+  }
+]

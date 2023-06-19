@@ -1,0 +1,2 @@
+https://leak.test/custom/CSP/main
+https://adition.com/report/?leak=baseline

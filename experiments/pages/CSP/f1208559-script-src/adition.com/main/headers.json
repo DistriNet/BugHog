@@ -1,0 +1,10 @@
+[
+  {
+    "key": "Content-Security-Policy",
+    "value": "script-src 'none' 'unsafe-inline'"
+  },
+  {
+    "key": "Service-Worker-Allowed",
+    "value": "/"
+  }
+]

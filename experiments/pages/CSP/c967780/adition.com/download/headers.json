@@ -1,0 +1,14 @@
+[
+    {
+        "key": "status",
+        "value": "302"
+    },
+    {
+        "key": "Location",
+        "value": "javascript: window.open('https://adition.com/report/?leak=c967780')"
+    },
+    {
+        "key": "Content-Security-Policy",
+        "value": "script-src 'self';"
+    }
+]

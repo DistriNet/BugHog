@@ -1,0 +1,6 @@
+[
+    {
+        "key": "Content-Security-Policy",
+        "value": "default-src 'none'; script-src 'sha256-1wbCYI6Vm5VFSd92LASsBaYcick8PV64bohjut2ay7s='"
+    }
+]

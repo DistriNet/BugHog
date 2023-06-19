@@ -1,0 +1,6 @@
+#!/bin/bash
+
+arg="$*"
+new_arg="--no-sandbox --disable-gpu --use-fake-ui-for-media-stream --load-extension=%s $arg"
+echo $new_arg >> /tmp/script_log
+/usr/bin/google-chrome-proxy $new_arg

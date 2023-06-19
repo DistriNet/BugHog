@@ -1,0 +1,96 @@
+version: '3'
+services:
+  web:
+    image: "registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server:latest"
+    pull_policy: always
+    volumes:
+      - ./experiments/pages:/custom_pages
+      - ./experiments/resources:/app/static/custom
+    container_name: bh_web
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      bh_net:
+        aliases:
+          - leak.test
+          - leak.to
+          - sub.leak.test
+          - leaking.via
+          - hsts-only.com
+          - sub.hsts-only.com
+          - attack.er
+          - adition.com
+          - sub.adition.com
+          - sub.sub.adition.com
+          - data.test
+          - iframe.test
+          - re.port
+
+  base:
+    build:
+      context: .
+      target: core
+    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/core/core:latest
+    pull_policy: if_not_present
+    shm_size: '2gb'
+    networks:
+      bh_net:
+        aliases:
+          - core
+    environment:
+      - host_pwd=${PWD}
+    # 192.168.0.1 instead of 172.17.0.1 because /etc/docker/daemon.json is modified
+    ports:
+      - "5000:5000"
+    volumes:
+      - .env:/app/.env
+      - ./binaries/chromium/artisanal:/app/binaries/chromium/artisanal:rw
+      - ./binaries/firefox/artisanal:/app/binaries/firefox/artisanal:rw
+      - ./experiments/pages:/app/pages:ro
+      - ./experiments/url_queues:/app/url_queues:ro
+      - ./extensions/chromium:/app/extensions/chromium:ro
+      - ./extensions/firefox:/app/extensions/firefox:ro
+      - ./logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /dev/shm:/dev/shm
+    container_name: bh_core
+
+  core:
+    extends: base
+    hostname: bh_core
+
+  worker:
+    extends: base
+    build:
+      context: .
+      target: worker
+    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/core/worker:latest
+    pull_policy: if_not_present
+    hostname: bh_worker
+    container_name: bh_worker
+
+  node_base:
+    image: node:lts-alpine
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./bci/ui/frontend:/app
+    working_dir: /app
+
+  node_install_deps:
+    extends: node_base
+    entrypoint: ["npm", "install"]
+
+  node_dev:
+    extends: node_base
+    entrypoint: ["npm", "run", "dev", "--", "--host"]
+
+  node_build:
+    extends: node_base
+    entrypoint: ["npm", "run", "build"]
+
+
+networks:
+  bh_net:
+    name: bh_net

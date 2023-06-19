@@ -1,0 +1,11 @@
+<iframe id="123" src="https://leak.test/custom/c633348/helper"></iframe>
+<script>
+    document.addEventListener("securitypolicyviolation", function (e) {
+        console.log("securitypolicyviolation_event.sourceFile=" + e.sourceFile);
+        console.log("securitypolicyviolation_event.lineNumber=" + e.lineNumber);
+        console.log("securitypolicyviolation_event.columnNumber=" + e.columnNumber);
+        if (e.sourceFile.length !== 0) {
+            document.location.href = "https://adition.com/report/?leak=c633348";
+        }
+    });
+</script>

@@ -1,0 +1,9 @@
+{
+    "exclude": [
+        "binaries",
+        "browser-repos",
+        "drivers",
+        "extensions",
+        "profiles"
+    ]
+}

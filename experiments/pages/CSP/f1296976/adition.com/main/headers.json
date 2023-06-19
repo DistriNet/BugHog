@@ -1,0 +1,6 @@
+[
+  {
+    "key": "Content-Security-Policy",
+    "value": "sandbox allow-same-origin allow-scripts;"
+  }
+]

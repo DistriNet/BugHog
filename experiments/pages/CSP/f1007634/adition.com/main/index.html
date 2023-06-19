@@ -1,0 +1,9 @@
+<script>
+    var worker = new Worker("worker");
+
+    worker.onmessage = function(event) {
+        document.location.href = "https://adition.com/report/?leak=f1007634";
+    }
+
+    worker.postMessage("ping");
+</script>

@@ -1,0 +1,11 @@
+-r requirements.txt
+anybadge==1.8.0
+boto3==1.14.20
+botocore==1.17.20
+black==21.12b0
+coverage==6.3.2
+debugpy==1.5.1
+isort==5.9.3
+pylint==2.11.1
+pytest==6.2.5
+pytest-flake8==1.0.6

@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <body>
+        <iframe id="iframe" sandbox="allow-same-origin allow-popups" src="helper"></iframe>
+        <script>
+            var iframe = document.getElementById("iframe");
+            iframe.addEventListener("load", function () {
+                iframe.contentWindow.document.getElementById("123").click();
+            });
+        </script>
+  </body>
+</html>

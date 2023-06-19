@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <script>
+    'use strict';
+
+    var start = function start() {
+      var after_load = function after_load() {
+        try {
+          throw_func();
+        } catch (err) {
+          var p_el = document.createElement('p');
+          p_el.innerText = 'Stack of error is: ' + JSON.stringify(err.stack);
+          document.body.appendChild(p_el);
+        }
+        draw_image();
+      };
+      var script = document.createElement('script');
+      script.src = 'helper';
+      script.onload = after_load;
+      document.head.appendChild(script);
+    };
+    </script>
+  </head>
+  <body onload="start()"></body>
+</html>

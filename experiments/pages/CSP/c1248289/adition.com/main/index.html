@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<body>
+<script>
+window.addEventListener('load', async function() {
+    await navigator.serviceWorker.register('helper');
+    console.log('sw registered.');
+    await navigator.serviceWorker.ready;
+    console.log('sw ready.');
+});
+</script>
+</body>

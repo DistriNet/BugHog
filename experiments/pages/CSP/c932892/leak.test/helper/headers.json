@@ -1,0 +1,10 @@
+[
+    {
+        "key": "status",
+        "value": "301"
+    },
+    {
+        "key": "Location",
+        "value": "https://adition.com/other_path"
+    }
+]

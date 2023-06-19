@@ -1,0 +1,7 @@
+[{
+  "key": "Content-Security-Policy",
+  "value": "script-src 'nonce-2726c7f26c'"
+}, {
+  "key": "allow-csp-from",
+  "value": "https://leak.test"
+}]

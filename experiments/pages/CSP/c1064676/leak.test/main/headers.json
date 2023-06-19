@@ -1,0 +1,6 @@
+[
+    {
+        "key": "Content-Security-Policy",
+        "value": "default-src 'self'; object-src 'none'; child-src 'none'; script-src 'self' 'unsafe-inline'"
+    }
+]

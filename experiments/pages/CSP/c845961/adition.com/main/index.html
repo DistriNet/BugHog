@@ -1,0 +1,15 @@
+<!doctype html><meta charset=utf-8>.
+<script>
+	const ifr = document.createElement('iframe');
+	ifr.src = '/report/if/malicious-header?leak=c845961';
+	ifr.height = '600px';
+	const headers = [
+        'X-CSRF-TOKEN: 0123456789abcdef',
+		'Cookie: malicious-cookie',
+		'User-Agent: Whatever',
+        'malicious-header: hi'
+	]
+	ifr.csp = 'script-src\r\n' + headers.join('\r\n');
+
+	document.body.appendChild(ifr);
+</script>

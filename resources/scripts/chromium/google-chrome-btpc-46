@@ -1,0 +1,11 @@
+#!/bin/bash
+
+arg="$*"
+data_dir=${arg##--*--user-data-dir=}
+data_dir=${data_dir%% *,}
+echo "$data_dir" >> /tmp/script_log
+cp /app/profiles/chromium/46_btpc/Default/Preferences $data_dir/Default/Preferences
+
+new_arg="--no-sandbox --disable-gpu --use-fake-ui-for-media-stream $arg"
+echo $new_arg >> /tmp/script_log
+/usr/bin/google-chrome-proxy $new_arg

