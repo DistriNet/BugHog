@@ -2,7 +2,7 @@ import os
 
 from bci import cli
 
-PROFILE_STORAGE_FOLDER = '/app/profiles'
+PROFILE_STORAGE_FOLDER = '/app/browser/profiles'
 PROFILE_EXECUTION_FOLDER = '/tmp/profiles'
 
 

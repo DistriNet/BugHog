@@ -1,9 +1,7 @@
 test/resources/repositories
-binaries/
+browser/binaries/
 database/data/
 !**/.gitkeep
-browser-repos/
-snapshots/
 **/node_modules
 # Created by https://www.toptal.com/developers/gitignore/api/intellij,python,flask,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij,python,flask,macos

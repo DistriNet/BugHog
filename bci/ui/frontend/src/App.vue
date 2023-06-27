@@ -104,7 +104,7 @@ export default {
   },
   methods: {
     get_info() {
-      const path = `http://${location.host}/api/info/`;
+      const path = `http://${location.hostname}:5000/api/info/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -121,7 +121,7 @@ export default {
         });
     },
     get_projects() {
-      const path = `http://${location.host}/api/projects/`;
+      const path = `http://${location.hostname}:5000/api/projects/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -133,7 +133,7 @@ export default {
         });
     },
     get_browsers() {
-      const path = `http://${location.host}/api/browsers/`;
+      const path = `http://${location.hostname}:5000/api/browsers/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -145,7 +145,7 @@ export default {
         });
     },
     get_options(browser) {
-      const path = `http://${location.host}/api/options/${browser}/`;
+      const path = `http://${location.hostname}:5000/api/options/${browser}/`;
       axios.get(path)
         .then((res) => {
           this.browser_settings = res.data.options;
@@ -155,7 +155,7 @@ export default {
         });
     },
     get_extensions(browser) {
-      const path = `http://${location.host}/api/extensions/${browser}/`;
+      const path = `http://${location.hostname}:5000/api/extensions/${browser}/`;
       axios.get(path)
         .then((res) => {
           this.extensions = res.data.extensions;
@@ -165,7 +165,7 @@ export default {
         });
     },
     get_tests(project) {
-      const path = `http://${location.host}/api/tests/${project}/`;
+      const path = `http://${location.hostname}:5000/api/tests/${project}/`;
       axios.get(path)
         .then((res) => {
           this.tests = res.data.tests;
@@ -189,7 +189,7 @@ export default {
       this.update_plot();
     },
     submit_form() {
-      const path = `http://${location.host}/api/evaluation/start/`;
+      const path = `http://${location.hostname}:5000/api/evaluation/start/`;
       axios.post(path, this.eval_params)
         .then((res) => {
 
@@ -199,7 +199,7 @@ export default {
         });
     },
     stop(forcefully) {
-      const path = `http://${location.host}/api/evaluation/stop/`;
+      const path = `http://${location.hostname}:5000/api/evaluation/stop/`;
       const data = {};
       if (forcefully) {
         data["forcefully"] = true;
@@ -213,7 +213,7 @@ export default {
         });
     },
     update_plot() {
-      const path = `http://${location.host}/api/results/`;
+      const path = `http://${location.hostname}:5000/api/results/`;
       axios.put(path, this.eval_params)
         .then((res) => {
           if (res.data.status == "OK") {

@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 class Global:
 
-    custom_page_folder = '/app/pages'
-    custom_test_folder = '/app/url_queues'
+    custom_page_folder = '/app/experiments/pages'
+    custom_test_folder = '/app/experiments/url_queues'
 
     @staticmethod
     def get_extension_folder(browser: str) -> str:
@@ -31,8 +31,8 @@ class Global:
     @staticmethod
     def initialize_folders():
         for browser in ['chromium', 'firefox']:
-            if not os.path.isfile(f'/app/binaries/{browser}/artisanal/meta.json'):
-                with open(f'/app/binaries/{browser}/artisanal/meta.json', 'w') as file:
+            if not os.path.isfile(f'/app/browser/binaries/{browser}/artisanal/meta.json'):
+                with open(f'/app/browser/binaries/{browser}/artisanal/meta.json', 'w') as file:
                     file.write('{}')
 
     @staticmethod
@@ -55,13 +55,13 @@ class Global:
 
 class Chromium:
 
-    extension_folder = '/app/extensions/chromium'
+    extension_folder = '/app/browser/extensions/chromium'
     repo_to_use = 'online'
 
 
 class Firefox:
 
-    extension_folder = '/app/extensions/firefox'
+    extension_folder = '/app/browser/extensions/firefox'
     repo_to_use = 'online'
 
 

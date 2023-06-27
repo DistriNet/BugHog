@@ -106,7 +106,7 @@ class Firefox(Browser):
 
         # The certutil in the docker image refuses to create cert8.db, so we copy
         # an existing cert8.db which accepts the necessary CAs
-        cli.execute(f'cp /app/profiles/firefox/cert8.db {self._profile_path}')
+        cli.execute(f'cp /app/browser/profiles/firefox/cert8.db {self._profile_path}')
         # How to create a cert8.db?
         # Current certutils versions do not support creating cert8.db anymore.
         # However, older Firefox versions (<= 57) embed an old version the certutils library libnss3.so.

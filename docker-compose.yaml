@@ -45,12 +45,10 @@ services:
       - "5000:5000"
     volumes:
       - .env:/app/.env
-      - ./binaries/chromium/artisanal:/app/binaries/chromium/artisanal:rw
-      - ./binaries/firefox/artisanal:/app/binaries/firefox/artisanal:rw
-      - ./experiments/pages:/app/pages:ro
-      - ./experiments/url_queues:/app/url_queues:ro
-      - ./extensions/chromium:/app/extensions/chromium:ro
-      - ./extensions/firefox:/app/extensions/firefox:ro
+      - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
+      - ./browser/binaries/firefox/artisanal:/app/browser/binaries/firefox/artisanal:rw
+      - ./experiments:/app/experiments:ro
+      - ./browser/extensions:/app/browser/extensions:ro
       - ./logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock
       - /dev/shm:/dev/shm

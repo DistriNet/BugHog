@@ -17,10 +17,9 @@ RUN wget -O libgcrypt11.deb https://launchpadlibrarian.net/201289896/libgcrypt11
     dpkg -i libpng12.deb &&\
     rm libgcrypt11.deb &&\
     rm libudev0.deb &&\
-    rm libpng12.deb
-
+    rm libpng12.deb &&\
 # Stuff needed for chrome versions < 17
-RUN ln -s /usr/lib/x86_64-linux-gnu/libnss3.so /usr/lib/x86_64-linux-gnu/libnss3.so.1d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libnss3.so /usr/lib/x86_64-linux-gnu/libnss3.so.1d  &&\
     ln -s /usr/lib/x86_64-linux-gnu/libnssutil3.so /usr/lib/x86_64-linux-gnu/libnssutil3.so.1d  &&\
     ln -s /usr/lib/x86_64-linux-gnu/libsmime3.so /usr/lib/x86_64-linux-gnu/libsmime3.so.1d  &&\
     ln -s /usr/lib/x86_64-linux-gnu/libssl3.so /usr/lib/x86_64-linux-gnu/libssl3.so.1d  &&\
@@ -37,21 +36,18 @@ RUN useradd -m bci && \
     chown bci:bci /var/run/docker.sock && \
     # Make owner of folders it has to write in
     mkdir -p /app/logs && \
-    mkdir -p /app/binaries/chromium/downloaded && \
-    mkdir -p /app/binaries/firefox/downloaded && \
-    mkdir -p /app/binaries/chromium/artisanal && \
-    mkdir -p /app/binaries/firefox/artisanal && \
+    mkdir -p /app/browser/binaries/chromium/downloaded && \
+    mkdir -p /app/browser/binaries/firefox/downloaded && \
+    mkdir -p /app/browser/binaries/chromium/artisanal && \
+    mkdir -p /app/browser/binaries/firefox/artisanal && \
     chown -R bci:bci /app && \
     chown bci:bci /app/logs && \
-    chown -R bci:bci /app/binaries/chromium/ && \
-    chown -R bci:bci /app/binaries/firefox/
+    chown -R bci:bci /app/browser/binaries/chromium/ && \
+    chown -R bci:bci /app/browser/binaries/firefox/
 
-COPY --chown=bci:bci resources/profiles/ /app/profiles/
-
-# Add xvfb service
-RUN echo "Xvfb :1 -screen 0 1024x768x16 &" > /etc/init.d/xvfb && \
-    chmod +x "/etc/init.d/xvfb"
-
+COPY --chown=bci:bci browser/profiles /app/browser/profiles
+COPY --chown=bci:bci --chmod=0755 scripts/ /app/scripts/
+RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 
 USER bci
 
@@ -70,17 +66,17 @@ RUN  python3 -m pip install -r /app/requirements.txt
 # RUN mkdir -p /home/bci/.mitmproxy/ && \
 #     python /home/bci/ca_generator.py /home/bci/.mitmproxy/mitmproxy-ca.pem /home/bci/.mitmproxy/mitmproxy-ca.crt && \
 
-COPY --chown=bci:bci resources/ssl/bughog_ca.crt /home/bci/bughog_ca.crt
+COPY --chown=bci:bci ssl/bughog_ca.crt /home/bci/bughog_ca.crt
 # Add certificates to Chromium
 RUN mkdir -p $HOME/.pki/nssdb && \
     certutil -d sql:$HOME/.pki/nssdb -A -t TC -n bci-ca -i /home/bci/bughog_ca.crt && \
 # Add certificates to Firefox
 # Legacy se rity databases (cert8.db and key3.db)
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d /app/profiles/firefox/default-67/ && \
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d /app/profiles/firefox/tp-67/ && \
+    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d /app/browser/profiles/firefox/default-67/ && \
+    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d /app/browser/profiles/firefox/tp-67/ && \
 # New SQL security databases (cert9.db and key4.db)
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:/app/profiles/firefox/default-67/ && \
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:/app/profiles/firefox/tp-67/
+    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:/app/browser/profiles/firefox/default-67/ && \
+    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:/app/browser/profiles/firefox/tp-67/
 # # More info: https://support.mozilla.org/en-US/questions/1207165
 # #cp firefox/cert8.db firefox/default-67/ &&\
 # #cp firefox/cert8.db firefox/tp-67/
@@ -90,18 +86,21 @@ RUN mkdir -p $HOME/.pki/nssdb && \
 #     echo "tls_version_server_min: UNBOUND" >> /home/bci/.mitmproxy/config.yaml && \
 #     echo "listen_port: 8081" >> /home/bci/.mitmproxy/config.yaml
 
-# Copy environment variables
-COPY --chown=bci:bci --chmod=0755 resources/scripts/bci/* /app/
-
 
 FROM base AS core
 # Copy rest of source code
 COPY --chown=bci:bci bci /app/bci
 COPY --chown=bci:bci analysis /app/analysis
 USER root
-ENTRYPOINT [ "/app/core.sh" ]
+ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 FROM base AS worker
 # Copy rest of source code
 COPY --chown=bci:bci bci /app/bci
-ENTRYPOINT [ "/app/worker.sh" ]
+ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
+
+FROM base AS dev
+COPY --chown=bci:bci requirements_dev.txt /app/requirements_dev.txt
+RUN pip install -r requirements_dev.txt
+USER root
+CMD sleep infinity
