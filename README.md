@@ -1,5 +1,7 @@
 # BugHog
 
+![pytest_job](https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main)
+
 BugHog is a powerful framework designed specifically to address the challenging task of pinpointing the exact revisions in which a particular browser bug was introduced or fixed.
 As such, it has been used in a study to identify the complete lifecycle of Content Security Policy bugs.
 
