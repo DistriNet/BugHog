@@ -27,29 +27,15 @@ RUN wget -O libgcrypt11.deb https://launchpadlibrarian.net/201289896/libgcrypt11
     ln -s /usr/lib/x86_64-linux-gnu/libplc4.so /usr/lib/x86_64-linux-gnu/libplc4.so.0d  &&\
     ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.0d
 
-# Create user `bci`
-RUN useradd -m bci && \
-    # Grant access to docker
-    usermod -aG docker bci && \
-    newgrp docker && \
-    touch /var/run/docker.sock && \
-    chown bci:bci /var/run/docker.sock && \
-    # Make owner of folders it has to write in
-    mkdir -p /app/logs && \
+RUN mkdir -p /app/logs && \
     mkdir -p /app/browser/binaries/chromium/downloaded && \
     mkdir -p /app/browser/binaries/firefox/downloaded && \
     mkdir -p /app/browser/binaries/chromium/artisanal && \
-    mkdir -p /app/browser/binaries/firefox/artisanal && \
-    chown -R bci:bci /app && \
-    chown bci:bci /app/logs && \
-    chown -R bci:bci /app/browser/binaries/chromium/ && \
-    chown -R bci:bci /app/browser/binaries/firefox/
+    mkdir -p /app/browser/binaries/firefox/artisanal
 
-COPY --chown=bci:bci browser/profiles /app/browser/profiles
-COPY --chown=bci:bci --chmod=0755 scripts/ /app/scripts/
+COPY browser/profiles /app/browser/profiles
+COPY --chmod=0755 scripts/ /app/scripts/
 RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
-
-USER bci
 
 # Install python packages
 COPY requirements.txt /app/requirements.txt
@@ -66,7 +52,7 @@ RUN  python3 -m pip install -r /app/requirements.txt
 # RUN mkdir -p /home/bci/.mitmproxy/ && \
 #     python /home/bci/ca_generator.py /home/bci/.mitmproxy/mitmproxy-ca.pem /home/bci/.mitmproxy/mitmproxy-ca.crt && \
 
-COPY --chown=bci:bci ssl/bughog_ca.crt /home/bci/bughog_ca.crt
+COPY ssl/bughog_ca.crt /home/bci/bughog_ca.crt
 # Add certificates to Chromium
 RUN mkdir -p $HOME/.pki/nssdb && \
     certutil -d sql:$HOME/.pki/nssdb -A -t TC -n bci-ca -i /home/bci/bughog_ca.crt && \
@@ -89,18 +75,16 @@ RUN mkdir -p $HOME/.pki/nssdb && \
 
 FROM base AS core
 # Copy rest of source code
-COPY --chown=bci:bci bci /app/bci
-COPY --chown=bci:bci analysis /app/analysis
-USER root
+COPY bci /app/bci
+COPY analysis /app/analysis
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 FROM base AS worker
 # Copy rest of source code
-COPY --chown=bci:bci bci /app/bci
+COPY bci /app/bci
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
 
 FROM base AS dev
-COPY --chown=bci:bci requirements_dev.txt /app/requirements_dev.txt
+COPY requirements_dev.txt /app/requirements_dev.txt
 RUN pip install -r requirements_dev.txt
-USER root
 CMD sleep infinity

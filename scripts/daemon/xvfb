@@ -14,8 +14,8 @@ NAME="Xvfb"
 DEAMON="/usr/bin/Xvfb"
 DEAMON_ARGS=":1 -screen 0 1024x768x16"
 PIDFILE="/tmp/$NAME.pid"
-USER="bci"
-GROUP="bci"
+USER="root"
+GROUP="root"
 
 # Function to start the service
 start() {
