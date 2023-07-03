@@ -1,0 +1,51 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          xvfb
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Xvfb service
+# Description:       Xvfb service for headless display
+### END INIT INFO
+
+
+NAME="Xvfb"
+DEAMON="/usr/bin/Xvfb"
+DEAMON_ARGS=":1 -screen 0 1024x768x16"
+PIDFILE="/tmp/$NAME.pid"
+USER="root"
+GROUP="root"
+
+# Function to start the service
+start() {
+    echo "Starting $NAME"
+    start-stop-daemon --start --background --chuid $USER:$GROUP --pidfile $PIDFILE --make-pidfile  --startas $DEAMON --signal TERM -- $DEAMON_ARGS
+}
+
+# Function to stop the service
+stop() {
+    echo "Stopping $NAME"
+    start-stop-daemon --stop --quiet --pidfile $PIDFILE --retry=TERM/30/KILL/5
+    rm -f $PIDFILE
+    echo "$NAME stopped successfully."
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0

@@ -16,9 +16,8 @@ from bci.version_control.states.state import State
 logger = logging.getLogger('bci')
 
 EXECUTABLE_NAME = 'firefox'
-BIN_FOLDER_PATH = '/app/binaries/firefox'
-DRIVER_FOLDER_PATH = '/app/drivers/firefox'
-EXTENSION_FOLDER_PATH = '/app/extensions/firefox'
+BIN_FOLDER_PATH = '/app/browser/binaries/firefox'
+EXTENSION_FOLDER_PATH = '/app/browser/extensions/firefox'
 
 
 class FirefoxBinary(Binary):

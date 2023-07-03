@@ -15,9 +15,8 @@ from bci.version_control.states.state import State
 logger = logging.getLogger('bci')
 
 EXECUTABLE_NAME = 'chrome'
-BIN_FOLDER_PATH = '/app/binaries/chromium'
-DRIVER_FOLDER_PATH = '/app/drivers/chromium'
-EXTENSION_FOLDER_PATH = '/app/extensions/chromium'
+BIN_FOLDER_PATH = '/app/browser/binaries/chromium'
+EXTENSION_FOLDER_PATH = '/app/browser/extensions/chromium'
 
 
 class ChromiumBinary(Binary):

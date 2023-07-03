@@ -49,7 +49,7 @@ class TestCase:
                 "certutil -A -n myCA -t CT,c -i /app/ssl/myCA.crt -d %s" % self.profile_path)
             # The certutil in the docker image refuses to create cert8.db, so we copy
             # an existing cert8.db which accepts the necessary CAs
-            cli.execute("cp /app/profiles/firefox/cert8.db %s" % self.profile_path)
+            cli.execute("cp /app/browser/profiles/firefox/cert8.db %s" % self.profile_path)
 
     def visit(self, url: str, clean_profile=True, sleep_after_visit=20):
         self.logger.info("Visiting '%s' %s a clean profile" % (url, "with" if clean_profile or self.profile_path is None else "without"))
