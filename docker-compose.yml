@@ -1,31 +1,9 @@
 version: '3'
 services:
-  web:
-    image: "registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server:latest"
-    pull_policy: always
-    volumes:
-      - ./experiments/pages:/custom_pages:ro
-      - ./experiments/resources:/app/static/custom:ro
-    container_name: bh_web
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      bh_net:
-        aliases:
-          - leak.test
-          - leak.to
-          - sub.leak.test
-          - leaking.via
-          - hsts-only.com
-          - sub.hsts-only.com
-          - attack.er
-          - adition.com
-          - sub.adition.com
-          - sub.sub.adition.com
-          - data.test
-          - iframe.test
-          - re.port
+
+#============#
+# BASE IMAGE #
+#============#
 
   base:
     build:
@@ -54,6 +32,31 @@ services:
       - /dev/shm:/dev/shm:rw
     container_name: bh_core
 
+#=============#
+# DEVELOPMENT #
+#=============#
+
+  core_dev:
+    extends: base
+    hostname: bh_core
+    build:
+      context: .
+      target: dev
+    image: bh_core_dev
+    environment:
+      - "DEVELOPMENT=1"
+      - "PYTHONPATH=/app:/root/.local/bin"
+      - "DISPLAY=:1"
+      - "MOZ_DISABLE_CONTENT_SANDBOX=1"
+      - "PATH=${PATH}:/$HOME/.local/bin"
+    volumes:
+      - .:/app:rw
+    container_name: bh_core_dev
+
+#============#
+# PRODUCTION #
+#============#
+
   core:
     extends: base
     hostname: bh_core
@@ -67,6 +70,41 @@ services:
     pull_policy: if_not_present
     hostname: bh_worker
     container_name: bh_worker
+
+#===================#
+# EXPERIMENT SERVER #
+#===================#
+
+  web:
+    image: "registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server:latest"
+    pull_policy: always
+    volumes:
+      - ./experiments/pages:/custom_pages:ro
+      - ./experiments/resources:/app/static/custom:ro
+    container_name: bh_web
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      bh_net:
+        aliases:
+          - leak.test
+          - leak.to
+          - sub.leak.test
+          - leaking.via
+          - hsts-only.com
+          - sub.hsts-only.com
+          - attack.er
+          - adition.com
+          - sub.adition.com
+          - sub.sub.adition.com
+          - data.test
+          - iframe.test
+          - re.port
+
+#================#
+# NODE FRONT END #
+#================#
 
   node_base:
     image: node:lts-alpine
@@ -87,7 +125,6 @@ services:
   node_build:
     extends: node_base
     entrypoint: ["npm", "run", "build"]
-
 
 networks:
   bh_net:

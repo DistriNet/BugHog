@@ -1,7 +1,13 @@
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 <script>
 import axios from 'axios'
+import SectionHeader from "./components/section-header.vue";
+import Tooltip from "./components/tooltip.vue";
 export default {
+  components: {
+    SectionHeader,
+    Tooltip,
+  },
   data() {
     return {
       timer: null,
@@ -270,13 +276,13 @@ export default {
     <!-- <p>[FRAMEWORK NAME + LOGO]</p> -->
     <p v-if="info.database.host !== null">Using MongoDB at {{ info.database.host }}</p>
     <p v-else>Could not connect to MongoDB. Click <a ref="db_retry" href="#" ping="/api/database/connect/">here</a> to retry connection.</p>
-    <p class="pr-10"><a href="/log">Logs</a></p>
+    <p class="pr-10"><a href="/log"></a></p>
   </div>
   <div>
     <div class="column">
-      <div class="w-screen form-section w-screen">
-        <div class=" w-screen">
-          <h2 class="form-section-title">Experiments</h2>
+      <div class="w-auto form-section">
+        <div class=" w-auto">
+          <section-header section="experiments" class="w-1/2" left></section-header>
           <ul class="horizontal-select">
             <li v-for="test in tests">
               <div>
@@ -296,8 +302,7 @@ export default {
 
           <div class="column">
             <div class="form-section">
-              <h2 class="form-section-title">Evaluation range</h2>
-
+              <section-header section="eval_range"></section-header>
               <div>
                 <div class="form-subsection flex flex-wrap">
                   <div class="flex flex-wrap w-full">
@@ -337,13 +342,14 @@ export default {
             </div>
 
             <div class="form-section">
-              <label for="db_collection_name">Database collection:</label>
+              <section-header section="db_collection"></section-header>
+              <label for="db_collection_name" hidden>Database collection:</label>
               <input v-bind:value="this.db_collection_prefix" type="text" disabled>
               <input v-model="db_collection_suffix" type="text"><br>
             </div>
 
             <div class="form-section">
-              <h2 class="form-section-title">Browser configuration</h2>
+              <section-header section="browser_config"></section-header>
 
               <div class="form-subsection flex flex-wrap">
                 <h2 class="form-subsection-title">Settings</h2>
@@ -375,10 +381,10 @@ export default {
 
           <div class="column">
             <div class="form-section eval_opts">
-              <h2 class="form-section-title">Evaluation settings</h2>
+              <section-header section="eval_settings"></section-header>
 
               <div class="form-subsection">
-                <h2 class="form-section-title">Automation</h2>
+                <section-header section="automation"></section-header>
                 <div class="radio-item">
                   <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option" value="terminal">
                   <label for="terminal_automation">CLI automation</label>
@@ -391,32 +397,44 @@ export default {
               </div>
 
               <div class="form-subsection">
-                <h2 class="form-section-title">Search strategy</h2>
+                <section-header section="search_strategy"></section-header>
 
                 <div class="radio-item">
                   <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option" value="bin_seq">
                   <label for="bin_seq">Binary sequence</label>
+                  <tooltip tooltip="bin_seq"></tooltip>
                 </div>
 
                 <div class="radio-item">
                   <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option" value="bin_search">
                   <label for="bin_search">Binary search</label>
+                  <tooltip tooltip="bin_search"></tooltip>
                 </div>
 
                 <div class="radio-item">
                   <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option" value="comp_search">
                   <label for="comp_search">Composite search</label>
+                  <tooltip tooltip="comp_search"></tooltip>
                 </div>
                 <br>
 
-                <label for="sequence_limit">Sequence limit</label>
+                <div class="flex items-baseline mb-1">
+                  <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
+                  <tooltip tooltip="sequence_limit"></tooltip>
+                </div>
                 <input v-model.number="eval_params.sequence_limit" type="number" min="1" max="10000">
                 <div id="search_stategy_hidden_options" class="hidden_options">
                   <br>
-                  <label for="mech_id">Reproduction id (this will only work for the experiment to which it is associated):</label>
+                  <div class="flex items-baseline">
+                    <label for="mech_id">Reproduction id</label>
+                    <tooltip tooltip="mech_id"></tooltip>
+                  </div>
                   <input v-model="eval_params.target_mech_id" type="text" id="mech_id" name="mech_id"><br>
                   <br>
-                  <label for="leak">Request or cookie</label>
+                  <!-- <div class="flex items-baseline">
+                    <label for="leak">Request or cookie</label>
+                    <tooltip tooltip="request_or_cookie"></tooltip>
+                  </div>
                   <div class="radio-item">
                     <input v-model="eval_params.check_for" type="radio" id="request" name="leak" value="request">
                     <label for="request">Request</label>
@@ -428,12 +446,12 @@ export default {
                   <div v-if="eval_params.check_for == 'cookie'">
                     <label for="cookie_name">Cookie name</label>
                     <input v-model="eval_params.target_cookie_name"  type="text" id="cookie_name" name="cookie_name">
-                  </div>
+                  </div> -->
                 </div>
               </div>
 
               <div class="form-subsection">
-                <h2 class="form-section-title">Number of parallel containers</h2>
+                <section-header section="parallel_containers"></section-header>
 
                 <input v-model.number="eval_params.nb_of_containers" type="number" id="nb_of_containers" name="nb_of_containers" min="1" max="16">
               </div>
@@ -453,8 +471,8 @@ export default {
           <button @click="stop(true)" class="w-1/2 bg-red-400">Stop forcefully</button>
         </div>
         <div class="results-section">
-          <div class="banner-generic">
-            <h2 class="form-section-title">Results</h2>
+            <section-header section="results" left></section-header>
+          <!-- <div class="banner-generic"> -->
             <div>
               <button id="dropdown_test" data-dropdown-toggle="test_dropdown" class="dropdown mx-3" type="button">{{
                 eval_params.plot_mech_group || "Select an experiment" }}<svg class="w-6 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor"
@@ -470,7 +488,7 @@ export default {
                   </li>
                 </ul>
               </div>
-            </div>
+            <!-- </div> -->
             <button @click="update_plot" class="bg-gray-300">Refresh</button>
           </div>
           <ul>

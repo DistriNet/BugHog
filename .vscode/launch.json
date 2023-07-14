@@ -5,13 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "framework",
+            "name": "BugHog",
             "type": "python",
             "request": "launch",
             "program": "/app/bci/ui/app.py",
             "purpose": [
                 "debug-test"
-            ]
+            ],
+            "env": {
+                "PYTHONPATH": "/app",
+                "DISPLAY": ":1",
+                "MOZ_DISABLE_CONTENT_SANDBOX": "1",
+                "PATH":"${PATH}:$HOME/.local/bin"
+            }
         }
     ]
 }

@@ -39,7 +39,7 @@
 }
 
 label {
-  @apply block text-gray-700 text-sm font-bold mb-2
+  @apply block text-gray-700 text-sm font-bold
 }
 
 .banner-generic {
@@ -59,7 +59,7 @@ label {
 }
 
 .results-section {
-  @apply text-left p-3 m-2 bg-slate-200 rounded overflow-hidden shadow-lg
+  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg
 }
 
 .column {
@@ -67,11 +67,11 @@ label {
 }
 
 .form-section {
-  @apply text-left p-3 m-2 bg-slate-200 rounded overflow-hidden shadow-lg
+  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg
 }
 
 .form-subsection {
-  @apply text-left p-2 m-1 mb-4 mt-4 bg-slate-300 max-w-sm rounded overflow-hidden shadow-lg
+  @apply text-left p-2 m-1 mb-4 mt-4 bg-slate-300 max-w-sm rounded shadow-lg
 }
 
 .form-section-title {
@@ -87,7 +87,7 @@ label {
 }
 
 .radio-item {
-  @apply flex items-center mb-4
+  @apply flex items-center mb-2
 }
 
 .radio-item input {
@@ -108,6 +108,38 @@ label {
 
 .checkbox-item label {
   @apply ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+}
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext, .tooltip .tooltiptext-left {
+  @apply text-sm bg-gray-700 p-2 text-left
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 180px;
+  color: #fff;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip .tooltiptext-left {
+  right: 105%;
+  visibility: hidden;
+  width: 180px;
+  color: #fff;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext, .tooltip:hover .tooltiptext-left {
+  visibility: visible;
 }
 
 :root {

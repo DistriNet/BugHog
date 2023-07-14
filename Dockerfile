@@ -39,7 +39,7 @@ RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 
 # Install python packages
 COPY requirements.txt /app/requirements.txt
-RUN  python3 -m pip install -r /app/requirements.txt
+RUN pip install --user -r /app/requirements.txt
 
 
 ################
@@ -86,5 +86,5 @@ ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
 
 FROM base AS dev
 COPY requirements_dev.txt /app/requirements_dev.txt
-RUN pip install -r requirements_dev.txt
+RUN pip install --user -r requirements_dev.txt
 CMD sleep infinity

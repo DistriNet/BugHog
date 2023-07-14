@@ -1,8 +1,7 @@
 {
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pylintPath": ".venv/bin/pylint",
     "python.testing.pytestArgs": [
         "test"
     ],
@@ -15,10 +14,10 @@
         "test_*.py"
     ],
     "python.testing.unittestEnabled": true,
-    "terminal.integrated.defaultProfile.linux": "bash", 
+    "terminal.integrated.defaultProfile.linux": "bash",
     "terminal.integrated.profiles.linux": {
         "zsh": {
             "path": "/bin/bash"
         },
-    }
+    },
 }
