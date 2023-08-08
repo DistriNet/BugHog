@@ -254,6 +254,7 @@ class PlotParameters:
     cli_options: list[str] = None
     dirty_allowed: bool = True
     target_cookie_name: str = None
+    previous_nb_of_evaluations: int = 0
 
 
 @staticmethod

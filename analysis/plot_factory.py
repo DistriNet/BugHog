@@ -24,9 +24,28 @@ class PlotFactory:
 
     @staticmethod
     def create_html_plot_string(params: PlotParameters, db: MongoDB) -> tuple[str, int]:
+        # Check for missing plot parameters
+        missing_parameters = []
+        if not params.mech_group:
+            missing_parameters.append('selected experiment')
+        if not params.target_mech_id:
+            missing_parameters.append('reproduction ID')
+        if not params.browser_name:
+            missing_parameters.append('browser')
+        if not params.database_collection:
+            missing_parameters.append('database collection')
+
+        if missing_parameters:
+            return (
+                f'No Gantt chart can be plotted because the following parameters are missing {", ".join(missing_parameters)}',
+                0
+            )
+
         plot, nb_of_evaluations = PlotFactory.__create_plot(params, db)
-        if plot is None:
+        if plot is None and nb_of_evaluations == 0:
             return '<p>No datapoints found...</p>', 0
+        elif plot is None:
+            return None, nb_of_evaluations
         html = file_html(plot, CDN)
         return html, nb_of_evaluations
 
@@ -34,7 +53,9 @@ class PlotFactory:
     def __create_plot(params: PlotParameters, db: MongoDB):
         docs = db.get_documents_for_plotting(params)
         if len(docs) == 0:
-            return None, None
+            return None, 0
+        elif len(docs) == params.previous_nb_of_evaluations:
+            return None, params.previous_nb_of_evaluations
 
         data = PlotFactory.__add_outcome_info(params, docs)
 
