@@ -3,7 +3,21 @@
 ![pytest_job](https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main)
 
 BugHog is a powerful framework designed specifically to address the challenging task of pinpointing the exact revisions in which a particular browser bug was introduced or fixed.
-As such, it has been used in a study to identify the complete lifecycle of Content Security Policy bugs.
+
+This framework has been developed as part of the _"A Bug's Life: Analyzing the Lifecycle and Mitigation Process of Content Security Policy Bugs"_ paper to identify Content Security Policy bug lifecycles, published at [USENIX Security '23](https://www.usenix.org/conference/usenixsecurity23/presentation/franken).
+
+<img
+    src="https://secartifacts.github.io/usenixsec2023/usenixbadges-available.png"
+    alt="USENIX Association artifact evaluated badge"
+    width="100"/>
+<img
+    src="https://secartifacts.github.io/usenixsec2023/usenixbadges-functional.png"
+    alt="USENIX Association artifact functional badge"
+    width="100"/>
+<img
+    src="https://secartifacts.github.io/usenixsec2023/usenixbadges-reproduced.png"
+    alt="USENIX Association artifact reproduced badge"
+    width="100"/>
 
 
 ## Usage

@@ -19,6 +19,7 @@ export default {
       db_collection_suffix: "",
       tests: [],
       plot_mech_group: null,
+      auto_refresh_plot: true,
       info: {
         log: [],
         database: {
@@ -48,17 +49,19 @@ export default {
         // Sequence config
         nb_of_containers: 8,
         sequence_limit: 1000,
-        target_mech_id: "",
+        target_mech_id: null,
         target_cookie_name: "generic",
         search_strategy: "bin_seq",
         // Database collection
-        db_collection: "",
+        db_collection: null,
         // For plotting
-        plot_mech_group: ""
+        plot_mech_group: null,
+        previous_nb_of_evaluations: null
       },
       results: {
-        nb_of_evaluations: null,
-        plot_html: null
+        nb_of_evaluations: 0,
+        plot_html: null,
+        cached_plot_html: null
       }
     }
   },
@@ -83,7 +86,6 @@ export default {
     },
     "info.log": {
       function (val) {
-        console.log("hi");
         if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
           log_section.scrollTo({"top": log_section.scrollHeight, "behavior": "auto"});
         }
@@ -93,6 +95,7 @@ export default {
   },
   mounted: function () {
     this.get_info();
+    this.update_results();
     this.get_projects();
     this.get_browsers();
     setTimeout(function() {
@@ -106,6 +109,7 @@ export default {
         this.get_browsers();
       }
       this.get_info();
+      this.update_results();
     }, 2000);
   },
   methods: {
@@ -192,7 +196,7 @@ export default {
     },
     set_plot_mech_group(mech_group) {
       this.eval_params.plot_mech_group = mech_group;
-      this.update_plot();
+      this.update_results(true);
     },
     submit_form() {
       const path = `http://${location.hostname}:5000/api/evaluation/start/`;
@@ -218,18 +222,28 @@ export default {
           console.error(error);
         });
     },
-    update_plot() {
+    update_results(force_plot_update) {
       const path = `http://${location.hostname}:5000/api/results/`;
-      axios.put(path, this.eval_params)
+      const eval_params = this.eval_params;
+      eval_params['previous_nb_of_evaluations'] = this.results.nb_of_evaluations;
+      axios.put(path, eval_params)
         .then((res) => {
           if (res.data.status == "OK") {
             this.results.nb_of_evaluations = res.data.nb_of_evaluations;
-            this.results.plot_html = res.data.plot_html;
+            if (res.data.plot_html) {
+              this.results.cached_plot_html = res.data.plot_html;
+            }
+            if (this.auto_refresh_plot || force_plot_update) {
+              this.render_plot();
+            }
           }
         })
         .catch((error) => {
           console.error(error);
         });
+    },
+    render_plot() {
+      this.results.plot_html = this.results.cached_plot_html;
     },
   },
   beforeDestroy() {
@@ -473,8 +487,8 @@ export default {
         <div class="results-section">
             <section-header section="results" left></section-header>
           <!-- <div class="banner-generic"> -->
-            <div>
-              <button id="dropdown_test" data-dropdown-toggle="test_dropdown" class="dropdown mx-3" type="button">{{
+            <div class="flex flex-wrap justify-between">
+              <button id="dropdown_test" data-dropdown-toggle="test_dropdown" class="dropdown" type="button">{{
                 eval_params.plot_mech_group || "Select an experiment" }}<svg class="w-6 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor"
                   viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -484,15 +498,23 @@ export default {
                 class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
                 <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown_project">
                   <li v-for="test in eval_params.tests">
-                    <a href="#" class="dropdown-item" @click="set_plot_mech_group(test)">{{ test }}</a>
+                    <button class="dropdown-item w-full" @click="set_plot_mech_group(test)">{{ test }}</button>
                   </li>
                 </ul>
               </div>
             <!-- </div> -->
-            <button @click="update_plot" class="bg-gray-300">Refresh</button>
+            <div class="flex flex-wrap">
+              <div class="radio-item m-2">
+                <input v-model="auto_refresh_plot" type="checkbox">
+                <label>Auto-refresh Gantt chart</label>
+              </div>
+              <button @click="update_results" class="bg-gray-300">Refresh</button>
+            </div>
           </div>
-          <ul>
-            <li>Number of experiments: {{ results.nb_of_evaluations }}</li>
+          <ul class="my-3">
+            <li v-if="this.info.running"> <b>Status:</b> Running &#x2705;</li>
+            <li v-else> <b>Status:</b> Stopped &#x1F6D1;</li>
+            <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
           </ul>
           <iframe id="plot" width="700" height="350" scrolling="no" :srcdoc="results.plot_html">
           </iframe>

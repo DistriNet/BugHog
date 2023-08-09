@@ -118,6 +118,7 @@ class Main:
             revision_number_range = (data['lower_revision_nb'], data['upper_revision_nb'])
         else:
             revision_number_range = None
+
         params = PlotParameters(
             data.get('plot_mech_group'),
             data.get('target_mech_id'),
@@ -129,6 +130,7 @@ class Main:
             extensions=data.get('extensions', []),
             cli_options=data.get('cli_options', []),
             dirty_allowed=data.get('dirty_allowed', True),
-            target_cookie_name=None if data.get('check_for') == 'request' else data.get('target_cookie_name', 'generic')
+            target_cookie_name=None if data.get('check_for') == 'request' else data.get('target_cookie_name', 'generic'),
+            previous_nb_of_evaluations=data.get('previous_nb_of_evaluations', 0)
         )
         return Main.master.get_html_plot(params)

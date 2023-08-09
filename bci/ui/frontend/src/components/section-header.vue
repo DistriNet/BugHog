@@ -34,7 +34,7 @@
           },
           "results": {
             "title": "Results",
-            "tooltip": "The evaluation results can be visualized in a Gantt chart. This chart is generated based on the selected fields. Use the dropdown menu to choose the experiment for which you want to display the data. Be sure to input the reproduction ID as well, as this is used to infer the boolean outcome for each revision."
+            "tooltip": "The evaluation results can be visualized in a Gantt chart. This chart is generated based on the selected fields. Use the dropdown menu to choose the experiment for which you want to display the data. Be sure to input the reproduction ID as well, as this is used to infer the boolean outcome for each revision. Note that the zoom level within the Gantt chart widget will reset each time the chart is refreshed."
           },
           "search_strategy": {
             "title": "Search strategy",
