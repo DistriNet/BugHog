@@ -44,6 +44,6 @@ typing-extensions==3.10.0.2
 urllib3==1.25.9
 wcwidth==0.2.5
 websocket-client==1.2.3
-Werkzeug==1.0.1
+Werkzeug==2.2.3
 wrapt==1.12.1
 zipp==3.1.0
