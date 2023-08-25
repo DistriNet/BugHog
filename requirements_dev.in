@@ -2,7 +2,6 @@
 anybadge
 boto3
 botocore
-black
 coverage
 debugpy
 flake8
