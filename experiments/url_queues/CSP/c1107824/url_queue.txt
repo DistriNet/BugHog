@@ -1,2 +1,2 @@
-https://adition.com/custom/c1107824
-https://adition.com/report/?leak=baseline
+https://a.test/CSP/c1107824
+https://a.test/report/?leak=baseline

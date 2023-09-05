@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 
 from bci.evaluations.logic import SequenceConfiguration, TestResult
@@ -18,7 +19,8 @@ class OutcomeChecker:
         target_cookie = self.sequence_config.target_cookie_name
         if result.requests is None:
             return None
-        requests_to_result_endpoint = list(filter(lambda x: f'https://adition.com/report/?leak={target_mech_id}' in x['url'], result.requests))
+        regex = rf'^https:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]+\/report\/\?leak={target_mech_id}$'
+        requests_to_result_endpoint = [request for request in result.requests if re.match(regex, request['url'])]
         for request in requests_to_result_endpoint:
             headers = request['headers']
             if not target_cookie:

@@ -1,6 +1,6 @@
 [
-    {
-        "key": "Content-Security-Policy",
-        "value": "script-src adition.com/custom/c661852/helper"
-    }
+  {
+    "key": "Content-Security-Policy",
+    "value": "script-src a.test/CSP/c661852/helper"
+  }
 ]

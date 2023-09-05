@@ -1,1 +1,1 @@
-document.location.href = "https://adition.com/report/?leak=strict-dynamic";
+document.location.href = "https://a.test/report/?leak=strict-dynamic";

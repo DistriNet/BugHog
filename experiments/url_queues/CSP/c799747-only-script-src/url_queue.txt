@@ -1,2 +1,2 @@
-https://leak.test/custom/c799747-only-script-src/main
-https://adition.com/report/?leak=baseline
+https://leak.test/CSP/c799747-only-script-src/main
+https://a.test/report/?leak=baseline

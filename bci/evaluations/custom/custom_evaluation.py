@@ -36,11 +36,11 @@ class CustomEvaluationFramework(EvaluationFramework):
             self.tests_per_project[project_name] = {}
             for test_name in os.listdir(project_path):
                 if test_name in used_test_names:
-                    raise AttributeError(f"Test name '{test_name}' should be unique over all projects (found in {project_name} and {used_test_names[test_name]})")
+                    raise AttributeError(f'Test name \'{test_name}\' should be unique over all projects (found in {project_name} and {used_test_names[test_name]})')
                 used_test_names[test_name] = project_name
                 test_path = os.path.join(project_path, test_name)
                 if os.path.isdir(test_path):
-                    with open(os.path.join(test_path, "url_queue.txt")) as file:
+                    with open(os.path.join(test_path, 'url_queue.txt')) as file:
                         self.tests_per_project[project_name][test_name] = file.readlines()
                         self.tests[test_name] = self.tests_per_project[project_name][test_name]
             # Find remaining tests by checking the pages hosting tests
@@ -48,12 +48,12 @@ class CustomEvaluationFramework(EvaluationFramework):
             for test_name in os.listdir(project_path):
                 test_path = os.path.join(project_path, test_name)
                 for domain in os.listdir(test_path):
-                    main_folder_path = os.path.join(project_path, test_path, domain, "main")
+                    main_folder_path = os.path.join(project_path, test_path, domain, 'main')
                     if os.path.exists(main_folder_path) and test_name not in used_test_names:
                         used_test_names[test_name] = project_name
                         self.tests_per_project[project_name][test_name] = [
-                            f"https://{domain}/custom/{test_name}/main",
-                            "https://adition.com/report/?leak=baseline"
+                            f'https://{domain}/{project_name}/{test_name}/main',
+                            'https://a.test/report/?leak=baseline'
                         ]
                         self.tests[test_name] = self.tests_per_project[project_name][test_name]
 
