@@ -24,38 +24,30 @@ class CustomEvaluationFramework(EvaluationFramework):
         self.initialize_tests_and_url_queues()
 
     def initialize_tests_and_url_queues(self):
-        used_test_names = {}
         page_folder_path = Global.custom_page_folder
-        test_folder_path = Global.custom_test_folder
-        if not os.path.isdir(test_folder_path):
-            return
-        project_names = [name for name in os.listdir(test_folder_path) if os.path.isdir(os.path.join(test_folder_path, name))]
+        project_names = [name for name in os.listdir(page_folder_path) if os.path.isdir(os.path.join(page_folder_path, name))]
         for project_name in project_names:
             # Find tests in folder
-            project_path = os.path.join(test_folder_path, project_name)
+            project_path = os.path.join(page_folder_path, project_name)
             self.tests_per_project[project_name] = {}
             for test_name in os.listdir(project_path):
-                if test_name in used_test_names:
-                    raise AttributeError(f'Test name \'{test_name}\' should be unique over all projects (found in {project_name} and {used_test_names[test_name]})')
-                used_test_names[test_name] = project_name
-                test_path = os.path.join(project_path, test_name)
-                if os.path.isdir(test_path):
-                    with open(os.path.join(test_path, 'url_queue.txt')) as file:
+                url_queue_file_path = os.path.join(project_path, test_name, 'url_queue.txt')
+                if os.path.isfile(url_queue_file_path):
+                    # If an URL queue is specified, it is parsed and used
+                    with open(url_queue_file_path) as file:
                         self.tests_per_project[project_name][test_name] = file.readlines()
                         self.tests[test_name] = self.tests_per_project[project_name][test_name]
-            # Find remaining tests by checking the pages hosting tests
-            project_path = os.path.join(page_folder_path, project_name)
-            for test_name in os.listdir(project_path):
-                test_path = os.path.join(project_path, test_name)
-                for domain in os.listdir(test_path):
-                    main_folder_path = os.path.join(project_path, test_path, domain, 'main')
-                    if os.path.exists(main_folder_path) and test_name not in used_test_names:
-                        used_test_names[test_name] = project_name
-                        self.tests_per_project[project_name][test_name] = [
-                            f'https://{domain}/{project_name}/{test_name}/main',
-                            'https://a.test/report/?leak=baseline'
-                        ]
-                        self.tests[test_name] = self.tests_per_project[project_name][test_name]
+                else:
+                    # Otherwise, a default URL queue is used, based on the domain that hosts the main page
+                    test_folder_path = os.path.join(project_path, test_name)
+                    for domain in os.listdir(test_folder_path):
+                        main_folder_path = os.path.join(test_folder_path, domain, 'main')
+                        if os.path.exists(main_folder_path):
+                            self.tests_per_project[project_name][test_name] = [
+                                f'https://{domain}/{project_name}/{test_name}/main',
+                                'https://a.test/report/?leak=baseline'
+                            ]
+                            self.tests[test_name] = self.tests_per_project[project_name][test_name]
 
     def perform_specific_evaluation(self, browser: Browser, params: TestParameters) -> TestResult:
         logger.info(f'Starting test for {params}')

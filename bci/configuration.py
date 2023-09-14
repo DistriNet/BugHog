@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 class Global:
 
     custom_page_folder = '/app/experiments/pages'
-    custom_test_folder = '/app/experiments/url_queues'
 
     @staticmethod
     def get_extension_folder(browser: str) -> str:
