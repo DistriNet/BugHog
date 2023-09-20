@@ -1,0 +1,2 @@
+https://a.test/Support/ServiceWorker/main
+https://a.test/report/?leak=baseline

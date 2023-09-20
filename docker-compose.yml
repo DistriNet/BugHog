@@ -32,9 +32,9 @@ services:
       - /dev/shm:/dev/shm:rw
     container_name: bh_core
 
-#=============#
-# DEVELOPMENT #
-#=============#
+  #=============#
+  # DEVELOPMENT #
+  #=============#
 
   core_dev:
     extends: base
@@ -53,9 +53,9 @@ services:
       - .:/app:rw
     container_name: bh_core_dev
 
-#============#
-# PRODUCTION #
-#============#
+  #============#
+  # PRODUCTION #
+  #============#
 
   core:
     extends: base
@@ -71,16 +71,16 @@ services:
     hostname: bh_worker
     container_name: bh_worker
 
-#===================#
-# EXPERIMENT SERVER #
-#===================#
+  #===================#
+  # EXPERIMENT SERVER #
+  #===================#
 
   web:
     image: "registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server:latest"
-    pull_policy: always
+    pull_policy: if_not_present
     volumes:
-      - ./experiments/pages:/custom_pages:ro
-      - ./experiments/resources:/app/static/custom:ro
+      - ./experiments/pages:/experiments/pages:ro
+      - ./experiments/resources:/app/static/resources:ro
     container_name: bh_web
     ports:
       - "80:80"
@@ -89,22 +89,15 @@ services:
       bh_net:
         aliases:
           - leak.test
-          - leak.to
-          - sub.leak.test
-          - leaking.via
-          - hsts-only.com
-          - sub.hsts-only.com
-          - attack.er
+          - a.test
+          - sub.a.test
+          - sub.sub.a.test
+          - b.test
           - adition.com
-          - sub.adition.com
-          - sub.sub.adition.com
-          - data.test
-          - iframe.test
-          - re.port
 
-#================#
-# NODE FRONT END #
-#================#
+  #================#
+  # NODE FRONT END #
+  #================#
 
   node_base:
     image: node:lts-alpine

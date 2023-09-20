@@ -95,6 +95,16 @@ To stop BugHog, run the following command:
 docker compose down
 ```
 
-## Adding your own proof of concepts
+### Adding Your Own Experiments
 
-🚧 This section is currently under construction and will soon provide detailed instructions on how to integrate your own proofs of concept into the BugHog framework. 🚧
+Instructions to add your own custom experiments to the server can be found [here](https://github.com/DistriNet/BugHog-web/blob/main/experiments/README.md).
+Be sure to restart the BugHog framework when you add a new experiment:
+
+```bash
+docker compose down
+docker compose up core web
+```
+
+## Additional help
+
+Don't hesitate to open a [GitHub issue](https://github.com/DistriNet/BugHog/issues/new) if you come across a bug, want to suggest a feature, or have any questions!

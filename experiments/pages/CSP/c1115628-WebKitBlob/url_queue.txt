@@ -1,0 +1,2 @@
+https://leak.test/CSP/c1115628-WebKitBlob/main
+https://a.test/report/?leak=baseline

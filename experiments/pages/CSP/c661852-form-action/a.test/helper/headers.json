@@ -1,0 +1,10 @@
+[
+  {
+    "key": "status",
+    "value": "302"
+  },
+  {
+    "key": "Location",
+    "value": "https://a.test/report/?leak=not-c661852-form-action"
+  }
+]

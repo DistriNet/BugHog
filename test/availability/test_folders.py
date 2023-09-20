@@ -31,9 +31,6 @@ class TestFolderAvailability(unittest.TestCase):
         assert os.path.isdir(Global.custom_page_folder)
         assert os.listdir(Global.custom_page_folder)
 
-        assert os.path.isdir(Global.custom_test_folder)
-        assert os.listdir(Global.custom_test_folder)
-
     @staticmethod
     def test_extensions_availability():
         assert os.path.isdir('/app/browser/extensions')

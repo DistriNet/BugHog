@@ -1,1 +1,1 @@
-document.location.href = "https://adition.com/report/?leak=not-script-src-elem"
+document.location.href = "https://a.test/report/?leak=not-script-src-elem";

@@ -9,7 +9,7 @@ package {
 		public var loader:URLLoader=new URLLoader();;
 		public function tester()
 		{
-			var request:URLRequest = new URLRequest("https://adition.com/");
+			var request:URLRequest = new URLRequest("https://a.test/");
 			ExternalInterface.call("alert");
 			this.loader.load(request);
 		}
