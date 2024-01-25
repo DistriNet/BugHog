@@ -1,8 +1,8 @@
 from bci.version_control.states.state import State
 from bci.util import request_json
 
-BINARY_AVAILABILITY_URL = "https://gjfr.dev/res/data/firefox_binary_availability_summary.json"
-REVISION_NUMBER_MAPPING_URL = "https://gjfr.dev/res/data/firefox_revision_number_to_id.json"
+BINARY_AVAILABILITY_URL = "https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_binary_availability.json"
+REVISION_NUMBER_MAPPING_URL = "https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_revision_nb_to_id.json"
 
 BINARY_AVAILABILITY_MAPPING = request_json(BINARY_AVAILABILITY_URL)["data"]
 REVISION_NUMBER_MAPPING = request_json(REVISION_NUMBER_MAPPING_URL)["data"]
