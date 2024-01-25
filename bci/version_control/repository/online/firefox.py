@@ -4,7 +4,7 @@ from bci.version_control.repository.repository import Repository
 
 LOGGER = logging.getLogger("bci")
 
-META_DATA_URL = "https://gjfr.dev/res/data/firefox.json"
+META_DATA_URL = "https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_release_base_revs.json"
 REPO_REVISION_URL = "https://hg.mozilla.org/releases/mozilla-release/rev/"
 
 

@@ -4,7 +4,7 @@ from bci.version_control.repository.repository import Repository
 
 LOGGER = logging.getLogger("bci")
 
-META_DATA_URL = "https://gjfr.dev/res/data/chromium.json"
+META_DATA_URL = "https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/chromium_release_base_revs.json"
 REPO_TAGS_URL = "https://chromium.googlesource.com/chromium/src/+refs/"
 
 
