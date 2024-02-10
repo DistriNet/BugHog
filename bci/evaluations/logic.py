@@ -141,6 +141,9 @@ class DatabaseConnectionParameters:
             data['database_name']
         )
 
+    def __str__(self) -> str:
+        return f'{self.username}@{self.host}:27017/{self.database_name}'
+
 
 @dataclass(frozen=True)
 class WorkerParameters:
