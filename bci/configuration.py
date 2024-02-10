@@ -43,13 +43,14 @@ class Global:
             logger.info('Could not find database environment variables, using database container...')
             return container.run()
         else:
-            logger.info(f'Found database environment variables for connection to \'{os.getenv("BCI_MONGO_HOST")}\'')
-            return DatabaseConnectionParameters(
+            database_params = DatabaseConnectionParameters(
                 os.getenv('BCI_MONGO_HOST'),
                 os.getenv('BCI_MONGO_USERNAME'),
                 os.getenv('BCI_MONGO_PASSWORD'),
                 os.getenv('BCI_MONGO_DATABASE')
             )
+            logger.info(f'Found database environment variables \'{database_params}\'')
+            return database_params
 
 
 class Chromium:
