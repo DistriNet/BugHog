@@ -1,5 +1,6 @@
 test/resources/repositories
 browser/binaries/
+config/
 database/data/
 !**/.gitkeep
 **/node_modules

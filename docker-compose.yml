@@ -22,7 +22,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - .env:/app/.env:ro
+      - ./config:/app/config:ro
       - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
       - ./browser/binaries/firefox/artisanal:/app/browser/binaries/firefox/artisanal:rw
       - ./experiments:/app/experiments:ro

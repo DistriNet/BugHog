@@ -41,7 +41,7 @@ class Master:
         self.firefox_build = None
         self.chromium_build = None
 
-        load_dotenv()
+        load_dotenv('/app/config/.env')
 
         Global.initialize_folders()
         self.db_connection_params = Global.get_database_connection_params()
