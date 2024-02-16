@@ -77,9 +77,9 @@ By default, BugHog uses a MongoDB container.
 you might want to prefer all data to be stored on your own MongoDB instance.
 If you prefer storing data in your own MongoDB instance, follow these steps:
 
-1. Create a `.env` file from `.env.example` in the BugHog root directory and fill in the missing values.
+1. Create a `.env` file from `.env.example` (both in the `config` folder) and fill in the missing values.
 
-2. Rebuild BugHog and run it.
+2. (Re)start BugHog.
 
 ### Stopping
 To stop BugHog, run the following command:

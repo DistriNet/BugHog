@@ -75,7 +75,7 @@ class WorkerManager:
                     labels=['bh_worker'],
                     command=command,
                     volumes=[
-                        os.path.join(os.getenv('host_pwd'), '.env') + ':/app/.env',
+                        os.path.join(os.getenv('host_pwd'), 'config') + ':/app/config',
                         os.path.join(os.getenv('host_pwd'), 'browser/binaries/chromium/artisanal') + ':/app/browser/binaries/chromium/artisanal',
                         os.path.join(os.getenv('host_pwd'), 'browser/binaries/firefox/artisanal') + ':/app/browser/binaries/firefox/artisanal',
                         os.path.join(os.getenv('host_pwd'), 'experiments') + ':/app/experiments',
