@@ -51,8 +51,6 @@ BugHog can be installed by following the steps below:
     If you want to modify the source code, use the following commands to build the necessary Docker images.
     Run this script again if you make changes to the source code.
     ```bash
-    docker compose up node_install_deps
-    docker compose up node_build
     docker compose build core worker web
     ```
 
@@ -65,7 +63,7 @@ If you switch between pulled and built images, make sure to execute the appropri
 docker compose up core web
 ```
 
-Open your web browser and navigate to http://localhost:5000 to access the graphical interface.
+Open your web browser and navigate to [http://localhost:5000](http://localhost:5000) to access the graphical interface.
 If you started BugHog on a remote server, replace localhost with its IP address.
 
 > :warning: BugHog's own MongoDB instance will persist data within the [database](database) folder.
@@ -77,7 +75,7 @@ By default, BugHog uses a MongoDB container.
 you might want to prefer all data to be stored on your own MongoDB instance.
 If you prefer storing data in your own MongoDB instance, follow these steps:
 
-1. Create a `.env` file from `.env.example` (both in the `config` folder) and fill in the missing values.
+1. Create a `.env` file from `.env.example` (both in the [config](config) folder) and fill in the missing values.
 
 2. (Re)start BugHog.
 
@@ -97,6 +95,18 @@ Be sure to restart the BugHog framework when you add a new experiment:
 docker compose down
 docker compose up core web
 ```
+
+### Development
+
+For extending or debugging the Vue UI, the most convenient approach is to launch an interactive Node environment.
+The UI can be visited at [http://localhost:5173](http://localhost:5173).
+
+```bash
+docker compose up node_dev
+```
+
+For debugging the core application, consider using the VS Code dev container for an effortless debugging experience.
+You can utilize the configuration in [.devcontainer](.devcontainer) for this.
 
 ## Additional help
 

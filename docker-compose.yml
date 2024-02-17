@@ -9,7 +9,6 @@ services:
     build:
       context: .
       target: core
-    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/core/core:latest
     pull_policy: if_not_present
     shm_size: '2gb'
     networks:
@@ -59,14 +58,15 @@ services:
 
   core:
     extends: base
+    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/app/core
     hostname: bh_core
 
   worker:
     extends: base
+    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/app/worker
     build:
       context: .
       target: worker
-    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/core/worker:latest
     pull_policy: if_not_present
     hostname: bh_worker
     container_name: bh_worker
@@ -76,7 +76,7 @@ services:
   #===================#
 
   web:
-    image: "registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server:latest"
+    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server
     pull_policy: if_not_present
     volumes:
       - ./experiments/pages:/experiments/pages:ro
@@ -99,25 +99,14 @@ services:
   # NODE FRONT END #
   #================#
 
-  node_base:
+  node_dev:
     image: node:lts-alpine
     ports:
       - "5173:5173"
     volumes:
       - ./bci/ui/frontend:/app
     working_dir: /app
-
-  node_install_deps:
-    extends: node_base
-    entrypoint: ["npm", "install"]
-
-  node_dev:
-    extends: node_base
     entrypoint: ["npm", "run", "dev", "--", "--host"]
-
-  node_build:
-    extends: node_base
-    entrypoint: ["npm", "run", "build"]
 
 networks:
   bh_net:

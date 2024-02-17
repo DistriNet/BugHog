@@ -1,5 +1,12 @@
-FROM python:3.11-slim-buster AS base
+FROM node:lts-alpine as ui-build-stage
+WORKDIR /app
+COPY /bci/ui/frontend/package*.json ./
+RUN npm install
+COPY /bci/ui/frontend ./
+RUN npm run build
 
+
+FROM python:3.11-slim-buster AS base
 WORKDIR /app
 
 RUN apt-get update -y
@@ -71,6 +78,7 @@ RUN mkdir -p $HOME/.pki/nssdb && \
 # RUN echo "tls_version_client_min: UNBOUND" > /home/bci/.mitmproxy/config.yaml && \
 #     echo "tls_version_server_min: UNBOUND" >> /home/bci/.mitmproxy/config.yaml && \
 #     echo "listen_port: 8081" >> /home/bci/.mitmproxy/config.yaml
+COPY --from=ui-build-stage /app/dist /app/bci/ui/frontend/dist
 
 
 FROM base AS core
@@ -79,10 +87,12 @@ COPY bci /app/bci
 COPY analysis /app/analysis
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
+
 FROM base AS worker
 # Copy rest of source code
 COPY bci /app/bci
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
+
 
 FROM base AS dev
 COPY requirements_dev.txt /app/requirements_dev.txt
