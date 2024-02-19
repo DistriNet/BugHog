@@ -1,0 +1,37 @@
+name: Trigger GitLab release build job
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  create:
+env:
+  GITLAB_PIPELINE_TRIGGER_TOKEN: ${{ secrets.GITLAB_PIPELINE_TRIGGER_TOKEN }}
+jobs:
+
+  trigger_build_job:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: send triggering request
+        run: |
+          curl -X POST \
+            --fail \
+            -F token=$GITLAB_PIPELINE_TRIGGER_TOKEN \
+            -F "ref=main" \
+            -F "variables[RELEASE_TAG]=${{github.ref_name}}" \
+            https://gitlab.kuleuven.be/api/v4/projects/17581/trigger/pipeline
+
+  package_release:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: true
+          prerelease: false

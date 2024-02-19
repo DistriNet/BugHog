@@ -1,0 +1,18 @@
+name: Trigger GitLab dev build job
+on:
+  push:
+    branches:
+      - dev
+env:
+  GITLAB_PIPELINE_TRIGGER_TOKEN: ${{ secrets.GITLAB_PIPELINE_TRIGGER_TOKEN }}
+jobs:
+  trigger_build_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: send triggering request
+        run: |
+          curl -X POST \
+            --fail \
+            -F token=$GITLAB_PIPELINE_TRIGGER_TOKEN \
+            -F "ref=main" \
+            https://gitlab.kuleuven.be/api/v4/projects/17581/trigger/pipeline
