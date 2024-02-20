@@ -13,6 +13,7 @@ jobs:
         run: |
           curl -X POST \
             --fail \
-            -F token=$GITLAB_PIPELINE_TRIGGER_TOKEN \
+            -F "token=$GITLAB_PIPELINE_TRIGGER_TOKEN" \
             -F "ref=main" \
+            -F "variables[REPO]=${{github.repositoryUrl}}" \
             https://gitlab.kuleuven.be/api/v4/projects/17581/trigger/pipeline
