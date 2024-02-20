@@ -58,12 +58,12 @@ services:
 
   core:
     extends: base
-    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/app/core
+    image: bughog/core
     hostname: bh_core
 
   worker:
     extends: base
-    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/app/worker
+    image: bughog/worker
     build:
       context: .
       target: worker
@@ -76,7 +76,7 @@ services:
   #===================#
 
   web:
-    image: registry.gitlab.kuleuven.be/distrinet/research/bughog/experiment-server
+    image: bughog/web
     pull_policy: if_not_present
     volumes:
       - ./experiments/pages:/experiments/pages:ro
