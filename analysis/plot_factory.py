@@ -54,8 +54,6 @@ class PlotFactory:
         docs = db.get_documents_for_plotting(params)
         if len(docs) == 0:
             return None, 0
-        elif len(docs) == params.previous_nb_of_evaluations:
-            return None, params.previous_nb_of_evaluations
 
         data = PlotFactory.__add_outcome_info(params, docs)
 

@@ -60,13 +60,14 @@ export default {
       },
       results: {
         nb_of_evaluations: 0,
-        plot_html: null,
-        cached_plot_html: null
+        plot_html: "",
+        cached_plot_html: ""
       },
       darkmode: null,
       darkmode_toggle: null,
       target_mech_id_input: null,
       target_mech_id: null,
+      should_refresh_plot: false,
     }
   },
   computed: {
@@ -126,12 +127,19 @@ export default {
       } else {
         this.eval_params.target_mech_id = val;
       }
+      this.update_results(true);
     },
     "eval_params.plot_mech_group": function (val) {
       if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
         this.eval_params.target_mech_id = val;
       }
+      this.update_results(true);
     },
+    "auto_refresh_plot": function (val) {
+      if (val) {
+        this.update_results(true);
+      }
+    }
   },
   mounted: function () {
     this.get_info();
@@ -257,7 +265,6 @@ export default {
     },
     set_plot_mech_group(mech_group) {
       this.eval_params.plot_mech_group = mech_group;
-      this.update_results(true);
     },
     submit_form() {
       const path = `http://${location.hostname}:5000/api/evaluation/start/`;
@@ -283,32 +290,38 @@ export default {
           console.error(error);
         });
     },
-    update_results(force_plot_update) {
+    update_results(force_refresh) {
       const path = `http://${location.hostname}:5000/api/results/`;
       const eval_params = this.eval_params;
-      eval_params['previous_nb_of_evaluations'] = this.results.nb_of_evaluations;
       axios.put(path, eval_params)
         .then((res) => {
           if (res.data.status == "OK") {
+            // Update number of evaluations
+            let previous_nb_of_evaluations = this.results.nb_of_evaluations;
             this.results.nb_of_evaluations = res.data.nb_of_evaluations;
-            if (res.data.plot_html) {
-              this.results.cached_plot_html = res.data.plot_html;
-            }
-            if (this.auto_refresh_plot || force_plot_update) {
-              this.render_plot();
-            }
+            // Render plot
+            this.render_plot(res, previous_nb_of_evaluations, force_refresh);
           }
         })
         .catch((error) => {
           console.error(error);
         });
     },
-    render_plot() {
-      this.results.plot_html = this.results.cached_plot_html;
+    render_plot(res, previous_nb_of_evaluations, force_refresh) {
+      if (res.data.plot_html === null) {
+        return;
+      }
+      if ((previous_nb_of_evaluations != res.data.nb_of_evaluations) || force_refresh) {
+        this.results.nb_of_evaluations = res.data.nb_of_evaluations;
+        this.results.cached_plot_html = res.data.plot_html;
+        if (this.auto_refresh_plot || force_refresh) {
+          this.results.plot_html = this.results.cached_plot_html;
+        }
+      }
     },
   },
   beforeDestroy() {
-    clearInterval(this.timer)
+    clearInterval(this.timer);
   }
 }
 </script>
@@ -568,7 +581,7 @@ export default {
               class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
               <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown_project">
                 <li v-for="test in eval_params.tests">
-                  <button class="dropdown-item w-full" @click="set_plot_mech_group(test)">{{ test }}</button>
+                  <a class="dropdown-item w-full" @click="set_plot_mech_group(test)">{{ test }}</a>
                 </li>
               </ul>
             </div>
@@ -578,7 +591,7 @@ export default {
                 <input v-model="auto_refresh_plot" type="checkbox">
                 <label>Auto-refresh Gantt chart</label>
               </div>
-              <button @click="update_results" class="button">Refresh</button>
+              <button @click="update_results(true)" class="button">Refresh</button>
             </div>
           </div>
           <ul class="my-3">
