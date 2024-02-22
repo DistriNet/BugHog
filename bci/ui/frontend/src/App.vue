@@ -1,4 +1,5 @@
-<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
+<style src="vue-multiselect/dist/vue-multiselect.min.css">
+</style>
 <script>
 import axios from 'axios'
 import SectionHeader from "./components/section-header.vue";
@@ -18,12 +19,11 @@ export default {
       // db_collection_suffix: "",
       db_collection_suffix: "",
       tests: [],
-      plot_mech_group: null,
       auto_refresh_plot: true,
       info: {
         log: [],
         database: {
-          "host": "connecting...",
+          "host": null,
           "connected": false
         },
         running: false,
@@ -65,6 +65,8 @@ export default {
       },
       darkmode: null,
       darkmode_toggle: null,
+      target_mech_id_input: null,
+      target_mech_id: null,
     }
   },
   computed: {
@@ -91,15 +93,22 @@ export default {
         return "p {color: black;}";
       }
     },
+    "database_message": function () {
+      if (this.info.database.connected) {
+        return `Connected to MongoDB at ${this.info.database.host}`;
+      } else {
+        return `Connecting to database...`;
+      }
+    },
   },
   watch: {
     "db_collection": function (val) {
       this.eval_params.db_collection = val;
     },
     "info.log": {
-      function (val) {
+      function(val) {
         if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
-          log_section.scrollTo({"top": log_section.scrollHeight, "behavior": "auto"});
+          log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
         }
       },
       "flush": "post",
@@ -111,15 +120,27 @@ export default {
         document.documentElement.classList.remove('dark');
       }
     },
+    "target_mech_id_input": function (val) {
+      if (val === null || val === "") {
+        this.eval_params.target_mech_id = this.eval_params.plot_mech_group;
+      } else {
+        this.eval_params.target_mech_id = val;
+      }
+    },
+    "eval_params.plot_mech_group": function (val) {
+      if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
+        this.eval_params.target_mech_id = val;
+      }
+    },
   },
   mounted: function () {
     this.get_info();
     this.update_results();
     this.get_projects();
     this.get_browsers();
-    setTimeout(function() {
-        log_section.scrollTo({"top": log_section.scrollHeight, "behavior": "auto"});
-      },
+    setTimeout(function () {
+      log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
+    },
       500
     );
     this.timer = setInterval(() => {
@@ -160,7 +181,7 @@ export default {
           if (res.data.status == "OK") {
             if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
               this.info = res.data.info;
-              log_section.scrollTo({"top": log_section.scrollHeight, "behavior": "auto"});
+              log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
             } else {
               this.info = res.data.info;
             }
@@ -293,7 +314,7 @@ export default {
 </script>
 
 <template>
-  <div class="banner-page">
+  <header class="banner-page">
     <div>
       <button id="dropdown_project" data-dropdown-toggle="project_dropdown" class="button mx-3" type="button">{{
         eval_params.project || "Project" }}<svg class="w-4 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor"
@@ -328,17 +349,19 @@ export default {
     </div>
 
     <!-- <p>[FRAMEWORK NAME + LOGO]</p> -->
-    <p v-if="info.database.host !== null">Using MongoDB at {{ info.database.host }}</p>
-    <p v-else>Could not connect to MongoDB. Click <a ref="db_retry" href="#" ping="/api/database/connect/">here</a> to retry connection.</p>
-    
+    <p>{{ database_message }}</p>
+
     <label class="inline-flex items-center cursor-pointer">
-      <input id="darkmode_toggle" type="checkbox" class="sr-only peer" @click="toggle_darkmode($event)" v-model="darkmode_toggle">
-      <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+      <input id="darkmode_toggle" type="checkbox" class="sr-only peer" @click="toggle_darkmode($event)"
+        v-model="darkmode_toggle">
+      <div
+        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600">
+      </div>
       <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Dark mode</span>
     </label>
-  </div>
+  </header>
   <div>
-    <div class="column">
+    <div>
       <div class="w-auto form-section">
         <div class=" w-auto">
           <section-header section="experiments" class="w-1/2" left></section-header>
@@ -353,13 +376,10 @@ export default {
         </div>
       </div>
     </div>
-    <div class="flex flex-wrap w-screen">
+    <div class="flex flex-wrap">
       <div>
-
-
         <div class="flex flex-wrap">
-
-          <div class="column">
+          <div>
             <div class="form-section">
               <section-header section="eval_range"></section-header>
               <div>
@@ -438,14 +458,15 @@ export default {
             </div>
           </div>
 
-          <div class="column">
+          <div>
             <div class="form-section eval_opts">
               <section-header section="eval_settings"></section-header>
 
               <div class="form-subsection">
                 <section-header section="automation"></section-header>
                 <div class="radio-item">
-                  <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option" value="terminal">
+                  <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option"
+                    value="terminal">
                   <label for="terminal_automation">CLI automation</label>
                 </div>
 
@@ -459,19 +480,22 @@ export default {
                 <section-header section="search_strategy"></section-header>
 
                 <div class="radio-item">
-                  <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option" value="bin_seq">
+                  <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
+                    value="bin_seq">
                   <label for="bin_seq">Binary sequence</label>
                   <tooltip tooltip="bin_seq"></tooltip>
                 </div>
 
                 <div class="radio-item">
-                  <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option" value="bin_search">
+                  <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
+                    value="bin_search">
                   <label for="bin_search">Binary search</label>
                   <tooltip tooltip="bin_search"></tooltip>
                 </div>
 
                 <div class="radio-item">
-                  <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option" value="comp_search">
+                  <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
+                    value="comp_search">
                   <label for="comp_search">Composite search</label>
                   <tooltip tooltip="comp_search"></tooltip>
                 </div>
@@ -488,7 +512,8 @@ export default {
                     <label for="mech_id">Reproduction id</label>
                     <tooltip tooltip="mech_id"></tooltip>
                   </div>
-                  <input v-model="eval_params.target_mech_id" type="text" class="input-box" id="mech_id" name="mech_id"><br>
+                  <input v-model="target_mech_id_input" type="text" class="input-box" id="mech_id" name="mech_id"
+                    :placeholder="eval_params.plot_mech_group"><br>
                   <br>
                   <!-- <div class="flex items-baseline">
                     <label for="leak">Request or cookie</label>
@@ -511,7 +536,8 @@ export default {
 
               <div class="form-subsection">
                 <section-header section="parallel_containers"></section-header>
-                <input v-model.number="eval_params.nb_of_containers" class="input-box" type="number" id="nb_of_containers" name="nb_of_containers" min="1" max="16">
+                <input v-model.number="eval_params.nb_of_containers" class="input-box" type="number" id="nb_of_containers"
+                  name="nb_of_containers" min="1" max="16">
               </div>
 
             </div>
@@ -520,7 +546,7 @@ export default {
         </div>
 
       </div>
-      <div class="column">
+      <div>
         <div v-if="this.info.running == false" class="m-2">
           <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
         </div>
@@ -529,23 +555,23 @@ export default {
           <button @click="stop(true)" class="w-1/2 bg-red-400 dark:bg-red-800">Stop forcefully</button>
         </div>
         <div class="results-section">
-            <section-header section="results" left></section-header>
+          <section-header section="results" left></section-header>
           <!-- <div class="banner-generic"> -->
-            <div class="flex flex-wrap justify-between">
-              <button id="dropdown_test" data-dropdown-toggle="test_dropdown" class="button" type="button">{{
-                eval_params.plot_mech_group || "Select an experiment" }}<svg class="w-6 h-4 ml-2" aria-hidden="true" fill="none" stroke="currentColor"
-                  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg></button>
-              <!-- Dropdown menu -->
-              <div id="test_dropdown"
-                class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
-                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown_project">
-                  <li v-for="test in eval_params.tests">
-                    <button class="dropdown-item w-full" @click="set_plot_mech_group(test)">{{ test }}</button>
-                  </li>
-                </ul>
-              </div>
+          <div class="flex flex-wrap justify-between">
+            <button id="dropdown_test" data-dropdown-toggle="test_dropdown" class="button" type="button">{{
+              eval_params.plot_mech_group || "Select an experiment" }}<svg class="w-6 h-4 ml-2" aria-hidden="true"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg></button>
+            <!-- Dropdown menu -->
+            <div id="test_dropdown"
+              class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
+              <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown_project">
+                <li v-for="test in eval_params.tests">
+                  <button class="dropdown-item w-full" @click="set_plot_mech_group(test)">{{ test }}</button>
+                </li>
+              </ul>
+            </div>
             <!-- </div> -->
             <div class="flex flex-wrap">
               <div class="radio-item m-2">
@@ -560,26 +586,26 @@ export default {
             <li v-else> <b>Status:</b> Stopped &#x1F6D1;</li>
             <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
           </ul>
-          <iframe id="plot" width="700" height="350" scrolling="no" :srcdoc="plot_srcdoc">
+          <iframe id="plot" width="700" height="450" scrolling="no" :srcdoc="plot_srcdoc">
           </iframe>
           <!-- <svg width="500" height="250">
             <rect width="500" height="250" style="fill:rgb(255,255,255);stroke-width:3;stroke:rgb(0,0,0)" />
           </svg> -->
         </div>
       </div>
-
-      <div class="column">
-        <div class="results-section w-screen">
-          <h2 class="form-section-title">Log</h2>
-          <div id="log_section" class="h-96 p-1 bg-white overflow-y-scroll flex flex-col dark:bg-dark-3">
-            <ul>
-              <li v-for="entry in this.info.log">
-                <p>{{ entry }}</p>
-              </li>
-            </ul>
-          </div>
+    </div>
+    <div>
+      <div class="results-section">
+        <h2 class="form-section-title">Log</h2>
+        <div id="log_section" class="h-96 bg-white overflow-y-scroll flex flex-col dark:bg-dark-3">
+          <ul>
+            <li v-for="entry in this.info.log">
+              <p>{{ entry }}</p>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
-  </div></template>
+  </div>
+</template>
 

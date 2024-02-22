@@ -43,7 +43,7 @@ label {
 }
 
 .banner-generic {
-  @apply flex z-50 mt-0 justify-between items-start w-full border border-b border-gray-200 sm:items-center dark:border-gray-700 lg:py-4 dark:bg-gray-800
+  @apply flex z-50 mt-0 justify-between items-start border border-b border-gray-200 sm:items-center dark:border-gray-700 lg:py-4 dark:bg-gray-800
 }
 
 .banner-generic button {
@@ -62,9 +62,6 @@ label {
   @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg dark:bg-dark-2
 }
 
-.column {
-  @apply w-auto
-}
 
 .form-section {
   @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg dark:bg-dark-2

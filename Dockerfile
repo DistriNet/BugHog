@@ -78,12 +78,12 @@ RUN mkdir -p $HOME/.pki/nssdb && \
 # RUN echo "tls_version_client_min: UNBOUND" > /home/bci/.mitmproxy/config.yaml && \
 #     echo "tls_version_server_min: UNBOUND" >> /home/bci/.mitmproxy/config.yaml && \
 #     echo "listen_port: 8081" >> /home/bci/.mitmproxy/config.yaml
-COPY --from=ui-build-stage /app/dist /app/bci/ui/frontend/dist
 
 
 FROM base AS core
 # Copy rest of source code
 COPY bci /app/bci
+COPY --from=ui-build-stage /app/dist /app/bci/ui/frontend/dist
 COPY analysis /app/analysis
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
@@ -91,6 +91,7 @@ ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 FROM base AS worker
 # Copy rest of source code
 COPY bci /app/bci
+COPY --from=ui-build-stage /app/dist /app/bci/ui/frontend/dist
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
 
 

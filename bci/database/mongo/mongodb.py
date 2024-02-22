@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 # pylint: disable=global-statement
 CLIENT = None
 DB = None
-CONNECTED = False
 
 
 class MongoDB(ABC):
@@ -330,7 +329,7 @@ class MongoDB(ABC):
             return {
                 'type': 'mongo',
                 'host': CLIENT.address[0],
-                'connected': CONNECTED
+                'connected': True
             }
         else:
             return {
