@@ -96,7 +96,6 @@ Requesting information
 
 @api.route('/info/', methods=['GET'])
 def get_info():
-
     return {
         'status': 'OK',
         'info': {

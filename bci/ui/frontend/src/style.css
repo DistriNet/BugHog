@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-.dropdown {
-  @apply text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800
+.button {
+  @apply text-white bg-blue-700 hover:bg-blue-800 active:ring-4 focus:outline-none font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:hover:bg-blue-700 dark:focus:ring-blue-800
 }
 
 .dropdown-head {
@@ -19,7 +19,7 @@
 }
 
 .horizontal-select {
-  @apply flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white
+  @apply flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:bg-dark-2
 }
 
 .horizontal-select li {
@@ -35,15 +35,15 @@
 }
 
 .horizontal-select label {
-  @apply w-full py-3 ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+  @apply w-full py-3 ml-2 text-sm font-medium
 }
 
 label {
-  @apply block text-gray-700 text-sm font-bold
+  @apply block text-sm font-bold
 }
 
 .banner-generic {
-  @apply flex z-50 mt-0 justify-between items-start w-full border border-b border-gray-200 sm:items-center dark:border-gray-700 lg:py-4 dark:bg-gray-800
+  @apply flex z-50 mt-0 justify-between items-start border border-b border-gray-200 sm:items-center dark:border-gray-700 lg:py-4 dark:bg-gray-800
 }
 
 .banner-generic button {
@@ -51,7 +51,7 @@ label {
 }
 
 .banner-page {
-  @apply banner-generic bg-gray-50 p-3
+  @apply banner-generic bg-gray-50 p-3 dark:bg-dark-3
 }
 
 .banner-page p {
@@ -59,23 +59,20 @@ label {
 }
 
 .results-section {
-  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg
+  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg dark:bg-dark-2
 }
 
-.column {
-  @apply w-auto
-}
 
 .form-section {
-  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg
+  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg dark:bg-dark-2
 }
 
 .form-subsection {
-  @apply text-left p-2 m-1 mb-4 mt-4 bg-slate-300 max-w-sm rounded shadow-lg
+  @apply text-left p-2 m-1 mb-4 mt-4 bg-slate-300 max-w-sm rounded shadow-lg dark:bg-dark-3
 }
 
 .form-section-title {
-  @apply font-bold mb-2
+  @apply font-bold mb-2 dark:text-gray-300
 }
 
 .form-subsection-title {
@@ -83,7 +80,7 @@ label {
 }
 
 .number-input {
-  @apply text-center
+  @apply text-center dark:bg-dark-4
 }
 
 .radio-item {
@@ -91,7 +88,7 @@ label {
 }
 
 .radio-item input {
-  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600
+  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:bg-dark-4;
 }
 
 .radio-item label {
@@ -103,11 +100,15 @@ label {
 }
 
 .checkbox-item input {
-  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600
+  @apply w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:bg-dark-4
 }
 
 .checkbox-item label {
   @apply ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+}
+
+.input-box {
+  @apply dark:bg-dark-4
 }
 
 .tooltip {
@@ -200,9 +201,6 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -217,17 +215,4 @@ button:focus-visible {
   margin: 0 auto;
   /* padding: 2rem; */
   text-align: center;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }

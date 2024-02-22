@@ -1,6 +1,9 @@
 # BugHog
 
 ![pytest_job](https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main)
+<a href="https://hub.docker.com/r/bughog/core">![Docker Image Version (tag)](https://img.shields.io/docker/v/bughog/core/latest?logo=docker)</a>
+<a href="https://hub.docker.com/r/bughog/core">![Docker Image Size](https://img.shields.io/docker/image-size/bughog/core?logo=docker)</a>
+
 
 BugHog is a powerful framework designed specifically to address the challenging task of pinpointing the exact revisions in which a particular browser bug was introduced or fixed.
 
