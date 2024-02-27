@@ -34,4 +34,4 @@ if __name__ == "__main__":
     logging.getLogger('werkzeug').addHandler(filer_handler)
 
     # Debug is set to false because it would otherwise auto-reload (run the program twice)
-    socketio.run(app, debug=False, host="0.0.0.0")
+    socketio.run(app, debug=False, host="0.0.0.0", allow_unsafe_werkzeug=True)

@@ -1,5 +1,6 @@
 -r requirements.txt
 anybadge
+autopep8
 boto3
 botocore
 coverage

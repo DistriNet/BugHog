@@ -9,14 +9,14 @@ services:
     build:
       context: .
       target: core
+    env_file:
+      - config/.env
     pull_policy: if_not_present
     shm_size: '2gb'
     networks:
       bh_net:
         aliases:
           - core
-    environment:
-      - host_pwd=${PWD}
     # 192.168.0.1 instead of 172.17.0.1 because /etc/docker/daemon.json is modified
     ports:
       - "5000:5000"

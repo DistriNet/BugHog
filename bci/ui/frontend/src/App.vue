@@ -48,7 +48,7 @@ export default {
         only_release_revisions: false,
         // Sequence config
         nb_of_containers: 8,
-        sequence_limit: 1000,
+        sequence_limit: 100,
         target_mech_id: null,
         target_cookie_name: "generic",
         search_strategy: "bin_seq",

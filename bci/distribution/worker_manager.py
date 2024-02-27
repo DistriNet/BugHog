@@ -42,7 +42,6 @@ class WorkerManager:
             time.sleep(5)
         container_id = self.container_id_pool.get()
         container_name = f'bh_worker_{container_id}'
-        command = [params.serialize()]
 
         def start_container_thread():
             try:
@@ -64,7 +63,7 @@ class WorkerManager:
                         logger.info(f'Removing old container \'{container.attrs["Name"]}\' to start new one')
                         container.remove(force=True)
                 self.client.containers.run(
-                    'registry.gitlab.kuleuven.be/distrinet/research/bughog/core/worker:latest',
+                    'bughog/worker:latest',
                     name=container_name,
                     hostname=container_name,
                     shm_size='2gb',
@@ -73,18 +72,18 @@ class WorkerManager:
                     detach=False,
                     remove=True,
                     labels=['bh_worker'],
-                    command=command,
+                    command=[params.serialize()],
                     volumes=[
-                        os.path.join(os.getenv('host_pwd'), 'config') + ':/app/config',
-                        os.path.join(os.getenv('host_pwd'), 'browser/binaries/chromium/artisanal') + ':/app/browser/binaries/chromium/artisanal',
-                        os.path.join(os.getenv('host_pwd'), 'browser/binaries/firefox/artisanal') + ':/app/browser/binaries/firefox/artisanal',
-                        os.path.join(os.getenv('host_pwd'), 'experiments') + ':/app/experiments',
-                        os.path.join(os.getenv('host_pwd'), 'browser/extensions') + ':/app/browser/extensions',
-                        os.path.join(os.getenv('host_pwd'), 'logs') + ':/app/logs',
+                        os.path.join(os.getenv('HOST_PWD'), 'config') + ':/app/config',
+                        os.path.join(os.getenv('HOST_PWD'), 'browser/binaries/chromium/artisanal') + ':/app/browser/binaries/chromium/artisanal',
+                        os.path.join(os.getenv('HOST_PWD'), 'browser/binaries/firefox/artisanal') + ':/app/browser/binaries/firefox/artisanal',
+                        os.path.join(os.getenv('HOST_PWD'), 'experiments') + ':/app/experiments',
+                        os.path.join(os.getenv('HOST_PWD'), 'browser/extensions') + ':/app/browser/extensions',
+                        os.path.join(os.getenv('HOST_PWD'), 'logs') + ':/app/logs',
                         '/dev/shm:/dev/shm',
                     ],
                 )
-                logger.debug(f'Container \'{container_name}\' finished experiments with command \'{command}\'')
+                logger.debug(f'Container \'{container_name}\' finished experiments with parameters \'{repr(params)}\'')
                 cb()
             except docker.errors.APIError:
                 logger.error(f'Could not run container \'{container_name}\' or container was unexpectedly removed', exc_info=True)

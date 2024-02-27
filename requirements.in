@@ -1,13 +1,7 @@
-attrs
-autopep8
-beautifulsoup4
 bokeh
 docker
 Flask
 Flask-SocketIO
-iniconfig
 mitmproxy
 pymongo
-python-dotenv
-python-dateutil
 requests
