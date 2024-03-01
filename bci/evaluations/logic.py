@@ -174,15 +174,24 @@ class WorkerParameters:
                 self.database_collection)
             for mech_group in self.mech_groups]
 
-    def serialize(self) -> str:
-        return json.dumps({
+    def _to_dict(self):
+        return {
             'browser_configuration': self.browser_configuration.to_dict(),
             'evaluation_configuration': self.evaluation_configuration.to_dict(),
             'state': state_factory.to_dict(self.state),
             'mech_groups': self.mech_groups,
             'database_collection': self.database_collection,
             'database_connection_params': self.database_connection_params.to_dict()
-        })
+        }
+
+    def serialize(self) -> str:
+        return json.dumps(self._to_dict())
+
+    def __repr__(self) -> str:
+        param_dict = self._to_dict()
+        # Mask password
+        param_dict['database_connection_params']['password'] = '*'
+        return json.dumps(param_dict)
 
     @staticmethod
     def deserialize(string: str) -> WorkerParameters:

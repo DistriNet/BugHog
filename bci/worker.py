@@ -2,8 +2,6 @@ import logging
 import os
 import sys
 
-from dotenv import load_dotenv
-
 from bci.configuration import Loggers
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
@@ -16,7 +14,6 @@ def run(params: WorkerParameters):
 
     # Only perform configuration steps for separate workers
     if __name__ == '__main__':
-        load_dotenv()
         Loggers.configure_loggers()
         MongoDB.connect(params.database_connection_params)
 

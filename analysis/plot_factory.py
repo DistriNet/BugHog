@@ -1,3 +1,5 @@
+from bokeh.core.validation import silence
+from bokeh.core.validation.warnings import PALETTE_LENGTH_FACTORS_MISMATCH
 from bokeh.embed import file_html
 from bokeh.models import BasicTickFormatter, ColumnDataSource, HoverTool
 from bokeh.models.glyphs import Circle
@@ -5,11 +7,12 @@ from bokeh.palettes import Iridescent23
 from bokeh.plotting import figure, output_file, show
 from bokeh.resources import CDN
 from bokeh.transform import factor_cmap
-from dotenv import load_dotenv
 
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import PlotParameters
 
+
+silence(PALETTE_LENGTH_FACTORS_MISMATCH, True)
 
 class PlotFactory:
 
@@ -120,19 +123,3 @@ class PlotFactory:
                 docs_with_outcome.append(new_doc)
         docs_with_outcome = PlotFactory.__transform_to_bokeh_compatible(docs_with_outcome)
         return docs_with_outcome
-
-
-if __name__ == '__main__':
-    load_dotenv()
-    MongoDB.connect()
-    db = MongoDB.get_instance()
-    params = PlotParameters(
-        'c487155',
-        'c487155',
-        'chromium',
-        'csp_chromium',
-        major_version_range=(40, 105),
-    )
-    PlotFactory.show_plot(params, db)
-    html = PlotFactory.create_html_plot_string(params, db)
-    print(html)

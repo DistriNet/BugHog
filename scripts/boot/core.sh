@@ -8,4 +8,11 @@ rm -f /tmp/.X1-lock
 service xvfb start
 
 source /app/scripts/boot/setup_environment.sh
-python3 /app/bci/ui/app.py
+gunicorn 'bci.ui.app:create_app()' \
+    --name core \
+    --workers 1 \
+    --threads 2 \
+    --bind '0.0.0.0:5000' \
+    --access-logfile /app/logs/gunicorn_access.log \
+    --log-file /app/logs/gunicorn.log \
+    --log-level info

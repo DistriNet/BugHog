@@ -1,6 +1,5 @@
 test/resources/repositories
 browser/binaries/
-config/
 database/data/
 !**/.gitkeep
 **/node_modules
@@ -116,7 +115,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+config/.env
 .venv
 env/
 venv/

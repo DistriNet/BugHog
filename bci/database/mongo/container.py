@@ -52,7 +52,7 @@ def __create_new_container(user: str, pw: str, db_name, db_host):
             remove=True,
             labels=['bh_db'],
             volumes=[
-                os.path.join(os.getenv('host_pwd'), 'database/data') + ':/data/db'
+                os.path.join(os.getenv('HOST_PWD'), 'database/data') + ':/data/db'
             ],
             ports={'27017/tcp': 27017},
             environment={

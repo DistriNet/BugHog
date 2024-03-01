@@ -28,6 +28,15 @@ class Global:
                 raise ValueError(f'Invalid browser \'{browser}\'')
 
     @staticmethod
+    def check_required_env_parameters() -> bool:
+        if (host_pwd:=os.getenv('HOST_PWD')) in ['', None]:
+            logger.fatal('The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up"')
+            return False
+        else:
+            logger.debug(f'HOST_PWD={host_pwd}')
+            return True
+
+    @staticmethod
     def initialize_folders():
         for browser in ['chromium', 'firefox']:
             if not os.path.isfile(f'/app/browser/binaries/{browser}/artisanal/meta.json'):

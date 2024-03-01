@@ -1,7 +1,5 @@
 import logging
 
-from dotenv import load_dotenv
-
 from analysis.plot_factory import PlotFactory
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB, ServerException
@@ -40,8 +38,6 @@ class Master:
 
         self.firefox_build = None
         self.chromium_build = None
-
-        load_dotenv('/app/config/.env')
 
         Global.initialize_folders()
         self.db_connection_params = Global.get_database_connection_params()

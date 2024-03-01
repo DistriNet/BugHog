@@ -11,10 +11,12 @@
 aws
 binaries
 browser-repos
+config
 database
 Dockerfile
 docker-compose.yaml
 drivers
+experiments
 extensions
 logs
 support
