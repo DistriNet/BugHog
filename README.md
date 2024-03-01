@@ -23,83 +23,85 @@ This framework has been developed as part of the _"A Bug's Life: Analyzing the L
     width="100"/>
 
 
-## Usage
+## Installation
 
-### Prerequisites
-- Docker (tested with version 24.0.1)
+BugHog is compatible with UNIX systems running Docker, including WSL on Windows.
+Follow these steps to get started:
 
-### Installing
-BugHog can be installed by following the steps below:
-
-1. Clone this repository:
+1. **Clone this repository:**
 
     ```bash
     git clone https://github.com/DistriNet/BugHog
     cd BugHog
     ```
 
-2. Obtain images:
+2. **Obtain images:**
 
     You will need at least 5 GB of disk space.
+    There are two options available to obtain the BugHog images, and you can switch between them by executing the appropriate command.
 
-    *Option A: Pulling (fastest)*
+    ***Option A:** Pulling (fastest)*
 
     Use the following command to pull the necessary Docker images:
     ```bash
     docker compose pull core worker web
     ```
 
-    *Option B: Building*
+    > :bulb: If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
 
-    If you want to modify the source code, use the following commands to build the necessary Docker images.
-    Run this script again if you make changes to the source code.
+    ***Option B:** Building*
+
+    Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
     ```bash
     docker compose build core worker web
     ```
 
     > :bulb: For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
-### Starting
-After pulling or building the images, start BugHog with the following command.
-If you switch between pulled and built images, make sure to execute the appropriate commands mentioned above before starting.
+
+## Usage
+
+Launch BugHog using the following command:
 ```bash
-docker compose up core web
+docker compose up
 ```
 
+> :warning: If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
+> To avoid this, explicitly pass on this variable: `sudo PWD=$PWD docker compose up`.
+
 Open your web browser and navigate to [http://localhost:5000](http://localhost:5000) to access the graphical interface.
-If you started BugHog on a remote server, replace localhost with its IP address.
+BugHog is started on a remote server, substitute 'localhost' with its IP address.
 
-> :warning: BugHog's own MongoDB instance will persist data within the [database](database) folder.
-> Be sure to back-up accordingly, or use your own MongoDB instance as explained below.
-
-#### Optional: Use your own MongoDB instance
-
-By default, BugHog uses a MongoDB container.
-you might want to prefer all data to be stored on your own MongoDB instance.
-If you prefer storing data in your own MongoDB instance, follow these steps:
-
-1. Create a `.env` file from `.env.example` (both in the [config](config) folder) and fill in the missing values.
-
-2. (Re)start BugHog.
-
-### Stopping
-To stop BugHog, run the following command:
-
+BugHog can be stopped through:
 ```bash
 docker compose down
 ```
 
-### Adding Your Own Experiments
+> :warning: BugHog's own MongoDB instance will persist data within the [database](database) folder.
+> Be sure to back-up accordingly, or use your own MongoDB instance as explained below.
+
+
+### Optional: Use your own MongoDB instance
+
+By default, BugHog uses a MongoDB container to store data.
+If you prefer storing data in your own MongoDB instance, follow these steps:
+
+1. Create a `.env` file from `.env.example` (both in the [config](config) folder) and fill in the missing database values.
+
+2. (Re)start BugHog.
+
+
+### Adding your new experiments
 
 Instructions to add your own custom experiments to the server can be found [here](https://github.com/DistriNet/BugHog-web/blob/main/experiments/README.md).
 Be sure to restart the BugHog framework when you add a new experiment:
 
 ```bash
 docker compose down
-docker compose up core web
+docker compose up
 ```
 
-### Development
+## Development
 
 For extending or debugging the Vue UI, the most convenient approach is to launch an interactive Node environment.
 The UI can be visited at [http://localhost:5173](http://localhost:5173).
@@ -108,9 +110,18 @@ The UI can be visited at [http://localhost:5173](http://localhost:5173).
 docker compose up node_dev
 ```
 
-For debugging the core application, consider using the VS Code dev container for an effortless debugging experience.
+For debugging the core application, consider using the VS Code dev container.
 You can utilize the configuration in [.devcontainer](.devcontainer) for this.
+
 
 ## Additional help
 
 Don't hesitate to open a [GitHub issue](https://github.com/DistriNet/BugHog/issues/new) if you come across a bug, want to suggest a feature, or have any questions!
+
+
+## Troubleshooting
+
+### WSL on Windows
+
+- Ensure you clone the BugHog project to the WSL file system instead of the Windows file system, and launch it from there.
+Virtualization between these file systems can cause complications with file management.

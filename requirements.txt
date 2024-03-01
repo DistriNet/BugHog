@@ -10,8 +10,6 @@ asgiref==3.7.2
     # via mitmproxy
 attrs==23.2.0
     # via service-identity
-bidict==0.23.1
-    # via python-socketio
 blinker==1.7.0
     # via flask
 bokeh==3.3.4
@@ -44,9 +42,8 @@ docker==7.0.0
 flask==3.0.2
     # via
     #   -r requirements.in
-    #   flask-socketio
     #   mitmproxy
-flask-socketio==5.3.6
+gunicorn==21.2.0
     # via -r requirements.in
 h11==0.14.0
     # via
@@ -82,7 +79,7 @@ mitmproxy-macos==0.5.1
     # via mitmproxy-rs
 mitmproxy-rs==0.5.1
     # via mitmproxy
-msgpack==1.0.7
+msgpack==1.0.8
     # via mitmproxy
 numpy==1.26.4
     # via
@@ -93,6 +90,7 @@ packaging==23.2
     # via
     #   bokeh
     #   docker
+    #   gunicorn
 pandas==2.2.1
     # via bokeh
 passlib==1.7.4
@@ -124,12 +122,8 @@ pyparsing==3.1.1
     # via mitmproxy
 pyperclip==1.8.2
     # via mitmproxy
-python-dateutil==2.8.2
+python-dateutil==2.9.0
     # via pandas
-python-engineio==4.9.0
-    # via python-socketio
-python-socketio==5.11.1
-    # via flask-socketio
 pytz==2024.1
     # via pandas
 pyyaml==6.0.1
@@ -144,8 +138,6 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 service-identity==24.1.0
     # via aioquic
-simple-websocket==1.0.0
-    # via python-engineio
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
@@ -165,9 +157,7 @@ urwid-mitmproxy==2.1.2.1
 werkzeug==3.0.1
     # via flask
 wsproto==1.2.0
-    # via
-    #   mitmproxy
-    #   simple-websocket
+    # via mitmproxy
 xyzservices==2023.10.1
     # via bokeh
 zstandard==0.22.0

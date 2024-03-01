@@ -22,10 +22,6 @@ attrs==23.2.0
     #   service-identity
 autopep8==2.0.4
     # via -r requirements_dev.in
-bidict==0.23.1
-    # via
-    #   -r requirements.txt
-    #   python-socketio
 blinker==1.7.0
     # via
     #   -r requirements.txt
@@ -95,9 +91,8 @@ flake8==7.0.0
 flask==3.0.2
     # via
     #   -r requirements.txt
-    #   flask-socketio
     #   mitmproxy
-flask-socketio==5.3.6
+gunicorn==21.2.0
     # via -r requirements.txt
 h11==0.14.0
     # via
@@ -167,7 +162,7 @@ mitmproxy-rs==0.5.1
     # via
     #   -r requirements.txt
     #   mitmproxy
-msgpack==1.0.7
+msgpack==1.0.8
     # via
     #   -r requirements.txt
     #   mitmproxy
@@ -183,6 +178,7 @@ packaging==23.2
     #   anybadge
     #   bokeh
     #   docker
+    #   gunicorn
     #   pytest
 pandas==2.2.1
     # via
@@ -258,19 +254,11 @@ pytest-cov==4.1.0
     # via -r requirements_dev.in
 pytest-flake8==1.1.1
     # via -r requirements_dev.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0
     # via
     #   -r requirements.txt
     #   botocore
     #   pandas
-python-engineio==4.9.0
-    # via
-    #   -r requirements.txt
-    #   python-socketio
-python-socketio==5.11.1
-    # via
-    #   -r requirements.txt
-    #   flask-socketio
 pytz==2024.1
     # via
     #   -r requirements.txt
@@ -297,10 +285,6 @@ service-identity==24.1.0
     # via
     #   -r requirements.txt
     #   aioquic
-simple-websocket==1.0.0
-    # via
-    #   -r requirements.txt
-    #   python-engineio
 six==1.16.0
     # via
     #   -r requirements.txt
@@ -337,7 +321,6 @@ wsproto==1.2.0
     # via
     #   -r requirements.txt
     #   mitmproxy
-    #   simple-websocket
 xyzservices==2023.10.1
     # via
     #   -r requirements.txt

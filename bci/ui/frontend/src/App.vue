@@ -68,6 +68,7 @@ export default {
       target_mech_id_input: null,
       target_mech_id: null,
       should_refresh_plot: false,
+      fatal_error: null,
     }
   },
   computed: {
@@ -94,8 +95,11 @@ export default {
         return "p {color: black;}";
       }
     },
-    "database_message": function () {
-      if (this.info.database.connected) {
+    "banner_message": function () {
+      if (this.fatal_error) {
+        return `A fatal error has occurred! Please, check the logs below...`
+      }
+      else if (this.info.database.connected) {
         return `Connected to MongoDB at ${this.info.database.host}`;
       } else {
         return `Connecting to database...`;
@@ -186,13 +190,14 @@ export default {
       const path = `http://${location.hostname}:5000/api/info/`;
       axios.get(path)
         .then((res) => {
-          if (res.data.status == "OK") {
+          if (res.data.status === "OK") {
             if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
               this.info = res.data.info;
               log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
-            } else {
-              this.info = res.data.info;
             }
+          } else {
+            this.info.log = res.data.info.log;
+            this.fatal_error = true;
           }
         })
         .catch((error) => {
@@ -362,7 +367,7 @@ export default {
     </div>
 
     <!-- <p>[FRAMEWORK NAME + LOGO]</p> -->
-    <p>{{ database_message }}</p>
+    <p :class="{ '!font-bold !text-red-600' : fatal_error }">{{ banner_message }}</p>
 
     <label class="inline-flex items-center cursor-pointer">
       <input id="darkmode_toggle" type="checkbox" class="sr-only peer" @click="toggle_darkmode($event)"

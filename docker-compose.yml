@@ -9,15 +9,19 @@ services:
     build:
       context: .
       target: core
-    env_file:
-      - config/.env
     pull_policy: if_not_present
     shm_size: '2gb'
     networks:
       bh_net:
         aliases:
           - core
-    # 192.168.0.1 instead of 172.17.0.1 because /etc/docker/daemon.json is modified
+    env_file:
+      - path: ./.env
+        required: true
+      - path: ./config/.env
+        required: false
+    environment:
+      - HOST_PWD=${PWD}
     ports:
       - "5000:5000"
     volumes:
@@ -29,7 +33,8 @@ services:
       - ./logs:/app/logs:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /dev/shm:/dev/shm:rw
-    container_name: bh_core
+    profiles:
+      - never_start
 
   #=============#
   # DEVELOPMENT #
@@ -51,6 +56,8 @@ services:
     volumes:
       - .:/app:rw
     container_name: bh_core_dev
+    profiles:
+      - dev
 
   #============#
   # PRODUCTION #
@@ -58,25 +65,30 @@ services:
 
   core:
     extends: base
-    image: bughog/core
+    image: bughog/core:${BUGHOG_VERSION}
     hostname: bh_core
+    container_name: bh_core
+    profiles:
+      - prod
 
   worker:
     extends: base
-    image: bughog/worker
+    image: bughog/worker:${BUGHOG_VERSION}
     build:
       context: .
       target: worker
     pull_policy: if_not_present
     hostname: bh_worker
     container_name: bh_worker
+    profiles:
+      - never_start
 
   #===================#
   # EXPERIMENT SERVER #
   #===================#
 
   web:
-    image: bughog/web
+    image: bughog/web:${BUGHOG_WEB_VERSION}
     pull_policy: if_not_present
     volumes:
       - ./experiments/pages:/experiments/pages:ro
@@ -94,6 +106,9 @@ services:
           - sub.sub.a.test
           - b.test
           - adition.com
+    profiles:
+      - prod
+      - dev
 
   #================#
   # NODE FRONT END #
@@ -107,6 +122,8 @@ services:
       - ./bci/ui/frontend:/app
     working_dir: /app
     entrypoint: ["npm", "run", "dev", "--", "--host"]
+    profiles:
+      - dev
 
 networks:
   bh_net:

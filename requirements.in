@@ -1,7 +1,7 @@
 bokeh
 docker
 Flask
-Flask-SocketIO
+gunicorn
 mitmproxy
 pymongo
 requests

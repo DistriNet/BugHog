@@ -21,7 +21,8 @@ class Main:
     def initialize():
         Main.loggers = Loggers()
         Main.loggers.configure_loggers()
-        Main.master = Master()
+        if Global.check_required_env_parameters():
+            Main.master = Master()
 
     @staticmethod
     def is_ready() -> bool:

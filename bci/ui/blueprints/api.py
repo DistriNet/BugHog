@@ -32,7 +32,10 @@ def check_readiness():
     if not bci_api.is_ready():
         return {
             'status': 'NOK',
-            'msg': 'BugHog is not ready.'
+            'msg': 'BugHog is not ready',
+            'info': {
+                'log': bci_api.get_logs(),
+            }
         }
 
 
