@@ -115,13 +115,18 @@ services:
   #================#
 
   node_dev:
-    image: node:lts-alpine
+    build:
+      context: .
+      target: ui-build-stage
     ports:
       - "5173:5173"
     volumes:
-      - ./bci/ui/frontend:/app
-    working_dir: /app
-    entrypoint: ["npm", "run", "dev", "--", "--host"]
+      - ./bci/ui/frontend/public:/app/public:rw
+      - ./bci/ui/frontend/src:/app/src:rw
+      - ./bci/ui/frontend/postcss.config.js:/app/postcss.config.js:rw
+      - ./bci/ui/frontend/tailwind.config.js:/app/tailwind.config.js:rw
+      - ./bci/ui/frontend/vite.config.js:/app/vite.config.js:rw
+    command: ["npm", "run", "dev", "--", "--host"]
     profiles:
       - dev
 
