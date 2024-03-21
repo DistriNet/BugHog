@@ -12,7 +12,7 @@ attrs==23.2.0
     # via service-identity
 blinker==1.7.0
     # via flask
-bokeh==3.3.4
+bokeh==3.4.0
     # via -r requirements.in
 brotli==1.1.0
     # via mitmproxy
@@ -29,7 +29,7 @@ click==8.1.7
     # via flask
 contourpy==1.2.0
     # via bokeh
-cryptography==41.0.7
+cryptography==42.0.5
     # via
     #   aioquic
     #   mitmproxy
@@ -73,7 +73,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   werkzeug
-mitmproxy==10.2.2
+mitmproxy==10.2.4
     # via -r requirements.in
 mitmproxy-macos==0.5.1
     # via mitmproxy-rs
@@ -86,7 +86,7 @@ numpy==1.26.4
     #   bokeh
     #   contourpy
     #   pandas
-packaging==23.2
+packaging==24.0
     # via
     #   bokeh
     #   docker
@@ -114,15 +114,15 @@ pylsqpack==0.3.18
     # via aioquic
 pymongo==4.6.2
     # via -r requirements.in
-pyopenssl==23.3.0
+pyopenssl==24.0.0
     # via
     #   aioquic
     #   mitmproxy
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via mitmproxy
 pyperclip==1.8.2
     # via mitmproxy
-python-dateutil==2.9.0
+python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
