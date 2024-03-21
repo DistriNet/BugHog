@@ -1,4 +1,4 @@
-from bci.revision_parser.chromium_parser import ChromiumRevisionParser
+from bci.version_control.revision_parser.chromium_parser import ChromiumRevisionParser
 from bci.version_control.states.state import State
 
 PARSER = ChromiumRevisionParser()

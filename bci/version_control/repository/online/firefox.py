@@ -1,31 +1,26 @@
 import logging
+import bci.version_control.repository.online.parser as parser
 from bci.util import request_json
-from bci.version_control.repository.repository import Repository
 
-LOGGER = logging.getLogger("bci")
+__META_DATA_URL = "https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_release_base_revs.json"
+__REPO_REVISION_URL = "https://hg.mozilla.org/releases/mozilla-release/rev/"
 
-META_DATA_URL = "https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_release_base_revs.json"
-REPO_REVISION_URL = "https://hg.mozilla.org/releases/mozilla-release/rev/"
+LOGGER = logging.getLogger(__name__)
+LOGGER.debug("Fetching Firefox meta data...")
+__META_DATA: list[dict] = request_json(__META_DATA_URL)["data"]
 
 
-class OnlineFirefoxRepo(Repository):
+def is_tag(tag: str) -> bool:
+    return parser.is_tag(tag, __META_DATA)
 
-    def __init__(self) -> None:
-        super().__init__()
-        LOGGER.debug("Fetching Firefox meta data...")
-        self.meta_data: list[dict] = request_json(META_DATA_URL)["data"]
 
-    def is_tag(self, tag) -> bool:
-        return tag in [info["release_tag"] for info in self.meta_data]
+def get_release_tag(major_release_version: int) -> str:
+    return parser.get_release_tag(major_release_version, __META_DATA)
 
-    def get_release_tag(self, major_release_version) -> str:
-        for entry in self.meta_data:
-            if entry["major_version"] == major_release_version:
-                return entry["release_tag"]
-        raise AttributeError(f"Could not find release tag associated with version '{major_release_version}'")
 
-    def get_release_revision_number(self, major_release_version: int) -> int:
-        for entry in self.meta_data:
-            if entry["major_version"] == major_release_version:
-                return entry["revision_number"]
-        raise AttributeError(f"Could not find major release version '{major_release_version}'")
+def get_release_revision_number(major_release_version: int) -> int:
+    return parser.get_release_revision_number(major_release_version, __META_DATA)
+
+
+def get_most_recent_major_version() -> int:
+    return parser.get_most_recent_major_version(__META_DATA)

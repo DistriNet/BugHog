@@ -1,22 +1,25 @@
 <style src="vue-multiselect/dist/vue-multiselect.min.css">
 </style>
+<style src="@vueform/slider/themes/default.css"></style>
 <script>
 import axios from 'axios'
 import SectionHeader from "./components/section-header.vue";
+import Slider from '@vueform/slider'
 import Tooltip from "./components/tooltip.vue";
 export default {
   components: {
     SectionHeader,
+    Slider,
     Tooltip,
   },
   data() {
     return {
       timer: null,
       projects: [],
-      browsers: [],
+      browsers: [
+        {'name': 'chr', 'min_version': 20, 'max_version': 90}
+      ],
       browser_settings: [],
-      extensions: [],
-      // db_collection_suffix: "",
       db_collection_suffix: "",
       tests: [],
       auto_refresh_plot: true,
@@ -27,6 +30,14 @@ export default {
           "connected": false
         },
         running: false,
+      },
+      curr_options: {
+        min_browser_version: 0,
+        max_browser_version: 100
+      },
+      slider: {
+        state: [0, 100],
+        disabled: true
       },
       eval_params: {
         check_for: "request",
@@ -107,6 +118,10 @@ export default {
     },
   },
   watch: {
+    "slider.state": function (val) {
+      this.eval_params.lower_version = val[0];
+      this.eval_params.upper_version = val[1];
+    },
     "db_collection": function (val) {
       this.eval_params.db_collection = val;
     },
@@ -149,7 +164,7 @@ export default {
     this.get_info();
     this.update_results();
     this.get_projects();
-    this.get_browsers();
+    this.get_browser_support();
     setTimeout(function () {
       log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
     },
@@ -158,7 +173,7 @@ export default {
     this.timer = setInterval(() => {
       if (this.projects.length == 0 || this.browsers.length == 0) {
         this.get_projects();
-        this.get_browsers();
+        this.get_browser_support();
       }
       this.get_info();
       this.update_results();
@@ -216,33 +231,13 @@ export default {
           console.error(error);
         });
     },
-    get_browsers() {
+    get_browser_support() {
       const path = `http://${location.hostname}:5000/api/browsers/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
             this.browsers = res.data.browsers;
           }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
-    get_options(browser) {
-      const path = `http://${location.hostname}:5000/api/options/${browser}/`;
-      axios.get(path)
-        .then((res) => {
-          this.browser_settings = res.data.options;
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
-    get_extensions(browser) {
-      const path = `http://${location.hostname}:5000/api/extensions/${browser}/`;
-      axios.get(path)
-        .then((res) => {
-          this.extensions = res.data.extensions;
         })
         .catch((error) => {
           console.error(error);
@@ -264,9 +259,12 @@ export default {
       this.eval_params.tests = [];
     },
     set_curr_browser(browser) {
-      this.eval_params.browser_name = browser;
-      this.get_options(browser);
-      this.get_extensions(browser);
+      this.eval_params.browser_name = browser["name"];
+      this.curr_options.min_browser_version = browser["min_version"];
+      this.curr_options.max_browser_version = browser["max_version"];
+      this.slider.state = [browser["min_version"], browser["max_version"]];
+      this.slider.disabled = false;
+      this.browser_settings = browser['options'];
     },
     set_plot_mech_group(mech_group) {
       this.eval_params.plot_mech_group = mech_group;
@@ -360,7 +358,7 @@ export default {
         class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
         <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown_browser">
           <li v-for="browser in browsers">
-            <a href="#" class="dropdown-item" @click="set_curr_browser(browser)">{{ browser }}</a>
+            <a href="#" class="dropdown-item" @click="set_curr_browser(browser)">{{ browser["name"] }}</a>
           </li>
         </ul>
       </div>
@@ -403,18 +401,20 @@ export default {
               <div>
                 <div class="form-subsection flex flex-wrap">
                   <div class="flex flex-wrap w-full">
-                    <div class="p-1 w-1/2">
-                      <label for="lower_version">Lower version</label>
-                      <input v-model.number="eval_params.lower_version" class="number-input w-20" type="number">
-                    </div>
-
-                    <div class="p-1 w-1/2">
-                      <label for="upper_version">Upper version</label>
-                      <input v-model.number="eval_params.upper_version" class="number-input w-20" type="number">
+                    <label>
+                      Browser version range
+                    </label>
+                    <div class="w-5/6 m-auto pt-12">
+                      <Slider
+                        v-model="this.slider.state"
+                        :min="this.curr_options.min_browser_version"
+                        :max="this.curr_options.max_browser_version"
+                        :disabled="this.slider.disabled"
+                        class="slider"
+                      />
                     </div>
                   </div>
-
-                  <div class="checkbox-item">
+                  <div class="pt-5 checkbox-item">
                     <input v-model="eval_params.only_release_revisions" type="checkbox" disabled>
                     <label><i>Only release revisions (coming soon)</i></label>
                   </div>
@@ -457,14 +457,14 @@ export default {
                 </div>
               </div>
 
-              <div class="form-subsection flex flex-wrap">
+              <!-- <div class="form-subsection flex flex-wrap">
                 <h2 class="form-subsection-title">Extensions</h2>
 
                 <div v-for="extension in extensions" class="checkbox-item">
                   <input v-model="eval_params.extensions" type="checkbox" :value="extension">
                   <label :for="extension">{{ extension }}</label>
                 </div>
-              </div>
+              </div> -->
 
               <div class="form-subsection flex flex-wrap">
                 <h2 class="form-subsection-title">CLI options <i>(beta)</i></h2>

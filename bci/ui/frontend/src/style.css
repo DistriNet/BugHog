@@ -216,3 +216,10 @@ button:focus-visible {
   /* padding: 2rem; */
   text-align: center;
 }
+
+.slider {
+  --slider-connect-bg: #3B82F6;
+  --slider-tooltip-bg: #3B82F6;
+  --slider-handle-ring-color: #3B82F630;
+  --slider-bg: #909eb3;
+}

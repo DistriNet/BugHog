@@ -1,8 +1,10 @@
 import re
 
+
+import bci.version_control.repository.online.chromium as chromium_repo
+import bci.version_control.repository.online.firefox as firefox_repo
+
 from bci.evaluations.logic import BrowserConfiguration, EvaluationRange
-from bci.version_control.repository.online.chromium import OnlineChromiumRepo
-from bci.version_control.repository.online.firefox import OnlineFirefoxRepo
 from bci.version_control.repository.repository import Repository
 from bci.version_control.states.chromium import ChromiumState
 from bci.version_control.states.firefox import FirefoxState
@@ -40,9 +42,9 @@ def __get_short_version(version: str) -> int:
 def __get_repo(browser_config: BrowserConfiguration) -> Repository:
     match browser_config.browser_name:
         case 'chromium':
-            return OnlineChromiumRepo()
+            return chromium_repo
         case 'firefox':
-            return OnlineFirefoxRepo()
+            return firefox_repo
         case _:
             raise ValueError(f'Unknown browser name: {browser_config.browser_name}')
 

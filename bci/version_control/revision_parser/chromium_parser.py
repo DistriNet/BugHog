@@ -1,7 +1,7 @@
 import logging
 import re
 from typing import Optional
-from bci.revision_parser.parser import RevisionParser
+from bci.version_control.revision_parser.parser import RevisionParser
 from bci.util import request_html, request_final_url
 
 
