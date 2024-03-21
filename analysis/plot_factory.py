@@ -75,7 +75,7 @@ class PlotFactory:
             width=700,
             tools='xwheel_zoom,reset,pan',
             active_scroll='xwheel_zoom')
-        plot.add_glyph(source, Circle(x='revision_number', y='outcome', fill_color=color_map, fill_alpha=0.8, size=15))
+        plot.add_glyph(source, Circle(x='revision_number', y='outcome', fill_color=color_map, fill_alpha=0.8, radius=8, radius_units='screen'))
 
         # Formatting
         plot.xaxis[0].formatter = BasicTickFormatter(use_scientific=False)
