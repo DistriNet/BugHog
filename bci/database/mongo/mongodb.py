@@ -98,7 +98,7 @@ class MongoDB(ABC):
             'revision_id': result.params.state.revision_id,
             'revision_number': result.params.state.revision_number,
             'mech_group': result.params.mech_group,
-            'results': result.requests,
+            'results': result.data,
             'dirty': result.is_dirty,
             'ts': str(datetime.now(timezone.utc).replace(microsecond=0))
         }
@@ -119,13 +119,15 @@ class MongoDB(ABC):
         collection = self.__get_data_collection(params)
         query = self.__to_query(params)
         document = collection.find_one(query)
-        return TestResult(
-            params,
-            document['browser_version'],
-            document['binary_origin'],
-            requests=document['results']['requests'] if 'requests' in document['results'] else None,
-            is_dirty=document['dirty']
-        )
+        if document:
+            return params.create_test_result_with(
+                document['browser_version'],
+                document['binary_origin'],
+                document['results'],
+                document['dirty']
+            )
+        else:
+            logger.error(f'Could not find document for query {query}')
 
     def has_result(self, params: TestParameters) -> bool:
         collection = self.__get_data_collection(params)

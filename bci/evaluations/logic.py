@@ -223,12 +223,12 @@ class TestParameters:
     mech_group: str
     database_collection: str
 
-    def create_test_result_with(self, browser_version: str, binary_origin: str, result: dict, dirty: bool) -> TestResult:
+    def create_test_result_with(self, browser_version: str, binary_origin: str, data: dict, dirty: bool) -> TestResult:
         return TestResult(
             self,
             browser_version,
             binary_origin,
-            result,
+            data,
             dirty
         )
 
@@ -238,7 +238,7 @@ class TestResult:
     params: TestParameters
     browser_version: str
     binary_origin: str
-    requests: list | None = None
+    data: dict
     is_dirty: bool = False
     driver_version: str | None = None
 
@@ -251,6 +251,13 @@ class TestResult:
                 raise AttributeError(f'Version \'{self.browser_version}\' is too big to be padded')
             padded_version.append('0' * (padding_target - len(sub)) + sub)
         return ".".join(padded_version)
+
+    @property
+    def reproduced(self):
+        entry_if_reproduced = {'val': 'reproduced', 'var': 'OK'}
+        reproduced_in_req_vars = [entry for entry in self.data['req_vars'] if entry == entry_if_reproduced] != []
+        reproduced_in_log_vars = [entry for entry in self.data['log_vars'] if entry == entry_if_reproduced] != []
+        return reproduced_in_req_vars or reproduced_in_log_vars
 
 
 @dataclass(frozen=True)

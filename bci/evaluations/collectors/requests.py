@@ -1,9 +1,10 @@
-
 import http.server
 import json
 import logging
 import socketserver
 from threading import Thread
+
+from .base import BaseCollector
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 
         logger.debug(f'Received request with body: {self.request_body}')
         request_body = json.loads(self.request_body)
-        self.collector.requests.append(request_body)
+        self.collector.data['requests'].append(request_body)
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
@@ -35,12 +36,14 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(b'Post request received')
 
 
-class Collector:
+class RequestCollector(BaseCollector):
 
     def __init__(self):
+        super().__init__()
         self.__httpd = None
         self.__thread = None
-        self.requests = []
+        self.data['requests'] = []
+        self.data['req_vars'] = []
 
     def start(self):
         logger.debug('Starting collector...')
@@ -51,8 +54,12 @@ class Collector:
         self.__thread.start()
 
     def stop(self):
-        logger.debug('Stopping collector...')
+        data = []
+        regex = r'bughog_(.+)=(.+)'
         if self.__httpd:
             self.__httpd.shutdown()
             self.__thread.join()
             self.__httpd.server_close()
+        request_urls = [request['url'] for request in self.data['requests']]
+        data = self._parse_bughog_variables(request_urls, regex)
+        self.data['req_vars'] = data

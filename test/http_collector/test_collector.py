@@ -3,7 +3,7 @@ import unittest
 
 import requests
 
-from bci.http.collector import Collector
+from bci.evaluations.result_collector.collector import Collector
 
 
 class TestCollector(unittest.TestCase):

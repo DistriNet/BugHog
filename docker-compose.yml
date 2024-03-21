@@ -22,8 +22,6 @@ services:
         required: false
     environment:
       - HOST_PWD=${PWD}
-    ports:
-      - "5000:5000"
     volumes:
       - ./config:/app/config:ro
       - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
@@ -68,6 +66,8 @@ services:
     image: bughog/core:${BUGHOG_VERSION}
     hostname: bh_core
     container_name: bh_core
+    ports:
+      - "5000:5000"
     profiles:
       - prod
 
@@ -77,11 +77,10 @@ services:
     build:
       context: .
       target: worker
-    pull_policy: if_not_present
     hostname: bh_worker
     container_name: bh_worker
     profiles:
-      - never_start
+      - prod
 
   #===================#
   # EXPERIMENT SERVER #
@@ -89,10 +88,9 @@ services:
 
   web:
     image: bughog/web:${BUGHOG_WEB_VERSION}
-    pull_policy: if_not_present
     volumes:
       - ./experiments/pages:/experiments/pages:ro
-      - ./experiments/resources:/app/static/resources:ro
+      - ./experiments/res:/app/static/res:ro
     container_name: bh_web
     ports:
       - "80:80"

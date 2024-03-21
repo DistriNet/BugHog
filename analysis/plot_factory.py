@@ -105,17 +105,24 @@ class PlotFactory:
         target_mech_id = params.target_mech_id if params.target_mech_id else params.mech_group
 
         for doc in docs:
+            # Backwards compatibility
             requests_to_target = list(filter(lambda x: f'/report/?leak={target_mech_id}' in x['url'], doc['results']['requests']))
-            requests_to_baseline = list(filter(lambda x: '/report/?leak=baseline' in x['url'], doc['results']['requests']))
+            # New way
+            if  [req_var for req_var in doc['results']['req_vars'] if req_var['var'] == 'reproduced' and req_var['val'] == 'OK'] or \
+                [log_var for log_var in doc['results']['log_vars'] if log_var['var'] == 'reproduced' and log_var['val'] == 'OK']:
+                reproduced = True
+            else:
+                reproduced = False
+
             new_doc = {
                 'revision_number': doc['revision_number'],
                 'browser_version': int(doc['browser_version'].split('.')[0]),
                 'browser_version_str': doc['browser_version'].split('.')[0]
             }
-            if doc['dirty'] or len(requests_to_baseline) == 0:
+            if doc['dirty']:
                 new_doc['outcome'] = 'Error'
                 docs_with_outcome.append(new_doc)
-            elif len(requests_to_target) > 0:
+            elif len(requests_to_target) > 0 or reproduced:
                 new_doc['outcome'] = 'Reproduced'
                 docs_with_outcome.append(new_doc)
             else:
