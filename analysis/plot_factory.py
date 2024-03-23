@@ -71,8 +71,8 @@ class PlotFactory:
             title='Gantt Chart with Points',
             x_range=(min(source.data['revision_number']), max(source.data['revision_number'])),
             y_range=['Error', 'Not reproduced', 'Reproduced'],
-            height=350,
-            width=700,
+            height=470,
+            width=900,
             tools='xwheel_zoom,reset,pan',
             active_scroll='xwheel_zoom')
         plot.add_glyph(source, Circle(x='revision_number', y='outcome', fill_color=color_map, fill_alpha=0.8, radius=8, radius_units='screen'))

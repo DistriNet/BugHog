@@ -41,6 +41,8 @@ services:
   core_dev:
     extends: base
     hostname: bh_core
+    ports:
+      - "5000:5000"
     build:
       context: .
       target: dev
