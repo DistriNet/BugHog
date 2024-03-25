@@ -335,7 +335,7 @@ export default {
 </script>
 
 <template>
-  <div id="option-board" class="grid grid-rows-[auto,50rem] grid-cols-[auto,60rem] gap-3 justify-center h-screen w-screen px-2">
+  <div id="option-board" class="grid grid-rows-[auto,50rem] grid-cols-[18rem,58rem] gap-3 justify-center h-screen">
 
     <!-- Banner -->
     <header class="banner-page row-start-1 col-span-2">
@@ -419,10 +419,10 @@ export default {
 
     <!-- Start button and results section -->
     <div class="row-start-2 col-start-2 flex flex-col h-full">
-      <div v-if="this.info.running == false" class="">
+      <div v-if="this.info.running == false">
         <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
       </div>
-      <div v-else class="m-2">
+      <div v-else>
         <button @click="stop(false)" class="w-1/2 bg-yellow-300 dark:bg-yellow-500">Stop gracefully</button>
         <button @click="stop(true)" class="w-1/2 bg-red-400 dark:bg-red-800">Stop forcefully</button>
       </div>
@@ -607,7 +607,7 @@ export default {
     </div>
 
     <!-- Logs -->
-    <div class="results-section h-fit col-span-2 row-start-4">
+    <div class="results-section h-fit col-span-2 row-start-4 flex-1">
       <div class="flex">
         <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
         <div class="w-full text-right">
