@@ -8,7 +8,6 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 import bci.browser.cli_options.chromium as cli_options_chromium
 import bci.browser.cli_options.firefox as cli_options_firefox
-import bci.version_control.states.factory as state_factory
 from bci.version_control.states.state import State
 
 logger = logging.getLogger('bci')
@@ -178,7 +177,7 @@ class WorkerParameters:
         return {
             'browser_configuration': self.browser_configuration.to_dict(),
             'evaluation_configuration': self.evaluation_configuration.to_dict(),
-            'state': state_factory.to_dict(self.state),
+            'state': self.state.to_dict(),
             'mech_groups': self.mech_groups,
             'database_collection': self.database_collection,
             'database_connection_params': self.database_connection_params.to_dict()
@@ -198,7 +197,7 @@ class WorkerParameters:
         data = json.loads(string)
         browser_config = BrowserConfiguration.from_dict(data['browser_configuration'])
         eval_config = EvaluationConfiguration.from_dict(data['evaluation_configuration'])
-        state = state_factory.from_dict(data['state'])
+        state = State.from_dict(data['state'])
         mech_groups = data['mech_groups']
         database_collection = data['database_collection']
         database_connection_params = DatabaseConnectionParameters.from_dict(data['database_connection_params'])

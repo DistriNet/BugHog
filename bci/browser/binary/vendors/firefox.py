@@ -9,7 +9,7 @@ import requests
 from bci import cli, util
 from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.browser.binary.binary import Binary
-from bci.version_control.states.firefox import (BINARY_AVAILABILITY_MAPPING,
+from bci.version_control.states.revisions.firefox import (BINARY_AVAILABILITY_MAPPING,
                                                 REVISION_NUMBER_MAPPING)
 from bci.version_control.states.state import State
 
@@ -40,26 +40,13 @@ class FirefoxBinary(Binary):
     def bin_folder_path(self) -> str:
         return BIN_FOLDER_PATH
 
-    @staticmethod
-    def has_available_binary_online(state: State) -> bool:
-        if state._revision_id:
-            return state._revision_id in BINARY_AVAILABILITY_MAPPING
-        if state._revision_number:
-            return str(state._revision_number) in REVISION_NUMBER_MAPPING
-
     def download_binary(self):
-        rev_id = self.state.revision_id
-        rev_number = self.state.revision_number
-
-        if self.only_releases:
-            binary_url = f'https://ftp.mozilla.org/pub/firefox/releases/{self.version}.0/linux-x86_64/en-US/firefox-{self.version}.0.tar.bz2'
-        else:
-            # binary_url = MongoDB.get_binary_url("firefox", changeset_id)
-            binary_base_url = BINARY_AVAILABILITY_MAPPING[rev_id]["files_url"]
-            app_version = BINARY_AVAILABILITY_MAPPING[rev_id]["app_version"]
-            binary_url = f"{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.bz2"
-        logger.debug(f'Downloading {rev_number} from \'{binary_url}\'')
-        tar_file_path = f'/tmp/{rev_number}/archive.tar.bz2'
+        if self.is_available_locally():
+            logger.debug(f'Binary for {self.state} was already downloaded ({self.get_bin_path()})')
+            return
+        binary_url = self.state.get_online_binary_url()
+        logger.debug(f'Downloading binary for {self.state} from \'{binary_url}\'')
+        tar_file_path = f'/tmp/{self.state.name}/archive.tar.bz2'
         if os.path.exists(os.path.dirname(tar_file_path)):
             shutil.rmtree(os.path.dirname(tar_file_path))
         os.makedirs(os.path.dirname(tar_file_path))

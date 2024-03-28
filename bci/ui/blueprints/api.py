@@ -125,6 +125,14 @@ def get_projects():
     }
 
 
+@api.route('/system/', methods=['GET'])
+def get_system_info():
+    return {
+        'status': 'OK',
+        'cpu_count': os.cpu_count() if os.cpu_count() else 2
+    }
+
+
 @api.route('/tests/<string:project>/', methods=['GET'])
 def get_tests(project: str):
     tests = bci_api.get_mech_groups_of_evaluation_framework('custom', project=project)

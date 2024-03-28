@@ -22,5 +22,9 @@ def get_release_revision_number(major_release_version: int) -> int:
     return parser.get_release_revision_number(major_release_version, __META_DATA)
 
 
+def get_release_revision_id(major_release_version: int) -> int:
+    return parser.get_release_revision_id(major_release_version, __META_DATA)
+
+
 def get_most_recent_major_version() -> int:
     return parser.get_most_recent_major_version(__META_DATA)

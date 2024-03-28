@@ -54,13 +54,13 @@ export default {
         upper_version: null,
         lower_revision_nb: null,
         upper_revision_nb: null,
-        only_release_revisions: false,
+        only_release_revisions: true,
         // Sequence config
         nb_of_containers: 8,
         sequence_limit: 100,
         target_mech_id: null,
         target_cookie_name: "generic",
-        search_strategy: "bin_seq",
+        search_strategy: "comp_search",
         // Database collection
         db_collection: null,
         // For plotting
@@ -84,6 +84,7 @@ export default {
       fatal_error: null,
       hide_advanced: true,
       hide_logs: true,
+      system: null,
     }
   },
   computed: {
@@ -179,9 +180,14 @@ export default {
       500
     );
     this.timer = setInterval(() => {
-      if (this.projects.length == 0 || this.browsers.length == 0) {
+      if (this.projects.length == 0) {
         this.get_projects();
+      }
+      if (this.browsers.length == 0) {
         this.get_browser_support();
+      }
+      if (this.system == null) {
+        this.get_system_info();
       }
       this.get_info();
       this.update_results();
@@ -245,6 +251,18 @@ export default {
         .then((res) => {
           if (res.data.status == "OK") {
             this.browsers = res.data.browsers;
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    },
+    get_system_info() {
+      const path = `http://${location.hostname}:5000/api/system/`;
+      axios.get(path)
+        .then((res) => {
+          if (res.data.status == "OK") {
+            this.system = res.data;
           }
         })
         .catch((error) => {
@@ -388,8 +406,14 @@ export default {
               />
             </div>
             <div class="pt-5 checkbox-item">
-              <input v-model="eval_params.only_release_revisions" type="checkbox" disabled>
-              <label><i>Only release revisions (coming soon)</i></label>
+              <input
+                v-model="eval_params.only_release_revisions"
+                :true-value="false"
+                :false-value="true"
+                type="checkbox">
+              <label>Deep search
+                <tooltip tooltip="deep_search"></tooltip>
+              </label>
             </div>
           </div>
         </div>
@@ -466,9 +490,9 @@ export default {
         </div>
       </div>
       <div :class="hide_advanced ? 'hidden' : ''">
-        <div class="grid grid-cols-[auto,auto] justify-start">
+        <div class="grid grid-cols-[auto,auto,auto] justify-start">
           <div class="flex flex-col">
-            <div class="form-subsection row-start-1">
+            <div class="form-subsection">
               <section-header section="browser_rev_range"></section-header>
               <div class="p-1 w-1/2">
                 <label for="lower_revision_nb">Lower rev nb</label>
@@ -482,13 +506,6 @@ export default {
             </div>
 
             <div class="form-subsection row-start-2">
-              <section-header section="db_collection"></section-header>
-              <label for="db_collection_name" hidden>Database collection:</label>
-              <input v-bind:value="this.db_collection_prefix" type="text" class="input-box" disabled>
-              <input v-model="db_collection_suffix" type="text" class="input-box"><br>
-            </div>
-
-            <div class="form-subsection row-start-3">
               <section-header section="reproduction_id"></section-header>
               <input v-model="target_mech_id_input" type="text" class="input-box" id="mech_id" name="mech_id"
                 :placeholder="eval_params.plot_mech_group"><br>
@@ -496,11 +513,18 @@ export default {
             </div>
           </div>
 
+          <div class="form-subsection col-start-2 h-max">
+              <section-header section="db_collection"></section-header>
+              <label for="db_collection_name" hidden>Database collection:</label>
+              <input v-bind:value="this.db_collection_prefix" type="text" class="input-box" disabled>
+              <input v-model="db_collection_suffix" type="text" class="input-box mb-1"><br>
+          </div>
+
           <!-- Evaluation settings -->
-          <div class="form-subsection w-fit eval_opts row-span-3">
+          <div class="form-subsection w-fit eval_opts col-start-3">
             <section-header section="eval_settings"></section-header>
 
-            <div class="form-subsection">
+            <!-- <div class="form-subsection">
               <section-header section="automation"></section-header>
               <div class="radio-item">
                 <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option"
@@ -512,7 +536,7 @@ export default {
                 <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option" value="selenium">
                 <label for="terminal_automation">Selenium automation</label><br>
               </div>
-            </div>
+            </div> -->
 
             <div class="form-subsection">
               <section-header section="search_strategy"></section-header>
@@ -532,7 +556,7 @@ export default {
               </div>
 
               <div class="radio-item">
-                <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
+                <input v-model="eval_params.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
                   value="comp_search">
                 <label for="comp_search">Composite search</label>
                 <tooltip tooltip="comp_search"></tooltip>
@@ -544,7 +568,7 @@ export default {
                 <tooltip tooltip="sequence_limit"></tooltip>
               </div>
               <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000">
-              <div id="search_stategy_hidden_options" class="hidden_options">
+              <!-- <div id="search_stategy_hidden_options" class="hidden_options">
                 <br>
 
                 <div class="flex items-baseline">
@@ -563,7 +587,7 @@ export default {
                   <label for="cookie_name">Cookie name</label>
                   <input v-model="eval_params.target_cookie_name"  type="text" id="cookie_name" name="cookie_name">
                 </div>
-              </div>
+              </div> -->
             </div>
 
             <div class="form-subsection">

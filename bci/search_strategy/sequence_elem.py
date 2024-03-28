@@ -23,7 +23,8 @@ class SequenceElem:
         self.outcome = outcome
 
     def is_available(self) -> bool:
-        return binary_factory.binary_is_available(self.value)
+        binary = binary_factory.get_binary(self.value)
+        return binary.is_available()
 
     def update_outcome(self, outcome: bool):
         if self.state == ElemState.DONE:

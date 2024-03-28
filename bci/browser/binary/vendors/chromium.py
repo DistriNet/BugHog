@@ -9,7 +9,6 @@ import requests
 from bci import cli, util
 from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.browser.binary.binary import Binary
-from bci.database.mongo.mongodb import MongoDB
 from bci.version_control.states.state import State
 
 logger = logging.getLogger('bci')
@@ -51,32 +50,17 @@ class ChromiumBinary(Binary):
 
     # Downloadable binaries
 
-    @staticmethod
-    def has_available_binary_online(state: State) -> bool:
-        cached_binary_available_online = MongoDB.has_binary_available_online('chromium', state)
-        if cached_binary_available_online is not None:
-            return cached_binary_available_online
-        url = f'https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{state.revision_number}%2Fchrome-linux.zip'
-        req = requests.get(url)
-        has_binary_online = req.status_code == 200
-        MongoDB.store_binary_availability_online_cache('chromium', state, has_binary_online)
-        return has_binary_online
-
     def download_binary(self):
-        rev_number = self.state.revision_number
-
-        if self.has_available_binary_locally():
-            logger.debug(f'{self.rev_number} was already downloaded ({self.get_bin_path()})')
+        if self.is_available_locally():
+            logger.debug(f'Binary for {self.state} was already downloaded ({self.get_bin_path()})')
             return
-        url = \
-            "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/%s%%2F%s%%2Fchrome-%s.zip?alt=media"\
-            % ('Linux_x64', rev_number, 'linux')
-        logger.info(f'Downloading {rev_number} from \'{url}\'')
-        zip_file_path = f'/tmp/{rev_number}/archive.zip'
+        binary_url = self.state.get_online_binary_url()
+        logger.info(f'Downloading binary for {self.state} from \'{binary_url}\'')
+        zip_file_path = f'/tmp/{self.state.name}/archive.zip'
         if os.path.exists(os.path.dirname(zip_file_path)):
             shutil.rmtree(os.path.dirname(zip_file_path))
         os.makedirs(os.path.dirname(zip_file_path))
-        with requests.get(url, stream=True) as req:
+        with requests.get(binary_url, stream=True) as req:
             with open(zip_file_path, 'wb') as file:
                 shutil.copyfileobj(req.raw, file)
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:

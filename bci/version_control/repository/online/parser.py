@@ -16,5 +16,12 @@ def get_release_revision_number(major_release_version: int, meta_data: dict) -> 
     raise AttributeError(f"Could not find major release version '{major_release_version}'")
 
 
+def get_release_revision_id(major_release_version: int, meta_data: dict) -> int:
+    for entry in meta_data:
+        if entry["major_version"] == major_release_version:
+            return entry["revision_id"]
+    raise AttributeError(f"Could not find major release version '{major_release_version}'")
+
+
 def get_most_recent_major_version(meta_data: dict) -> int:
     return max([entry['major_version'] for entry in meta_data])

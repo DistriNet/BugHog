@@ -95,8 +95,7 @@ class MongoDB(ABC):
             'browser_config': browser_config.browser_setting,
             'cli_options': browser_config.cli_options,
             'extensions': browser_config.extensions,
-            'revision_id': result.params.state.revision_id,
-            'revision_number': result.params.state.revision_number,
+            'state': result.params.state.to_dict(),
             'mech_group': result.params.mech_group,
             'results': result.data,
             'dirty': result.is_dirty,
@@ -106,7 +105,7 @@ class MongoDB(ABC):
             document["driver_version"] = result.driver_version
 
         if browser_config.browser_name == "firefox":
-            build_id = self.get_build_id_firefox(result.params.state.revision_id)
+            build_id = self.get_build_id_firefox(result.params.state)
             if build_id is None:
                 document["artisanal"] = True
                 document["build_id"] = "artisanal"
@@ -143,7 +142,7 @@ class MongoDB(ABC):
 
     def __to_query(self, params: TestParameters) -> dict:
         query = {
-            'revision_number': params.state.revision_number,
+            'state': params.state.to_dict(),
             'browser_automation': params.evaluation_configuration.automation,
             'browser_config': params.browser_configuration.browser_setting,
             'mech_group': params.mech_group
@@ -182,7 +181,7 @@ class MongoDB(ABC):
     @staticmethod
     def has_binary_available_online(browser: str, state: State):
         collection = MongoDB.get_binary_availability_collection(browser)
-        document = collection.find_one({'revision_number': state.revision_number})
+        document = collection.find_one({'state': state.to_dict()})
         if document is None:
             return None
         return document["binary_online"]
@@ -196,7 +195,7 @@ class MongoDB(ABC):
             },
             {
                 "_id": False,
-                "state_id": True,
+                "state": True,
             }
         )
         if browser == "firefox":
@@ -204,32 +203,16 @@ class MongoDB(ABC):
         return result
 
     @staticmethod
-    def get_binary_url(browser: str, state_id: str):
-        collection = MongoDB.get_binary_availability_collection(browser)
-        result = collection.find_one(
-            {
-                "state_id": int(state_id) if state_id.isdigit() else state_id
-            },
-            {
-                "_id": False,
-                "url": True
-            }
-        )
-        if len(result) == 0:
-            raise AttributeError("No entry found for state_id '%s'" % state_id)
-        return result["url"]
-
-    @staticmethod
     def store_binary_availability_online_cache(browser: str, state: State, binary_online: bool, url: str = None):
         collection = MongoDB.get_binary_availability_collection(browser)
         collection.update_one(
             {
-                'revision_number': state.revision_number
+                'state': state.to_dict()
             },
             {
                 "$set":
                 {
-                    'revision_number': state.revision_number,
+                    'state': state.to_dict(),
                     'binary_online': binary_online,
                     'url': url,
                     'ts': str(datetime.now(timezone.utc).replace(microsecond=0))
@@ -239,34 +222,11 @@ class MongoDB(ABC):
         )
 
     @staticmethod
-    def store_binary_availability_online_cache_firefox(upsert_data):
-        collection = MongoDB.get_binary_availability_collection("firefox")
-
-        bulk_update = []
-        for attributes in upsert_data:
-            update = UpdateOne(
-                {
-                    "state_id": attributes["changeset_id"]
-                },
-                {
-                    "$set": {
-                        "state_id": attributes["changeset_id"],
-                        "binary_online": attributes["binary_online"],
-                        "url": attributes["binary_url"],
-                        'build_id': attributes["build_id"],
-                        "ts": str(datetime.now(timezone.utc).replace(microsecond=0))
-                    }
-                }, upsert=True)
-            bulk_update.append(update)
-        if len(bulk_update) > 0:
-            collection.bulk_write(bulk_update)
-
-    @staticmethod
-    def get_build_id_firefox(revision_id: str):
+    def get_build_id_firefox(state: State):
         collection = MongoDB.get_binary_availability_collection("firefox")
 
         result = collection.find_one({
-            "state_id": revision_id
+            "state": state.to_dict()
         }, {
             "_id": False,
             "build_id": 1
@@ -277,11 +237,12 @@ class MongoDB(ABC):
             return None
         return result["build_id"]
 
-    def get_documents_for_plotting(self, params: PlotParameters):
+    def get_documents_for_plotting(self, params: PlotParameters, releases: bool = False):
         collection = self.get_collection(params.database_collection)
         query = {
             'mech_group': params.mech_group,
             'browser_config': params.browser_config,
+            'state.type': 'version' if releases else 'revision'
         }
         query['extensions'] = {
             '$size': len(params.extensions) if params.extensions else 0
@@ -294,7 +255,7 @@ class MongoDB(ABC):
         if params.cli_options:
             query['cli_options']['$all'] = params.cli_options
         if params.revision_number_range:
-            query['revision_number'] = {
+            query['state.revision_number'] = {
                 '$gte': params.revision_number_range[0],
                 '$lte': params.revision_number_range[1]
             }
@@ -311,7 +272,7 @@ class MongoDB(ABC):
             {
                 '$project': {
                     '_id': False,
-                    'revision_number': True,
+                    'state': True,
                     'browser_version': True,
                     'dirty': True,
                     'results': True

@@ -92,7 +92,7 @@ class WorkerManager:
 
         thread = threading.Thread(target=start_container_thread)
         thread.start()
-        logger.info(f'Container \'{container_name}\' started experiments for revision \'{params.state.revision_number}\'')
+        logger.info(f'Container \'{container_name}\' started experiments for \'{params.state}\'')
         # To avoid race-condition where more than max containers are started
         time.sleep(5)
 

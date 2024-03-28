@@ -25,7 +25,7 @@ def binary_is_available(state: State) -> bool:
 
 
 def __has_available_binary_online(state: State) -> bool:
-    return __get_class(state.browser_name).has_available_binary_online(state)
+    return __get_class(state.browser_name).has_available_binary_online()
 
 
 def __has_available_binary_artisanal(state: State) -> bool:

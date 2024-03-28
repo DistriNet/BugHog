@@ -1,5 +1,4 @@
 import logging
-import os
 
 import bci.browser.binary.factory as binary_factory
 from bci.browser.support import get_chromium_support, get_firefox_support

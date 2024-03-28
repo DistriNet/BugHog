@@ -12,6 +12,9 @@
           "comp_search": {
             "tooltip": "Combines the two strategies above. First, a general sweep is performed until the sequence limit is reached. Then, for each shift in reproducibility that can be observed, a targeted search is conducted to identify an introducing or fixing revision."
           },
+          "deep_search": {
+            "tooltip": "Evaluate at revision level to find code changes that introduced or fixed a bug. If unchecked, only browser releases (or base positions of releases in case of Chromium) will be evaluated."
+          },
           "mech_id": {
             "tooltip": "Experiments can have one or more boolean outcomes. Each outcome is identified by a reproduction ID, which is linked to a boolean value indicating reproducibility. In most cases, experiments have only one outcome, and the reproduction ID is set to be the same as the experiment ID by default."
           },
