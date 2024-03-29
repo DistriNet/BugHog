@@ -17,7 +17,7 @@ class TestCompositeSearch(unittest.TestCase):
         return x % 2 == 0
 
     def test_find_all_shift_index_pairs(self):
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             def outcome(x) -> bool:
                 return x < 22 or x > 60
             values = list(range(100))

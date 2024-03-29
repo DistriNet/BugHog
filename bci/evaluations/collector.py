@@ -42,7 +42,3 @@ class Collector:
             all_data.update(collector.data)
         logger.debug(f'Collected data: {all_data}')
         return all_data
-
-
-
-

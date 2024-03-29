@@ -30,7 +30,6 @@ class BaseCollector:
             BaseCollector._add_val_var_pair(var, val, data)
         return data
 
-
     @staticmethod
     def _add_val_var_pair(var: str, val: str, data: list) -> list:
         for entry in data:

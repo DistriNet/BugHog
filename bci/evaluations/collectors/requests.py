@@ -60,6 +60,6 @@ class RequestCollector(BaseCollector):
             self.__httpd.shutdown()
             self.__thread.join()
             self.__httpd.server_close()
-        request_urls = [request['url'] for request in self.data['requests']]
+        request_urls = [request['url'] for request in self.data['requests'] if 'url' in request]
         data = self._parse_bughog_variables(request_urls, regex)
         self.data['req_vars'] = data

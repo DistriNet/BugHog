@@ -11,17 +11,17 @@ class TestSearchStrategy(unittest.TestCase):
 
     @staticmethod
     def only_even(x):
-        return x % 2 == 0
+        return x.value % 2 == 0
 
     @staticmethod
     def one_in_15(x):
-        return x % 15 == 0
+        return x.value % 15 == 0
 
     def test_binary_search(self):
         def outcome(x) -> bool:
             return x < 22
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             values = list(range(100))
             seq = NArySearch(values, 2)
             expected_elem_sequence = [0, 99, 50, 26, 14, 21, 24, 23, 22]
@@ -37,7 +37,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 22
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.only_even):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.only_even):
             values = list(range(100))
             seq = NArySearch(values, 2)
             expected_elem_sequence = [0, 98, 50, 26, 14, 20, 24, 22]
@@ -53,7 +53,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 15
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.only_even):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.only_even):
             values = list(range(100))
             seq = NArySearch(values, 3)
             expected_elem_sequence = [0, 98, 34, 12, 24, 16, 14]
@@ -67,9 +67,9 @@ class TestSearchStrategy(unittest.TestCase):
 
     def test_observer_edge_case1(self):
         def is_available(x):
-            return x in [766907, 766912, 766922]
+            return x.value in [766907, 766912, 766922]
 
-        with patch('bci.browser.binary.factory.binary_is_available', is_available):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', is_available):
             values = list(range(766907, 766923))
             seq = NArySearch(values, 16)
             assert seq.next() == 766907
@@ -83,7 +83,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 454750
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.one_in_15):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.one_in_15):
             values = list(range(454462, 455227))
             seq = NArySearch(values, 8)
             elem_sequence = []
@@ -101,7 +101,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 561011
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.one_in_15):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.one_in_15):
             values = list(range(560417, 562154))
             seq = NArySearch(values, 2)
             elem_sequence = []
@@ -119,7 +119,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 561011
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.one_in_15):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.one_in_15):
             values = list(range(560417, 562154))
             seq = NArySearch(values, 4)
             elem_sequence = []
@@ -137,7 +137,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 561011
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.one_in_15):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.one_in_15):
             values = list(range(560417, 562154))
             seq = NArySearch(values, 8)
             elem_sequence = []
@@ -155,7 +155,7 @@ class TestSearchStrategy(unittest.TestCase):
         def outcome(x) -> bool:
             return x < 561011
 
-        with patch('bci.browser.binary.factory.binary_is_available', self.one_in_15):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.one_in_15):
             values = list(range(560417, 562154))
             seq = NArySearch(values, 16)
             elem_sequence = []

@@ -4,7 +4,7 @@ import logging
 from abc import ABC
 from datetime import datetime, timezone
 
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
