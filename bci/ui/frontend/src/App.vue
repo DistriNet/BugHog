@@ -224,6 +224,7 @@ export default {
               this.info = res.data.info;
               log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
             }
+            this.fatal_error = false;
           } else {
             this.info.log = res.data.info.log;
             this.fatal_error = true;
@@ -353,7 +354,7 @@ export default {
 </script>
 
 <template>
-  <div id="option-board" class="grid grid-rows-[auto,50rem] grid-cols-[18rem,58rem] gap-3 justify-center h-screen">
+  <div id="option-board" class="grid grid-rows-[4rem,50rem,auto,auto] grid-cols-[18rem,58rem] content-start gap-3 justify-center h-screen">
 
     <!-- Banner -->
     <header class="banner-page row-start-1 col-span-2">
