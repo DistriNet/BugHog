@@ -42,3 +42,31 @@ class TestCompositeSearch(unittest.TestCase):
                 assert seq.sequence_strategy_finished
             assert expected_elem_search == elem_search
             self.assertRaises(SequenceFinished, seq.next)
+
+    def test_composite_search(self):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
+            def outcome(x) -> bool:
+                return x < 22 or x > 60
+
+            values = list(range(100))
+            seq = CompositeSearch(values, 2, 10, NArySequence, NArySearch)
+            seq.is_available = self.always_true
+            expected_sequence_part = [0, 99, 50, 26, 75, 14, 39, 63, 88, 8]
+            expected_search_part = [21, 24, 23, 22, 57, 61, 60]
+
+            actual_sequence_part = []
+            for _ in range(10):
+                elem = seq.next()
+                seq.update_outcome(elem, outcome(elem))
+                actual_sequence_part.append(elem)
+            assert expected_sequence_part == actual_sequence_part
+
+            actual_search_part = []
+            while True:
+                try:
+                    elem = seq.next()
+                    seq.update_outcome(elem, outcome(elem))
+                    actual_search_part.append(elem)
+                except SequenceFinished:
+                    break
+            assert expected_search_part == actual_search_part

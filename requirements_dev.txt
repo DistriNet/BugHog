@@ -90,6 +90,8 @@ flask==3.0.2
     # via
     #   -r requirements.txt
     #   mitmproxy
+flatten-dict==0.4.2
+    # via -r requirements.txt
 gunicorn==21.2.0
     # via -r requirements.txt
 h11==0.14.0
@@ -286,6 +288,7 @@ service-identity==24.1.0
 six==1.16.0
     # via
     #   -r requirements.txt
+    #   flatten-dict
     #   python-dateutil
 sortedcontainers==2.4.0
     # via

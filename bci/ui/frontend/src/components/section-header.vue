@@ -13,7 +13,7 @@
           },
           "browser_rev_range": {
             "title": "Browser revision range",
-            "tooltip": "Specify a browser range based on revision numebers. The browser version range will be ignored if this is set."
+            "tooltip": "Define a binary range based on revision numbers. The browser version range defined above will be disregarded if this option is used."
           },
           "db_collection": {
             "title": "Database collection",
@@ -22,31 +22,31 @@
           "eval_range": {
             "title": "Browser version range",
             "tooltip":
-              "Specify the scope of revisions to be evaluated by setting the boundaries using either browser release version numbers or revision numbers."
+              "Specify which binaries you want to evaluate by selecting the browser and its version range. Enabling deep search extends the evaluation to include all available revision binaries, offering a more comprehensive analysis."
           },
           "eval_settings": {
             "title": "Evaluation settings",
-            "tooltip": "Customize the evaluation process by selecting the automation mode, search strategy, and the number of parallel containers."
+            "tooltip": "Customize the evaluation process by selecting the search strategy, sequence limit and the number of parallel containers."
           },
           "experiments": {
             "title": "Experiments",
-            "tooltip": "Choose the experiments to be conducted. All available experiments within the selected project are shown here. Note that if multiple experiments are chosen, binary search and composite search will only target the experiment of which the reproduction id is provided."
+            "tooltip": "Pick a project from the dropdown menu to access all available experiments. Then, mark the experiments you wish to conduct. Keep in mind that if multiple experiments are chosen, only a binary sequence will be performed. For a binary search or composite search, select only one experiment."
           },
           "parallel_containers": {
             "title": "Number of parallel containers",
-            "tooltip": "Specify the number of concurrent containers allowed to run for evaluating each revision binary. To disable concurrency and conduct all experiments in the main container, enter '1'. This will prevent new containers from being spawned during the evaluation process."
+            "tooltip": "Specify the maximum number of concurrent containers allowed to run. To disable concurrency, simply input '1'."
           },
           "reproduction_id": {
             "title": "Reproduction id",
-            "tooltip": "Experiments can have one or more boolean outcomes. Each outcome is identified by a reproduction ID, which is linked to a boolean value indicating reproducibility. In most cases, experiments have only one outcome, and the reproduction ID is set to be the same as the experiment ID by default."
+            "tooltip": "This option will be deprecated. Experiments can have one or more boolean outcomes. Each outcome is identified by a reproduction ID, which is linked to a boolean value indicating reproducibility. In most cases, experiments have only one outcome, and the reproduction ID is set to be the same as the experiment ID by default."
           },
           "results": {
             "title": "Results",
-            "tooltip": "The evaluation results can be visualized in a Gantt chart. This chart is generated based on the selected fields. Use the dropdown menu to choose the experiment for which you want to display the data. Squares represent (approximations of) release binaries, while dots represent revision binaries. Note that the zoom level within the Gantt chart widget will reset each time the chart is refreshed."
+            "tooltip": "Choose an experiment from the dropdown menu to visualize its results in the Gantt chart below. Squares represent (approximate) release binaries, while dots represent revision binaries. Disable auto-refresh to prevent chart updates while navigating the chart."
           },
           "search_strategy": {
             "title": "Search strategy",
-            "tooltip": "Configure the evaluation to perform either a general sweep on revision binaries, a targeted search for introductions and fixes, or a combination of the two."
+            "tooltip": "Select a search strategy. Additional information on each specific search strategy is available with each option."
           }
         }
       }

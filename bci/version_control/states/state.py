@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod, abstractproperty
-import re
 
 
 class EvaluationResult:

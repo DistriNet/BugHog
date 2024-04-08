@@ -253,7 +253,7 @@ class TestResult:
 
     @property
     def reproduced(self):
-        entry_if_reproduced = {'val': 'reproduced', 'var': 'OK'}
+        entry_if_reproduced = {'var': 'reproduced', 'val': 'OK'}
         reproduced_in_req_vars = [entry for entry in self.data['req_vars'] if entry == entry_if_reproduced] != []
         reproduced_in_log_vars = [entry for entry in self.data['log_vars'] if entry == entry_if_reproduced] != []
         return reproduced_in_req_vars or reproduced_in_log_vars

@@ -1,4 +1,5 @@
 from abc import abstractmethod, abstractproperty
+
 from bci.version_control.states.state import State
 
 
@@ -26,7 +27,7 @@ class BaseVersion(State):
     def browser_name(self):
         pass
 
-    def to_dict(self) -> dict:
+    def to_dict(self, make_complete: bool = True) -> dict:
         return {
             'type': 'version',
             'browser_name': self.browser_name,
@@ -37,7 +38,8 @@ class BaseVersion(State):
 
     @staticmethod
     def from_dict(data: dict) -> State:
-        from bci.version_control.states.versions.chromium import ChromiumVersion
+        from bci.version_control.states.versions.chromium import \
+            ChromiumVersion
         from bci.version_control.states.versions.firefox import FirefoxVersion
         match data['browser_name']:
             case 'chromium':

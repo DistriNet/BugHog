@@ -43,6 +43,8 @@ flask==3.0.2
     # via
     #   -r requirements.in
     #   mitmproxy
+flatten-dict==0.4.2
+    # via -r requirements.in
 gunicorn==21.2.0
     # via -r requirements.in
 h11==0.14.0
@@ -139,7 +141,9 @@ ruamel-yaml-clib==0.2.8
 service-identity==24.1.0
     # via aioquic
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   flatten-dict
+    #   python-dateutil
 sortedcontainers==2.4.0
     # via mitmproxy
 tornado==6.4

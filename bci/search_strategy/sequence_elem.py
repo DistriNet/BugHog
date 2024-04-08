@@ -31,7 +31,8 @@ class SequenceElem:
             raise AttributeError(f"Outcome was already set to DONE for {repr(self)}")
         if outcome is None:
             self.state = ElemState.ERROR
-        self.state = ElemState.DONE
+        else:
+            self.state = ElemState.DONE
         self.outcome = outcome
 
     def get_deep_copy(self, index=None):

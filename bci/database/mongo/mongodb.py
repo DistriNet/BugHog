@@ -4,11 +4,14 @@ import logging
 from abc import ABC
 from datetime import datetime, timezone
 
+from flatten_dict import flatten
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
-from bci.evaluations.logic import DatabaseConnectionParameters, PlotParameters, TestParameters, TestResult, WorkerParameters
+from bci.evaluations.logic import (DatabaseConnectionParameters,
+                                   PlotParameters, TestParameters, TestResult,
+                                   WorkerParameters)
 from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)
@@ -181,7 +184,7 @@ class MongoDB(ABC):
     @staticmethod
     def has_binary_available_online(browser: str, state: State):
         collection = MongoDB.get_binary_availability_collection(browser)
-        document = collection.find_one({'state': state.to_dict()})
+        document = collection.find_one({'state': state.to_dict(make_complete=False)})
         if document is None:
             return None
         return document["binary_online"]
@@ -201,6 +204,19 @@ class MongoDB(ABC):
         if browser == "firefox":
             result.sort('build_id', -1)
         return result
+
+    @staticmethod
+    def get_complete_state_dict_from_binary_availability_cache(state: State):
+        collection = MongoDB.get_binary_availability_collection(state.browser_name)
+        # We have to flatten the state dictionary to ignore missing attributes.
+        state_dict = {
+            'state': state.to_dict(make_complete=False)
+        }
+        query = flatten(state_dict, reducer='dot')
+        document = collection.find_one(query)
+        if document is None:
+            return None
+        return document['state']
 
     @staticmethod
     def store_binary_availability_online_cache(browser: str, state: State, binary_online: bool, url: str = None):

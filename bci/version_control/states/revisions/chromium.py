@@ -29,7 +29,11 @@ class ChromiumRevision(BaseRevision):
         return "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/%s%%2F%s%%2Fchrome-%s.zip?alt=media" % ('Linux_x64', self._revision_number, 'linux')
 
     def _fetch_revision_id(self) -> str:
+        if state := MongoDB.get_complete_state_dict_from_binary_availability_cache(self):
+            return state['revision_id']
         return PARSER.get_rev_id(self._revision_number)
 
     def _fetch_revision_number(self) -> int:
+        if state := MongoDB.get_complete_state_dict_from_binary_availability_cache(self):
+            return state['revision_number']
         return PARSER.get_rev_number(self._revision_id)

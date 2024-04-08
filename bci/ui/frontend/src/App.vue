@@ -422,7 +422,7 @@ export default {
 
       <!-- Experiments -->
       <div class="form-section flex flex-col grow h-0">
-        <section-header section="experiments" class="w-1/2" left></section-header>
+        <section-header section="experiments" class="w-1/2"></section-header>
 
         <select class="mb-2" v-model="selected.project">
           <option disabled value="">Select a project</option>

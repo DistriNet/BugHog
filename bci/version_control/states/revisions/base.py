@@ -1,5 +1,6 @@
-from abc import abstractmethod
 import re
+from abc import abstractmethod
+
 from bci.version_control.states.state import State
 
 
@@ -29,18 +30,36 @@ class BaseRevision(State):
     def name(self):
         return f'{self.revision_number}'
 
-    def to_dict(self) -> dict:
-        return {
-            'type': 'revision',
-            'browser_name': self.browser_name,
-            'revision_id': self.revision_id,
-            'revision_number': self.revision_number
-        }
+    def to_dict(self, make_complete: bool = True) -> dict:
+        '''
+        Returns a dictionary representation of the state.
+        If complete is True, any missing information will be fetched.
+        For example, only the revision id might be known, but not the revision number.
+        '''
+        if make_complete:
+            return {
+                'type': 'revision',
+                'browser_name': self.browser_name,
+                'revision_id': self.revision_id,
+                'revision_number': self.revision_number
+            }
+        else:
+            state_dict = {
+                'type': 'revision',
+                'browser_name': self.browser_name
+            }
+            if self._revision_id is not None:
+                state_dict['revision_id'] = self._revision_id
+            if self._revision_number is not None:
+                state_dict['revision_number'] = self._revision_number
+            return state_dict
 
     @staticmethod
     def from_dict(data: dict) -> State:
-        from bci.version_control.states.revisions.chromium import ChromiumRevision
-        from bci.version_control.states.revisions.firefox import FirefoxRevision
+        from bci.version_control.states.revisions.chromium import \
+            ChromiumRevision
+        from bci.version_control.states.revisions.firefox import \
+            FirefoxRevision
         match data['browser_name']:
             case 'chromium':
                 return ChromiumRevision(
