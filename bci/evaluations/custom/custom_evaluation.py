@@ -20,7 +20,6 @@ class CustomEvaluationFramework(EvaluationFramework):
     def __init__(self):
         super().__init__()
         self.tests_per_project = {}
-        self.tests = {}
         self.initialize_tests_and_url_queues()
 
     def initialize_tests_and_url_queues(self):
@@ -36,7 +35,6 @@ class CustomEvaluationFramework(EvaluationFramework):
                     # If an URL queue is specified, it is parsed and used
                     with open(url_queue_file_path) as file:
                         self.tests_per_project[project_name][test_name] = file.readlines()
-                        self.tests[test_name] = self.tests_per_project[project_name][test_name]
                 else:
                     # Otherwise, a default URL queue is used, based on the domain that hosts the main page
                     test_folder_path = os.path.join(project_path, test_name)
@@ -47,7 +45,6 @@ class CustomEvaluationFramework(EvaluationFramework):
                                 f'https://{domain}/{project_name}/{test_name}/main',
                                 'https://a.test/report/?bughog_sanity_check=OK'
                             ]
-                            self.tests[test_name] = self.tests_per_project[project_name][test_name]
 
     def perform_specific_evaluation(self, browser: Browser, params: TestParameters) -> TestResult:
         logger.info(f'Starting test for {params}')
@@ -59,7 +56,7 @@ class CustomEvaluationFramework(EvaluationFramework):
 
         is_dirty = False
         try:
-            url_queue = self.tests[params.mech_group]
+            url_queue = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
             for url in url_queue:
                 tries = 0
                 while tries < 3:

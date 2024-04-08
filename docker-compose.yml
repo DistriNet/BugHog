@@ -1,4 +1,3 @@
-version: '3'
 services:
 
 #============#
@@ -22,6 +21,7 @@ services:
         required: false
     environment:
       - HOST_PWD=${PWD}
+      - BUGHOG_VERSION=${BUGHOG_VERSION}
     volumes:
       - ./config:/app/config:ro
       - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw

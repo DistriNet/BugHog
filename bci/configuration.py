@@ -29,12 +29,22 @@ class Global:
 
     @staticmethod
     def check_required_env_parameters() -> bool:
-        if (host_pwd:=os.getenv('HOST_PWD')) in ['', None]:
-            logger.fatal('The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up"')
-            return False
+        fatal = False
+        # HOST_PWD
+        if (host_pwd := os.getenv('HOST_PWD')) in ['', None]:
+            logger.fatal('The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up".')
+            fatal = True
         else:
             logger.debug(f'HOST_PWD={host_pwd}')
-            return True
+
+        # BUGHOG_VERSION
+        if (bughog_version := os.getenv('BUGHOG_VERSION')) in ['', None]:
+            logger.fatal('"BUGHOG_VERSION" variable is not set.')
+            fatal = True
+        else:
+            logger.info(f'Starting BugHog with tag "{bughog_version}"')
+
+        return not fatal
 
     @staticmethod
     def initialize_folders():
@@ -66,6 +76,15 @@ class Global:
             )
             logger.info(f'Found database environment variables \'{database_params}\'')
             return database_params
+
+    @staticmethod
+    def get_tag() -> str:
+        '''
+        Returns the Docker image tag of BugHog.
+        This should never be empty.
+        '''
+        assert (bughog_version := os.getenv('BUGHOG_VERSION')) not in ['', None]
+        return bughog_version
 
 
 class Chromium:

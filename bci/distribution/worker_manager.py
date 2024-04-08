@@ -9,6 +9,7 @@ import docker
 import docker.errors
 
 from bci import worker
+from bci.configuration import Global
 from bci.evaluations.logic import WorkerParameters
 
 logger = logging.getLogger('bci')
@@ -63,7 +64,7 @@ class WorkerManager:
                         logger.info(f'Removing old container \'{container.attrs["Name"]}\' to start new one')
                         container.remove(force=True)
                 self.client.containers.run(
-                    'bughog/worker:latest',
+                    f'bughog/worker:{Global.get_tag()}',
                     name=container_name,
                     hostname=container_name,
                     shm_size='2gb',
