@@ -8,7 +8,7 @@ from bci.version_control.states.state import State
 
 class SequenceStrategy:
     def __init__(self, values: list[State], prior_elems: list[SequenceElem] = None) -> None:
-        self.logger = logging.getLogger("bci")
+        self.logger = logging.getLogger(__name__)
         if prior_elems and len(values) != len(prior_elems):
             raise AttributeError(f"List of values and list of elems should be of equal length ({len(values)} != {len(prior_elems)})")
         self.values = values

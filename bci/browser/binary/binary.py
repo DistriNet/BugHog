@@ -8,7 +8,7 @@ from bci import util
 from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.version_control.states.state import State
 
-logger = logging.getLogger('bci')
+logger = logging.getLogger(__name__)
 
 
 class Binary:
@@ -16,10 +16,6 @@ class Binary:
     def __init__(self, state: State):
         self.state = state
         self.__version = None
-        self.only_releases = None
-
-    def set_only_releases(self, only_releases):
-        self.only_releases = only_releases
 
     @property
     def version(self) -> str:
@@ -73,24 +69,26 @@ class Binary:
         if self.is_built():
             return
         # Try to download binary
-        elif self.__class__.has_available_binary_online(self.state):
+        elif self.is_available_online():
             self.download_binary()
         else:
-            raise BuildNotAvailableError(self.browser_name, self.state.revision_number)
+            raise BuildNotAvailableError(self.browser_name, self.state)
 
-    @abstractmethod
-    def download_binary(self):
-        pass
+    def is_available(self):
+        '''
+        Returns True if the binary is available either locally or online.
+        '''
+        return self.is_available_locally() or self.is_available_online()
 
-    def is_available_locally_or_online(self):
-        return self.has_available_binary_locally() or self.has_available_binary_online()
-
-    def has_available_binary_locally(self):
+    def is_available_locally(self):
         bin_path = self.get_bin_path()
         return bin_path is not None
 
+    def is_available_online(self):
+        return self.state.has_online_binary()
+
     @abstractmethod
-    def has_available_binary_online(self):
+    def download_binary(self):
         pass
 
     def is_built(self):
@@ -114,8 +112,8 @@ class Binary:
         Returns path to potential binary. It does not guarantee whether the binary is available locally.
         """
         if artisanal:
-            return os.path.join(self.bin_folder_path, "artisanal", str(self.state.revision_number), self.executable_name)
-        return os.path.join(self.bin_folder_path, "downloaded", str(self.state.revision_number), self.executable_name)
+            return os.path.join(self.bin_folder_path, "artisanal", self.state.name, self.executable_name)
+        return os.path.join(self.bin_folder_path, "downloaded", self.state.name, self.executable_name)
 
     def get_bin_folder_path(self):
         path_downloaded = self.get_potential_bin_folder_path()
@@ -128,14 +126,14 @@ class Binary:
 
     def get_potential_bin_folder_path(self, artisanal=False):
         if artisanal:
-            return os.path.join(self.bin_folder_path, "artisanal", str(self.state.revision_number))
-        return os.path.join(self.bin_folder_path, "downloaded", str(self.state.revision_number))
+            return os.path.join(self.bin_folder_path, "artisanal", self.state.name)
+        return os.path.join(self.bin_folder_path, "downloaded", self.state.name)
 
     def remove_bin_folder(self):
         path = self.get_bin_folder_path()
         if path and "artisanal" not in path:
             if not util.rmtree(path):
-                self.logger.error("Could not remove folder '%s'" % path)
+                logger.error("Could not remove folder '%s'" % path)
 
     @abstractmethod
     def get_driver_version(self, browser_version):

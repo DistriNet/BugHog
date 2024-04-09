@@ -8,7 +8,6 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 import bci.browser.cli_options.chromium as cli_options_chromium
 import bci.browser.cli_options.firefox as cli_options_firefox
-import bci.version_control.states.factory as state_factory
 from bci.version_control.states.state import State
 
 logger = logging.getLogger('bci')
@@ -178,7 +177,7 @@ class WorkerParameters:
         return {
             'browser_configuration': self.browser_configuration.to_dict(),
             'evaluation_configuration': self.evaluation_configuration.to_dict(),
-            'state': state_factory.to_dict(self.state),
+            'state': self.state.to_dict(),
             'mech_groups': self.mech_groups,
             'database_collection': self.database_collection,
             'database_connection_params': self.database_connection_params.to_dict()
@@ -198,7 +197,7 @@ class WorkerParameters:
         data = json.loads(string)
         browser_config = BrowserConfiguration.from_dict(data['browser_configuration'])
         eval_config = EvaluationConfiguration.from_dict(data['evaluation_configuration'])
-        state = state_factory.from_dict(data['state'])
+        state = State.from_dict(data['state'])
         mech_groups = data['mech_groups']
         database_collection = data['database_collection']
         database_connection_params = DatabaseConnectionParameters.from_dict(data['database_connection_params'])
@@ -223,12 +222,12 @@ class TestParameters:
     mech_group: str
     database_collection: str
 
-    def create_test_result_with(self, browser_version: str, binary_origin: str, result: dict, dirty: bool) -> TestResult:
+    def create_test_result_with(self, browser_version: str, binary_origin: str, data: dict, dirty: bool) -> TestResult:
         return TestResult(
             self,
             browser_version,
             binary_origin,
-            result,
+            data,
             dirty
         )
 
@@ -238,7 +237,7 @@ class TestResult:
     params: TestParameters
     browser_version: str
     binary_origin: str
-    requests: list | None = None
+    data: dict
     is_dirty: bool = False
     driver_version: str | None = None
 
@@ -251,6 +250,13 @@ class TestResult:
                 raise AttributeError(f'Version \'{self.browser_version}\' is too big to be padded')
             padded_version.append('0' * (padding_target - len(sub)) + sub)
         return ".".join(padded_version)
+
+    @property
+    def reproduced(self):
+        entry_if_reproduced = {'var': 'reproduced', 'val': 'OK'}
+        reproduced_in_req_vars = [entry for entry in self.data['req_vars'] if entry == entry_if_reproduced] != []
+        reproduced_in_log_vars = [entry for entry in self.data['log_vars'] if entry == entry_if_reproduced] != []
+        return reproduced_in_req_vars or reproduced_in_log_vars
 
 
 @dataclass(frozen=True)

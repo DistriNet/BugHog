@@ -1,6 +1,7 @@
 bokeh
 docker
 Flask
+flatten-dict
 gunicorn
 mitmproxy
 pymongo

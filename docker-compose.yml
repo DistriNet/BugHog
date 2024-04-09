@@ -1,4 +1,3 @@
-version: '3'
 services:
 
 #============#
@@ -22,8 +21,7 @@ services:
         required: false
     environment:
       - HOST_PWD=${PWD}
-    ports:
-      - "5000:5000"
+      - BUGHOG_VERSION=${BUGHOG_VERSION}
     volumes:
       - ./config:/app/config:ro
       - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
@@ -43,6 +41,8 @@ services:
   core_dev:
     extends: base
     hostname: bh_core
+    ports:
+      - "5000:5000"
     build:
       context: .
       target: dev
@@ -68,6 +68,8 @@ services:
     image: bughog/core:${BUGHOG_VERSION}
     hostname: bh_core
     container_name: bh_core
+    ports:
+      - "5000:5000"
     profiles:
       - prod
 
@@ -77,11 +79,10 @@ services:
     build:
       context: .
       target: worker
-    pull_policy: if_not_present
     hostname: bh_worker
     container_name: bh_worker
     profiles:
-      - never_start
+      - prod
 
   #===================#
   # EXPERIMENT SERVER #
@@ -89,10 +90,9 @@ services:
 
   web:
     image: bughog/web:${BUGHOG_WEB_VERSION}
-    pull_policy: if_not_present
     volumes:
       - ./experiments/pages:/experiments/pages:ro
-      - ./experiments/resources:/app/static/resources:ro
+      - ./experiments/res:/app/static/res:ro
     container_name: bh_web
     ports:
       - "80:80"
@@ -115,13 +115,18 @@ services:
   #================#
 
   node_dev:
-    image: node:lts-alpine
+    build:
+      context: .
+      target: ui-build-stage
     ports:
       - "5173:5173"
     volumes:
-      - ./bci/ui/frontend:/app
-    working_dir: /app
-    entrypoint: ["npm", "run", "dev", "--", "--host"]
+      - ./bci/ui/frontend/public:/app/public:rw
+      - ./bci/ui/frontend/src:/app/src:rw
+      - ./bci/ui/frontend/postcss.config.js:/app/postcss.config.js:rw
+      - ./bci/ui/frontend/tailwind.config.js:/app/tailwind.config.js:rw
+      - ./bci/ui/frontend/vite.config.js:/app/vite.config.js:rw
+    command: ["npm", "run", "dev", "--", "--host"]
     profiles:
       - dev
 

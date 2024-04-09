@@ -25,6 +25,13 @@ module.exports = {
         'dark-4': '#172E4D',
         'dark-5': '#20385E',
         'dark-6': '#2649FC',
+        // BugHog brand colors
+        'burnham': '#012326',
+        'faded-jade': '#3C7363',
+        'tea-green': '#C2F2D3',
+        'soft-peach': '#F2EFE9',
+        'brown': '#382113',
+        'brown-900': '#2E1B0F'
       },
     }
   }

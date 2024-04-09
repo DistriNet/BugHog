@@ -39,6 +39,9 @@ def get_evaluation_framework(params: WorkerParameters):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        logger.info('Worker did not receive any arguments.')
+        os._exit(0)
     args = sys.argv[1]
     params = WorkerParameters.deserialize(args)
     run(params)

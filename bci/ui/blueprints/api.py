@@ -113,7 +113,7 @@ def get_info():
 def get_browsers():
     return {
         'status': 'OK',
-        'browsers': bci_api.get_browsers()
+        'browsers': bci_api.get_browser_support()
     }
 
 
@@ -125,34 +125,12 @@ def get_projects():
     }
 
 
-@api.route('/options/<string:browser_name>/', methods=['GET'])
-def get_options(browser_name: str):
-    try:
-        options = bci_api.get_browser_options(browser_name)
-        return {
-            'status': 'OK',
-            'options': options
-        }
-    except Exception as e:
-        return {
-            'status': 'NOK',
-            'msg': str(e)
-        }
-
-
-@api.route('/extensions/<string:browser_name>/', methods=['GET'])
-def get_extensions(browser_name: str):
-    try:
-        extensions = bci_api.get_available_extensions(browser_name)
-        return {
-            'status': 'OK',
-            'extensions': extensions
-        }
-    except Exception as e:
-        return {
-            'status': 'NOK',
-            'msg': str(e)
-        }
+@api.route('/system/', methods=['GET'])
+def get_system_info():
+    return {
+        'status': 'OK',
+        'cpu_count': os.cpu_count() if os.cpu_count() else 2
+    }
 
 
 @api.route('/tests/<string:project>/', methods=['GET'])

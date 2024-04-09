@@ -26,3 +26,9 @@ def index():
 def serve_static_files(file_path):
     path = os.path.join('dist', file_path)
     return send_from_directory('frontend', path)
+
+
+if __name__ == '__main__':
+    # Used when running in devcontainer
+    app = create_app()
+    app.run(debug=False, host='0.0.0.0')

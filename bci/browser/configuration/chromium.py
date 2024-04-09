@@ -11,7 +11,6 @@ SUPPORTED_OPTIONS = [
 SELENIUM_USED_FLAGS = [
     '--use-fake-ui-for-media-stream',
     '--ignore-certificate-errors',
-    '--use-fake-ui-for-media-stream',
     '--disable-background-networking',
     '--disable-client-side-phishing-detection',
     '--disable-component-update',
@@ -22,15 +21,12 @@ SELENIUM_USED_FLAGS = [
     '--disable-prompt-on-repost',
     '--disable-sync',
     '--disable-web-resources',
-    '--enable-logging',
-    '--log-level=0',
     '--metrics-recording-only',
     '--no-first-run',
     '--password-store=basic',
     '--safebrowsing-disable-auto-update',
     '--use-mock-keychain',
     '--no-sandbox',
-    '--ignore-certificate-errors'
 ]
 
 
@@ -41,6 +37,14 @@ class Chromium(Browser):
 
         args = [self._get_executable_file_path()]
         args.append(f'--user-data-dir={self._profile_path}')
+        # Enable logging
+        args.append('--enable-logging')
+        args.append('--v=1')
+        args.append('--log-level=0')
+        # Headless changed from version +/- 110 onwards: https://developer.chrome.com/docs/chromium/new-headless
+        # Using the `--headless` flag will crash the browser for these later versions.
+        # Also see: https://github.com/DistriNet/BugHog/issues/12
+        # args.append('--headless=new')  # From Chrome
 
         if 'btpc' in self.browser_config.browser_setting:
             # This is handled in the profile folder

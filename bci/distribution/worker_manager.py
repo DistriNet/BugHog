@@ -9,6 +9,7 @@ import docker
 import docker.errors
 
 from bci import worker
+from bci.configuration import Global
 from bci.evaluations.logic import WorkerParameters
 
 logger = logging.getLogger('bci')
@@ -63,7 +64,7 @@ class WorkerManager:
                         logger.info(f'Removing old container \'{container.attrs["Name"]}\' to start new one')
                         container.remove(force=True)
                 self.client.containers.run(
-                    'bughog/worker:latest',
+                    f'bughog/worker:{Global.get_tag()}',
                     name=container_name,
                     hostname=container_name,
                     shm_size='2gb',
@@ -92,7 +93,7 @@ class WorkerManager:
 
         thread = threading.Thread(target=start_container_thread)
         thread.start()
-        logger.info(f'Container \'{container_name}\' started experiments for revision \'{params.state.revision_number}\'')
+        logger.info(f'Container \'{container_name}\' started experiments for \'{params.state}\'')
         # To avoid race-condition where more than max containers are started
         time.sleep(5)
 

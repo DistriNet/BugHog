@@ -18,8 +18,12 @@
   @apply block p-2.5 w-full text-sm text-gray-900 bg-gray-50 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500
 }
 
+select {
+  @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500
+}
+
 .horizontal-select {
-  @apply flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:bg-dark-2
+  @apply flex flex-col overflow-y-scroll w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:bg-dark-2
 }
 
 .horizontal-select li {
@@ -59,16 +63,15 @@ label {
 }
 
 .results-section {
-  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg dark:bg-dark-2
+  @apply text-left p-3 bg-slate-200 rounded shadow-lg dark:bg-dark-2
 }
 
-
 .form-section {
-  @apply text-left p-3 m-2 bg-slate-200 rounded shadow-lg dark:bg-dark-2
+  @apply text-left p-3 bg-slate-200 rounded shadow-lg dark:bg-dark-2
 }
 
 .form-subsection {
-  @apply text-left p-2 m-1 mb-4 mt-4 bg-slate-300 max-w-sm rounded shadow-lg dark:bg-dark-3
+  @apply text-left p-2 m-1 my-4 bg-slate-300 max-w-sm rounded shadow-lg dark:bg-dark-3
 }
 
 .form-section-title {
@@ -150,7 +153,6 @@ label {
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -215,4 +217,15 @@ button:focus-visible {
   margin: 0 auto;
   /* padding: 2rem; */
   text-align: center;
+}
+
+.slider {
+  --slider-connect-bg: #1D4ED8;
+  --slider-tooltip-bg: #1D4ED8;
+  --slider-handle-ring-color: #3B82F630;
+  --slider-bg: #909eb3;
+}
+
+.collapse-button {
+  @apply bg-blue-700 hover:bg-blue-800 text-white font-bold py-1 px-3 rounded-full
 }

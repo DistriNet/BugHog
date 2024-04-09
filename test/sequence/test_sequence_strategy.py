@@ -11,11 +11,11 @@ class TestSequenceStrategy(unittest.TestCase):
 
     @staticmethod
     def only_even(x):
-        return x % 2 == 0
+        return x.value % 2 == 0
 
     def test_binary_sequence(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 2)
             assert seq.next() == 0
             assert seq.next() == 99
@@ -23,7 +23,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_binary_sequence_ending(self):
         values = list(range(10))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 2)
             assert seq.next() == 0
             assert seq.next() == 9
@@ -39,7 +39,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_binary_sequence_ending_only_even_available(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.only_even):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.only_even):
             seq = NArySequence(values, 2)
             outputted_values = set()
             for _ in range(50):
@@ -51,7 +51,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_3ary_sequence(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 3)
             assert seq.next() == 0
             assert seq.next() == 99
@@ -66,7 +66,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_3nary_sequence_ending(self):
         values = list(range(10))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 3)
             assert seq.next() == 0
             assert seq.next() == 9
@@ -82,7 +82,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_3nary_sequence_ending_only_even_available(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.only_even):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.only_even):
             seq = NArySequence(values, 3)
             outputted_values = set()
             for _ in range(50):
@@ -94,7 +94,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_4ary_sequence(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 4)
             assert seq.next() == 0
             assert seq.next() == 99
@@ -104,7 +104,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_4nary_sequence_ending(self):
         values = list(range(10))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 4)
             assert seq.next() == 0
             assert seq.next() == 9
@@ -120,7 +120,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_4nary_sequence_ending_only_even_available(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.only_even):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.only_even):
             seq = NArySequence(values, 4)
             outputted_values = set()
             for _ in range(50):
@@ -132,7 +132,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_limit(self):
         values = list(range(100))
-        with patch('bci.browser.binary.factory.binary_is_available', self.always_true):
+        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
             seq = NArySequence(values, 2, limit=37)
             for _ in range(37):
                 seq.next()

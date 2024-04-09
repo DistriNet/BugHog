@@ -63,14 +63,14 @@ Follow these steps to get started:
 
 Launch BugHog using the following command:
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 > :warning: If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
 > To avoid this, explicitly pass on this variable: `sudo PWD=$PWD docker compose up`.
 
 Open your web browser and navigate to [http://localhost:5000](http://localhost:5000) to access the graphical interface.
-BugHog is started on a remote server, substitute 'localhost' with its IP address.
+If BugHog is started on a remote server, substitute 'localhost' with the appropriate IP address.
 
 BugHog can be stopped through:
 ```bash
@@ -98,7 +98,7 @@ Be sure to restart the BugHog framework when you add a new experiment:
 
 ```bash
 docker compose down
-docker compose up
+docker compose up -d
 ```
 
 ## Development
@@ -114,12 +114,25 @@ For debugging the core application, consider using the VS Code dev container.
 You can utilize the configuration in [.devcontainer](.devcontainer) for this.
 
 
-## Additional help
+## Contact
 
-Don't hesitate to open a [GitHub issue](https://github.com/DistriNet/BugHog/issues/new) if you come across a bug, want to suggest a feature, or have any questions!
+Don't hesitate to open a [GitHub issue](https://github.com/DistriNet/BugHog/issues/new) if you encounter a bug or want to suggest a feature!
+
+For questions or collaboration, you can reach out to [Gertjan Franken](https://distrinet.cs.kuleuven.be/people/GertjanFranken).
 
 
 ## Troubleshooting
+
+If something isn't working as expected, check out the troubleshooting tips below.
+If you don't find a solution, don't hesitate to open a [GitHub issue](https://github.com/DistriNet/BugHog/issues/new).
+Feel free to include any relevant logs.
+
+
+### Consult the logs
+
+- Try launching BugHog without the `-d` flag to see logging output in the terminal, which might provide more information about the issue.
+- For more detailed logs at the `DEBUG` level, check out the [logs](/logs) folder for all logging files.
+
 
 ### WSL on Windows
 

@@ -74,7 +74,7 @@ class Browser:
         self._profile_path = None
 
     def __get_execution_folder_path(self) -> str:
-        return os.path.join(EXECUTION_PARENT_FOLDER, str(self.state.revision_number))
+        return os.path.join(EXECUTION_PARENT_FOLDER, str(self.state.name))
 
     def _get_executable_file_path(self) -> str:
         return os.path.join(self.__get_execution_folder_path(), self.binary.executable_name)

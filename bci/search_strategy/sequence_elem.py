@@ -23,14 +23,16 @@ class SequenceElem:
         self.outcome = outcome
 
     def is_available(self) -> bool:
-        return binary_factory.binary_is_available(self.value)
+        binary = binary_factory.get_binary(self.value)
+        return binary.is_available()
 
     def update_outcome(self, outcome: bool):
         if self.state == ElemState.DONE:
             raise AttributeError(f"Outcome was already set to DONE for {repr(self)}")
         if outcome is None:
             self.state = ElemState.ERROR
-        self.state = ElemState.DONE
+        else:
+            self.state = ElemState.DONE
         self.outcome = outcome
 
     def get_deep_copy(self, index=None):

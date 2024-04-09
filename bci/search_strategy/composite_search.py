@@ -46,15 +46,20 @@ class CompositeSearch(SequenceStrategy):
                 del self.search_strategies[0]
 
     def get_active_strategy(self) -> SequenceStrategy:
+        '''
+        Returns the currently active sequence/search strategy.
+        Returns None if all sequence/search strategies are finished.
+        '''
         if not self.sequence_strategy_finished:
             return self.sequence_strategy
         elif self.search_strategies:
             return self.search_strategies[0]
         else:
-            raise AttributeError("No strategy is currently active")
+            return None
 
     def update_outcome(self, elem: State, outcome: bool) -> None:
-        self.get_active_strategy().update_outcome(elem, outcome)
+        if active_strategy := self.get_active_strategy():
+            active_strategy.update_outcome(elem, outcome)
         # We only update the outcome of this object too if we are still using the sequence strategy
         # because the elem lists need to be synced up until the search strategies are prepared.
         # Not very clean, but does the job for now.

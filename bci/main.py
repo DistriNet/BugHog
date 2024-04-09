@@ -1,9 +1,7 @@
-import dataclasses
 import logging
-import os
 
 import bci.browser.binary.factory as binary_factory
-from bci.browser.configuration import chromium, firefox
+from bci.browser.support import get_chromium_support, get_firefox_support
 from bci.configuration import Global, Loggers
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import EvaluationParameters, PlotParameters
@@ -61,29 +59,11 @@ class Main:
         return MongoDB.get_info()
 
     @staticmethod
-    def get_browsers() -> list[str]:
+    def get_browser_support() -> list[dict]:
         return [
-            'chromium',
-            'firefox'
+            get_chromium_support(),
+            get_firefox_support()
         ]
-
-    @staticmethod
-    def get_browser_options(browser_name: str) -> list[dict[str, str]]:
-        match browser_name:
-            case 'chromium':
-                return [dataclasses.asdict(option) for option in chromium.SUPPORTED_OPTIONS]
-            case 'firefox':
-                return [dataclasses.asdict(option) for option in firefox.SUPPORTED_OPTIONS]
-            case _:
-                raise AttributeError(f'Browser \'{browser_name}\' is not supported')
-
-    @staticmethod
-    def get_available_extensions(browser: str) -> list[str]:
-        extensions = []
-        folder_path = Global.get_extension_folder(browser)
-        for _, _, files in os.walk(folder_path):
-            extensions.extend(files)
-        return list(filter(lambda x: x != '.gitkeep', extensions))
 
     @staticmethod
     def list_downloaded_binaries(browser):

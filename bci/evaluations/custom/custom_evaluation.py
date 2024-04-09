@@ -1,14 +1,14 @@
 import logging
 import os
 from unittest import TestResult
-from bci.browser.configuration.browser import Browser
 
+from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
+from bci.evaluations.collector import Collector
+from bci.evaluations.collector import Type
 from bci.evaluations.custom.custom_mongodb import CustomMongoDB
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import TestParameters
-from bci.http.collector import Collector
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,6 @@ class CustomEvaluationFramework(EvaluationFramework):
     def __init__(self):
         super().__init__()
         self.tests_per_project = {}
-        self.tests = {}
         self.initialize_tests_and_url_queues()
 
     def initialize_tests_and_url_queues(self):
@@ -36,7 +35,6 @@ class CustomEvaluationFramework(EvaluationFramework):
                     # If an URL queue is specified, it is parsed and used
                     with open(url_queue_file_path) as file:
                         self.tests_per_project[project_name][test_name] = file.readlines()
-                        self.tests[test_name] = self.tests_per_project[project_name][test_name]
                 else:
                     # Otherwise, a default URL queue is used, based on the domain that hosts the main page
                     test_folder_path = os.path.join(project_path, test_name)
@@ -45,21 +43,20 @@ class CustomEvaluationFramework(EvaluationFramework):
                         if os.path.exists(main_folder_path):
                             self.tests_per_project[project_name][test_name] = [
                                 f'https://{domain}/{project_name}/{test_name}/main',
-                                'https://a.test/report/?leak=baseline'
+                                'https://a.test/report/?bughog_sanity_check=OK'
                             ]
-                            self.tests[test_name] = self.tests_per_project[project_name][test_name]
 
     def perform_specific_evaluation(self, browser: Browser, params: TestParameters) -> TestResult:
         logger.info(f'Starting test for {params}')
         browser_version = browser.version
         binary_origin = browser.get_binary_origin()
 
-        collector = Collector()
+        collector = Collector([Type.REQUESTS, Type.LOGS])
         collector.start()
 
         is_dirty = False
         try:
-            url_queue = self.tests[params.mech_group]
+            url_queue = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
             for url in url_queue:
                 tries = 0
                 while tries < 3:
@@ -70,13 +67,17 @@ class CustomEvaluationFramework(EvaluationFramework):
             is_dirty = True
         finally:
             collector.stop()
+            data = collector.collect_results()
             if not is_dirty:
-                if len([request for request in collector.requests if 'report/?leak=baseline' in request['url']]) == 0:
+                # New way to perform sanity check
+                if [var_entry for var_entry in data['req_vars'] if var_entry['var'] == 'sanity_check' and var_entry['val'] == 'OK']:
+                    pass
+                # Old way for backwards compatibility
+                elif [request for request in data['requests'] if 'report/?leak=baseline' in request['url']]:
+                    pass
+                else:
                     is_dirty = True
-            result = {
-                'requests': collector.requests
-            }
-        return params.create_test_result_with(browser_version, binary_origin, result, is_dirty)
+        return params.create_test_result_with(browser_version, binary_origin, data, is_dirty)
 
     def get_mech_groups(self, project=None):
         if project:

@@ -3,8 +3,7 @@ import signal
 import subprocess
 import time
 
-
-logger = logging.getLogger('bci')
+logger = logging.getLogger(__name__)
 
 
 class TerminalAutomation:
@@ -14,11 +13,12 @@ class TerminalAutomation:
         logger.debug("Starting browser process...")
         args.append(url)
         logger.debug(f'Command string: \'{" ".join(args)}\'')
-        proc = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        with open('/tmp/browser.log', 'a') as file:
+            proc = subprocess.Popen(
+                args,
+                stdout=file,
+                stderr=file
+            )
 
         time.sleep(seconds_per_visit)
 

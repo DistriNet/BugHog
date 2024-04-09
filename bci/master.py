@@ -17,7 +17,7 @@ from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.n_ary_search import NArySearch
 from bci.search_strategy.n_ary_sequence import NArySequence, SequenceFinished
 from bci.search_strategy.sequence_strategy import SequenceStrategy
-from bci.version_control import state_factory
+from bci.version_control import factory
 from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Master:
         self.stop_gracefully = False
         self.stop_forcefully = False
 
-        self.evaluations = []
+        # self.evaluations = []
         self.evaluation_framework = None
         self.worker_manager = None
         self.available_evaluation_frameworks = {}
@@ -68,16 +68,14 @@ class Master:
         worker_manager = WorkerManager(sequence_config.nb_of_containers)
 
         try:
-            state_list = state_factory.get_state_list(browser_config, evaluation_range)
+            state_list = factory.create_state_collection(browser_config, evaluation_range)
 
-            search_strategy = self.parse_search_strategy(
-                sequence_config.search_strategy, state_list, 2, sequence_config.sequence_limit
-            )
+            search_strategy = self.parse_search_strategy(sequence_config, state_list)
 
             outcome_checker = OutcomeChecker(sequence_config)
 
             # The state_lineage is put into self.evaluation as a means to check on the process through front-end
-            self.evaluations.append(state_list)
+            # self.evaluations.append(state_list)
 
             try:
                 current_state = search_strategy.next()
@@ -89,7 +87,7 @@ class Master:
 
                     # Check whether state is already evaluated
                     if self.evaluation_framework.has_all_results(worker_params):
-                        logger.info(f"State '{current_state.revision_number}' already evaluated.")
+                        logger.info(f"'{current_state}' already evaluated.")
                         update_outcome()
                         current_state = search_strategy.next()
                         continue
@@ -134,14 +132,16 @@ class Master:
         self.available_evaluation_frameworks["xsleaks"] = XSLeaksEvaluation()
 
     @staticmethod
-    def parse_search_strategy(search_strategy_option: str, state_list: list[State], n: int, sequence_limit: int):
-        if search_strategy_option == "bin_seq":
-            return NArySequence(state_list, n, limit=sequence_limit)
-        if search_strategy_option == "bin_search":
-            return NArySearch(state_list, n)
-        if search_strategy_option == "comp_search":
-            return CompositeSearch(state_list, n, sequence_limit, NArySequence, NArySearch)
-        raise AttributeError("Unknown search strategy option '%s'" % search_strategy_option)
+    def parse_search_strategy(sequence_config: SequenceConfiguration, state_list: list[State]):
+        search_strategy = sequence_config.search_strategy
+        sequence_limit = sequence_config.sequence_limit
+        if search_strategy == "bin_seq":
+            return NArySequence(state_list, 2, limit=sequence_limit)
+        if search_strategy == "bin_search":
+            return NArySearch(state_list, 2)
+        if search_strategy == "comp_search":
+            return CompositeSearch(state_list, 2, sequence_limit, NArySequence, NArySearch)
+        raise AttributeError("Unknown search strategy option '%s'" % search_strategy)
 
     def get_specific_evaluation_framework(self, evaluation_name: str) -> EvaluationFramework:
         # TODO: we always use 'custom', in which evaluation_name is a project

@@ -8,7 +8,7 @@ from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import TestParameters, TestResult, WorkerParameters
 
-logger = logging.getLogger('bci')
+logger = logging.getLogger(__name__)
 
 
 class EvaluationFramework(ABC):
