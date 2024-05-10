@@ -1,11 +1,8 @@
-import logging
-import logging.handlers
 import os
 
 from flask import Flask, send_from_directory
 
 from bci.ui.blueprints.api import api
-
 
 app = Flask(__name__)
 
