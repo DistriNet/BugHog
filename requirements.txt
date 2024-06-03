@@ -12,8 +12,6 @@ attrs==23.2.0
     # via service-identity
 blinker==1.8.2
     # via flask
-bokeh==3.4.1
-    # via -r requirements.in
 brotli==1.1.0
     # via mitmproxy
 certifi==2024.2.2
@@ -27,8 +25,6 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via flask
-contourpy==1.2.1
-    # via bokeh
 cryptography==42.0.7
     # via
     #   aioquic
@@ -64,9 +60,7 @@ idna==3.7
 itsdangerous==2.2.0
     # via flask
 jinja2==3.1.4
-    # via
-    #   bokeh
-    #   flask
+    # via flask
 kaitaistruct==0.10
     # via mitmproxy
 ldap3==2.9.1
@@ -77,28 +71,16 @@ markupsafe==2.1.5
     #   werkzeug
 mitmproxy==10.3.0
     # via -r requirements.in
-mitmproxy-macos==0.5.2
-    # via mitmproxy-rs
 mitmproxy-rs==0.5.2
     # via mitmproxy
 msgpack==1.0.8
     # via mitmproxy
-numpy==1.26.4
-    # via
-    #   bokeh
-    #   contourpy
-    #   pandas
 packaging==24.0
     # via
-    #   bokeh
     #   docker
     #   gunicorn
-pandas==2.2.2
-    # via bokeh
 passlib==1.7.4
     # via mitmproxy
-pillow==10.3.0
-    # via bokeh
 protobuf==5.26.1
     # via mitmproxy
 publicsuffix2==2.20191221
@@ -124,12 +106,6 @@ pyparsing==3.1.2
     # via mitmproxy
 pyperclip==1.8.2
     # via mitmproxy
-python-dateutil==2.9.0.post0
-    # via pandas
-pytz==2024.1
-    # via pandas
-pyyaml==6.0.1
-    # via bokeh
 requests==2.31.0
     # via
     #   -r requirements.in
@@ -141,17 +117,11 @@ ruamel-yaml-clib==0.2.8
 service-identity==24.1.0
     # via aioquic
 six==1.16.0
-    # via
-    #   flatten-dict
-    #   python-dateutil
+    # via flatten-dict
 sortedcontainers==2.4.0
     # via mitmproxy
 tornado==6.4
-    # via
-    #   bokeh
-    #   mitmproxy
-tzdata==2024.1
-    # via pandas
+    # via mitmproxy
 urllib3==2.2.1
     # via
     #   docker
@@ -162,7 +132,5 @@ werkzeug==3.0.3
     # via flask
 wsproto==1.2.0
     # via mitmproxy
-xyzservices==2024.4.0
-    # via bokeh
 zstandard==0.22.0
     # via mitmproxy

@@ -159,3 +159,20 @@ def log():
     return {
         'status': 'OK'
     }
+
+
+@api.route('/data/', methods=['PUT'])
+def data_source():
+    params = request.json.copy()
+    revision_data, version_data = bci_api.get_data_sources(params)
+    if revision_data or version_data:
+        return {
+            'status': 'OK',
+            'revision': revision_data,
+            'version': version_data
+        }
+    else:
+        return {
+            'status': 'NOK',
+            'msg': 'Invalid type'
+        }

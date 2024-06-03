@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, send_from_directory
+from flask import Flask, render_template, send_from_directory
 
 from bci.ui.blueprints.api import api
 
@@ -23,6 +23,11 @@ def index():
 def serve_static_files(file_path):
     path = os.path.join('dist', file_path)
     return send_from_directory('frontend', path)
+
+
+@app.route('/test', methods=['GET'])
+def test():
+    return render_template('test.html')
 
 
 if __name__ == '__main__':

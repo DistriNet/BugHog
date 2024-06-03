@@ -1,13 +1,14 @@
-<style src="vue-multiselect/dist/vue-multiselect.min.css">
-</style>
+<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 <style src="@vueform/slider/themes/default.css"></style>
 <script>
 import axios from 'axios'
+import Gantt from "./components/gantt.vue"
 import SectionHeader from "./components/section-header.vue";
 import Slider from '@vueform/slider'
 import Tooltip from "./components/tooltip.vue";
 export default {
   components: {
+    Gantt,
     SectionHeader,
     Slider,
     Tooltip,
@@ -20,7 +21,6 @@ export default {
       browser_settings: [],
       db_collection_suffix: "",
       tests: [],
-      auto_refresh_plot: true,
       info: {
         log: [],
         database: {
@@ -65,12 +65,9 @@ export default {
         db_collection: null,
         // For plotting
         plot_mech_group: null,
-        previous_nb_of_evaluations: null
       },
       results: {
         nb_of_evaluations: 0,
-        plot_html: "",
-        cached_plot_html: ""
       },
       selected: {
         experiment: null,
@@ -80,7 +77,6 @@ export default {
       darkmode_toggle: null,
       target_mech_id_input: null,
       target_mech_id: null,
-      should_refresh_plot: false,
       fatal_error: null,
       hide_advanced: true,
       hide_logs: true,
@@ -101,16 +97,6 @@ export default {
         return this.db_collection_prefix + "_" + this.db_collection_suffix;
       }
     },
-    "plot_srcdoc": function () {
-      return "<html><head><style>" + this.plot_style + "</style></head><body><p>" + this.results.plot_html + "</p></body></html>";
-    },
-    "plot_style": function () {
-      if (this.darkmode) {
-        return "p {color: white;}";
-      } else {
-        return "p {color: black;}";
-      }
-    },
     "banner_message": function () {
       if (this.fatal_error) {
         return `A fatal error has occurred! Please, check the logs below...`
@@ -124,7 +110,6 @@ export default {
   },
   watch: {
     "selected.project": function (val) {
-      console.log('hello');
       this.set_curr_project(val);
     },
     "slider.state": function (val) {
@@ -155,19 +140,14 @@ export default {
       } else {
         this.eval_params.target_mech_id = val;
       }
-      this.update_results(true);
+      this.update_results();
     },
     "eval_params.plot_mech_group": function (val) {
       if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
         this.eval_params.target_mech_id = val;
       }
-      this.update_results(true);
+      this.update_results();
     },
-    "auto_refresh_plot": function (val) {
-      if (val) {
-        this.update_results(true);
-      }
-    }
   },
   mounted: function () {
     this.get_info();
@@ -317,34 +297,27 @@ export default {
           console.error(error);
         });
     },
-    update_results(force_refresh) {
-      const path = `http://${location.hostname}:5000/api/results/`;
-      const eval_params = this.eval_params;
-      axios.put(path, eval_params)
-        .then((res) => {
-          if (res.data.status == "OK") {
-            // Update number of evaluations
-            let previous_nb_of_evaluations = this.results.nb_of_evaluations;
-            this.results.nb_of_evaluations = res.data.nb_of_evaluations;
-            // Render plot
-            this.render_plot(res, previous_nb_of_evaluations, force_refresh);
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
-    render_plot(res, previous_nb_of_evaluations, force_refresh) {
-      if (res.data.plot_html === null) {
-        return;
-      }
-      if ((previous_nb_of_evaluations != res.data.nb_of_evaluations) || force_refresh) {
-        this.results.nb_of_evaluations = res.data.nb_of_evaluations;
-        this.results.cached_plot_html = res.data.plot_html;
-        if (this.auto_refresh_plot || force_refresh) {
-          this.results.plot_html = this.results.cached_plot_html;
+    fetch_results(url) {
+      return axios.put(url, JSON.stringify(this.eval_params), {
+        headers: {
+          'Content-Type': 'application/json',
         }
-      }
+      })
+    },
+    update_results() {
+      this.fetch_results('/api/data/').then((res) => {
+        if (res.data.status === "NOK") {
+          this.results.nb_of_evaluations = 0;
+          return;
+        }
+        let revision_data = res.data.revision;
+        let version_data = res.data.version;
+        this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
+        this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+      })
+      .catch((error) => {
+        console.error(error);
+      });
     },
   },
   beforeDestroy() {
@@ -453,28 +426,24 @@ export default {
       </div>
       <div class="results-section mt-2 h-full flex flex-col">
         <section-header section="results" left></section-header>
-        <!-- <div class="banner-generic"> -->
-        <div class="flex flex-wrap justify-between">
-          <select class="w-fit" v-model="eval_params.plot_mech_group">
+        <div class="flex flex-wrap justify-between h-fit">
+          <select class="w-fit h-fit" v-model="eval_params.plot_mech_group">
             <option disabled value="">Select an experiment</option>
             <option v-for="test in eval_params.tests">{{ test }}</option>
           </select>
-          <!-- </div> -->
           <div class="flex flex-wrap">
-            <div class="radio-item m-2">
-              <input v-model="auto_refresh_plot" type="checkbox">
-              <label>Auto-refresh Gantt chart</label>
-            </div>
-            <button @click="update_results(true)" class="button">Refresh</button>
+            <ul class="my-3">
+              <li v-if="this.info.running"> <b>Status:</b> Running &#x2705;</li>
+              <li v-else> <b>Status:</b> Stopped &#x1F6D1;</li>
+            </ul>
+          </div>
+          <div class="flex flex-wrap">
+            <ul class="my-3 w-64">
+              <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
+            </ul>
           </div>
         </div>
-        <ul class="my-3">
-          <li v-if="this.info.running"> <b>Status:</b> Running &#x2705;</li>
-          <li v-else> <b>Status:</b> Stopped &#x1F6D1;</li>
-          <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
-        </ul>
-        <iframe id="plot" class="w-full h-0 grow" scrolling="no" :srcdoc="plot_srcdoc">
-        </iframe>
+        <gantt ref="gantt"></gantt>
       </div>
     </div>
 
