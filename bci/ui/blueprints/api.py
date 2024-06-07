@@ -176,3 +176,33 @@ def data_source():
             'status': 'NOK',
             'msg': 'Invalid type'
         }
+
+
+@api.route('/poc/<string:project>/<string:poc>/', methods=['GET'])
+def poc(project: str, poc: str):
+    return {
+        'status': 'OK',
+        'tree': bci_api.get_poc(project, poc)
+    }
+
+
+@api.route('/poc/<string:project>/<string:poc>/<string:domain>/<string:path>/<string:file>/', methods=['GET'])
+def poc_file(project: str, poc: str, domain: str, path: str, file: str):
+    return {
+        'status': 'OK',
+        'content': bci_api.get_poc_file(project, poc, domain, path, file)
+    }
+
+
+@api.route('/poc/<string:project>/<string:poc>/<string:domain>/<string:path>/<string:file>/', methods=['POST'])
+def update_poc_file(project: str, poc: str, domain: str, path: str, file: str):
+    data = request.json.copy()
+    success = bci_api.update_poc_file(project, poc, domain, path, file, data['content'])
+    if success:
+        return {
+            'status': 'OK'
+        }
+    else :
+        return {
+            'status': 'NOK'
+        }

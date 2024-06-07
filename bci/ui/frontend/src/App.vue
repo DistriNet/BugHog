@@ -3,12 +3,14 @@
 <script>
 import axios from 'axios'
 import Gantt from "./components/gantt.vue"
+import PocEditor from "./components/poc-editor.vue"
 import SectionHeader from "./components/section-header.vue";
 import Slider from '@vueform/slider'
 import Tooltip from "./components/tooltip.vue";
 export default {
   components: {
     Gantt,
+    PocEditor,
     SectionHeader,
     Slider,
     Tooltip,
@@ -80,6 +82,7 @@ export default {
       fatal_error: null,
       hide_advanced: true,
       hide_logs: true,
+      hide_poc_editor: false,
       system: null,
     }
   },
@@ -189,6 +192,7 @@ export default {
     toggle_darkmode(event) {
       let darkmode_toggle_checked = event.srcElement.checked;
       this.darkmode = darkmode_toggle_checked;
+      this.$refs.poc_editor.darkmode = this.darkmode;
       if (darkmode_toggle_checked) {
         localStorage.setItem('theme', 'dark');
       } else {
@@ -305,7 +309,7 @@ export default {
       })
     },
     update_results() {
-      this.fetch_results('/api/data/').then((res) => {
+      this.fetch_results(`http://${location.hostname}:5000/api/data/`).then((res) => {
         if (res.data.status === "NOK") {
           this.results.nb_of_evaluations = 0;
           return;
@@ -407,7 +411,12 @@ export default {
             <li v-for="test in tests">
               <div>
                 <input v-model="eval_params.tests" type="checkbox" :value="test">
-                <label for="vue-checkbox-list">{{ test }}</label>
+                <label for="vue-checkbox-list">
+                  {{ test }}
+                  <div role="button" @click="this.$refs.poc_editor.set_active_poc(this.selected.project, test)">
+                    EDIT
+                  </div>
+                </label>
               </div>
             </li>
           </ul>
@@ -447,8 +456,25 @@ export default {
       </div>
     </div>
 
+    <!-- PoC editor -->
+    <div class="form-section col-span-2 row-start-3">
+      <div class="flex">
+        <h2 class="flex-initial w-1/2 form-section-title">PoC editor</h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_poc_editor = !this.hide_poc_editor">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="hide_poc_editor ? 'hidden w-full' : 'w-full'">
+        <poc-editor :darkmode="this.darkmode" ref="poc_editor" class="w-full h-full mt-2"></poc-editor>
+      </div>
+    </div>
+
     <!-- Advanced options -->
-    <div class="form-section h-fit col-span-2 row-start-3">
+    <div class="form-section h-fit col-span-2 row-start-4">
       <div class="flex">
         <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced options</h2>
         <div class="w-full text-right">
@@ -601,7 +627,7 @@ export default {
     </div>
 
     <!-- Logs -->
-    <div class="results-section h-fit col-span-2 row-start-4 flex-1">
+    <div class="results-section h-fit col-span-2 row-start-5 flex-1">
       <div class="flex">
         <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
         <div class="w-full text-right">

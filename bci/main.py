@@ -159,3 +159,16 @@ class Main:
         return \
             PlotFactory.get_plot_revision_data(params, MongoDB.get_instance()), \
             PlotFactory.get_plot_version_data(params, MongoDB.get_instance())
+
+    @staticmethod
+    def get_poc(project: str, poc: str) -> dict:
+        return Main.master.get_specific_evaluation_framework("custom").get_poc_structure(project, poc)
+
+    @staticmethod
+    def get_poc_file(project: str, poc: str, domain: str, path: str, file: str) -> str:
+        return Main.master.get_specific_evaluation_framework("custom").get_poc_file(project, poc, domain, path, file)
+
+    @staticmethod
+    def update_poc_file(project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
+        logger.error(f'Updating file {file} of project {project} and poc {poc} // {content}')
+        return Main.master.get_specific_evaluation_framework("custom").update_poc_file(project, poc, domain, path, file, content)

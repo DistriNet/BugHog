@@ -20,7 +20,9 @@ class CustomEvaluationFramework(EvaluationFramework):
     def __init__(self):
         super().__init__()
         self.tests_per_project = {}
+        self.project_structure = {}
         self.initialize_tests_and_url_queues()
+        self.dir_tree = self.initialize_dir_tree()
 
     def initialize_tests_and_url_queues(self):
         page_folder_path = Global.custom_page_folder
@@ -45,6 +47,20 @@ class CustomEvaluationFramework(EvaluationFramework):
                                 f'https://{domain}/{project_name}/{test_name}/main',
                                 'https://a.test/report/?bughog_sanity_check=OK'
                             ]
+
+    def initialize_dir_tree(self) -> dict:
+        path = Global.custom_page_folder
+
+        def path_to_dict(path):
+            if os.path.isdir(path):
+                return {
+                    sub_folder: path_to_dict(os.path.join(path, sub_folder))
+                    for sub_folder in os.listdir(path) if sub_folder != 'url_queue.txt'
+                }
+            else:
+                return os.path.basename(path)
+
+        return path_to_dict(path)
 
     def perform_specific_evaluation(self, browser: Browser, params: TestParameters) -> TestResult:
         logger.info(f'Starting test for {params}')
@@ -86,3 +102,20 @@ class CustomEvaluationFramework(EvaluationFramework):
 
     def get_projects(self) -> list[str]:
         return sorted(list(self.tests_per_project.keys()))
+
+    def get_poc_structure(self, project: str, poc: str) -> dict:
+        return self.dir_tree[project][poc]
+
+    def get_poc_file(self, project: str, poc: str, domain: str, path: str, file: str) -> str:
+        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file)
+        if os.path.isfile(file_path):
+            with open(file_path) as file:
+                return file.read()
+
+    def update_poc_file(self, project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
+        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file)
+        if os.path.isfile(file_path):
+            with open(file_path, 'w') as file:
+                file.write(content)
+            return True
+        return False
