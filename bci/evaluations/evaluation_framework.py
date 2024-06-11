@@ -87,7 +87,7 @@ class EvaluationFramework(ABC):
         self.should_stop = True
 
     @abstractmethod
-    def get_mech_groups(self, project=None):
+    def get_mech_groups(self, project):
         """
         Returns the available mechanism groups for this evaluation framework.
         """

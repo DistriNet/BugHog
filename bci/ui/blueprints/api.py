@@ -133,15 +133,6 @@ def get_system_info():
     }
 
 
-@api.route('/tests/<string:project>/', methods=['GET'])
-def get_tests(project: str):
-    tests = bci_api.get_mech_groups_of_evaluation_framework('custom', project=project)
-    return {
-        'status': 'OK',
-        'tests': tests
-    }
-
-
 @api.route('/results/', methods=['PUT'])
 def get_html_plot():
     params = request.json.copy()
@@ -178,6 +169,15 @@ def data_source():
         }
 
 
+@api.route('/poc/<string:project>/', methods=['GET'])
+def get_experiments(project: str):
+    experiments = bci_api.get_mech_groups_of_evaluation_framework('custom', project)
+    return {
+        'status': 'OK',
+        'experiments': experiments
+    }
+
+
 @api.route('/poc/<string:project>/<string:poc>/', methods=['GET'])
 def poc(project: str, poc: str):
     return {
@@ -205,4 +205,45 @@ def update_poc_file(project: str, poc: str, domain: str, path: str, file: str):
     else :
         return {
             'status': 'NOK'
+        }
+
+
+@api.route('/poc/<string:project>/<string:poc>/', methods=['POST'])
+def add_page(project: str, poc: str):
+    data = request.json.copy()
+    success = bci_api.add_page(project, poc, data['domain'], data['page'], data['file_type'])
+    if success:
+        return {
+            'status': 'OK'
+        }
+    else:
+        return {
+            'status': 'NOK'
+        }
+
+
+@api.route('/poc/domain/', methods=['GET'])
+def get_available_domains():
+    return {
+        'status': 'OK',
+        'domains': bci_api.get_available_domains()
+    }
+
+
+@api.route('/poc/<string:project>/', methods=['POST'])
+def create_experiment(project: str):
+    data = request.json.copy()
+    if 'poc_name' not in data.keys():
+        return {
+            'status': 'NOK',
+            'msg': 'Missing experiment name'
+        }
+    if bci_api.create_empty_poc(project, data['poc_name']):
+        return {
+            'status': 'OK'
+        }
+    else:
+        return {
+            'status': 'NOK',
+            'msg': 'Could not create experiment'
         }
