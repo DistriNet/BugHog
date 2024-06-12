@@ -2,6 +2,7 @@
 <style src="@vueform/slider/themes/default.css"></style>
 <script>
 import axios from 'axios'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import Gantt from "./components/gantt.vue"
 import PocEditor from "./components/poc-editor.vue"
 import SectionHeader from "./components/section-header.vue";
@@ -85,7 +86,7 @@ export default {
       fatal_error: null,
       hide_advanced: true,
       hide_logs: true,
-      hide_poc_editor: false,
+      hide_poc_editor: true,
       system: null,
       available_domains: null,
     }
@@ -118,6 +119,11 @@ export default {
   watch: {
     "selected.project": function (val) {
       this.set_curr_project(val);
+    },
+    "selected.experiment": function (val) {
+      if (val !== null) {
+        this.hide_poc_editor = false;
+      }
     },
     "slider.state": function (val) {
       this.eval_params.lower_version = val[0];
@@ -422,26 +428,30 @@ export default {
           <option v-for="project in projects">{{ project }}</option>
         </select>
 
-        <div class="h-0 grow overflow-y-auto">
+        <div class="h-0 grow overflow-y-auto overflow-x-hidden">
           <ul class="horizontal-select">
             <li v-for="tuple in tests">
               <div>
-                <input v-model="eval_params.tests" type="checkbox" :value="tuple[0]" :disabled="!tuple[1]">
-                <label for="vue-checkbox-list" class="flex">
-                  <div v-if="!tuple[1]" class="text-red-500 font-bold">
-                    !
+                <input v-model="eval_params.tests" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
+                <label for="vue-checkbox-list" class="flex group w-full">
+                  <div class="pl-0 w-full">
+                    <div v-if="!tuple[1]" class="text-red-500 font-bold">
+                      !
+                    </div>
+                    <p class="truncate w-0 grow">
+                      {{ tuple[0] }}
+                    </p>
                   </div>
-                  {{ tuple[0] }}
-                  <div role="button" @click="this.selected.experiment=tuple[0]">
-                    EDIT
+                  <div role="button" @click="this.selected.experiment=tuple[0]" class="invisible w-content collapse group-hover:visible">
+                    <v-icon name="fa-regular-edit"/>
                   </div>
                 </label>
               </div>
             </li>
-            <li v-if="this.selected.project" role="button" class="text-center p-1 bg-blue-200" onclick="create_experiment_dialog.showModal()">
-              Add new experiment
-            </li>
           </ul>
+        </div>
+        <div v-if="this.selected.project" role="button" class="button mt-2" onclick="create_experiment_dialog.showModal()">
+          Add new experiment
         </div>
       </div>
     </div>
@@ -481,7 +491,12 @@ export default {
     <!-- PoC editor -->
     <div class="form-section col-span-2 row-start-3">
       <div class="flex">
-        <h2 class="flex-initial w-1/2 form-section-title">PoC editor</h2>
+        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+          Experiment editor
+          <div v-if="this.selected.experiment !== null && !this.hide_poc_editor" class="px-1 font-normal">
+            ({{ this.selected.experiment }})
+          </div>
+        </h2>
         <div class="w-full text-right">
           <button class="collapse-button" @click="this.hide_poc_editor = !this.hide_poc_editor">
             <div class="flex items-center">
@@ -490,14 +505,12 @@ export default {
           </button>
         </div>
       </div>
-      <div :class="hide_poc_editor ? 'hidden w-full' : 'w-full'">
+      <div :class="this.hide_poc_editor ? 'hidden w-full' : 'w-full'">
         <poc-editor
         :darkmode="this.darkmode"
         :available_domains="this.available_domains"
         :project="this.selected.project"
-        :experiment="this.selected.experiment"
-        ref="poc_editor"
-        class="w-full h-full mt-2"></poc-editor>
+        :poc="this.selected.experiment"></poc-editor>
       </div>
     </div>
 
@@ -614,17 +627,19 @@ export default {
   </div>
 
   <!-- Create file dialog -->
-  <dialog id="create_experiment_dialog">
+  <dialog id="create_experiment_dialog" class="dialog">
     <form method="dialog" @submit="create_new_experiment">
       <p>
         <label>
-          Enter new experiment name:
-          <input type="text" v-model="dialog.new_experiment_name" required autocomplete="off" />
+          <div class="pb-5">
+            Enter new experiment name:
+          </div>
+          <input type="text" v-model="dialog.new_experiment_name" class="input-box" required autocomplete="off" />
         </label>
       </p>
-      <div>
-        <input type="submit" value="Create file">
-        <input type="button" value="Cancel" onclick="create_file_dialog.close()">
+      <div class="flex pt-3">
+        <input type="submit" value="Create file" class="button m-2 w-full">
+        <input type="button" value="Cancel" class="button m-2" onclick="create_experiment_dialog.close()">
       </div>
     </form>
   </dialog>

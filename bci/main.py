@@ -170,7 +170,7 @@ class Main:
 
     @staticmethod
     def update_poc_file(project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
-        logger.error(f'Updating file {file} of project {project} and poc {poc} // {content}')
+        logger.error(f'Updating file {file} of project {project} and poc {poc}')
         return Main.master.get_specific_evaluation_framework("custom").update_poc_file(project, poc, domain, path, file, content)
 
     @staticmethod
