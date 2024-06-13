@@ -1,0 +1,10 @@
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+prompt             = no
+[ req_distinguished_name ]
+countryName         = BE
+stateOrProvinceName = Vlaams-Brabant
+localityName        = Heverlee
+organizationName    = DistriNet
+commonName          = bughog

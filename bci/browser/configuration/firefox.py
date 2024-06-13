@@ -97,11 +97,11 @@ class Firefox(Browser):
         # Make Firefox trust the proxy CA and server CA
         # cert9.db  key4.db  pkcs11.txt
         cli.execute(
-            f'certutil -A -n bughog-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:{self._profile_path}'
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}'
             )
         # Normally: cert8.db  key3.db  secmod.db, however: cert9.db  key4.db  pkcs11.txt
         cli.execute(
-            f'certutil -A -n bughog-ca -t CT,c -i /home/bci/bughog_ca.crt -d {self._profile_path}'
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d {self._profile_path}'
             )
 
         # The certutil in the docker image refuses to create cert8.db, so we copy

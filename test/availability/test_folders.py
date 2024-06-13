@@ -44,5 +44,5 @@ class TestFolderAvailability(unittest.TestCase):
 
     @staticmethod
     def test_ssl_availability():
-        assert os.path.isdir('/app/ssl')
-        assert os.path.isfile('/app/ssl/bughog_ca.crt')
+        assert os.path.isdir('/etc/nginx/ssl/')
+        assert os.path.isfile('/etc/nginx/ssl/certs/bughog_CA.crt')

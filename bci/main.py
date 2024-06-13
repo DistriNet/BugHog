@@ -1,7 +1,7 @@
 import logging
 
 import bci.browser.binary.factory as binary_factory
-from analysis.plot_factory import PlotFactory
+from bci.analysis.plot_factory import PlotFactory
 from bci.browser.support import get_chromium_support, get_firefox_support
 from bci.configuration import Global, Loggers
 from bci.database.mongo.mongodb import MongoDB

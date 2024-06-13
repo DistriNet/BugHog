@@ -29,6 +29,7 @@ services:
       - ./experiments:/app/experiments:ro
       - ./browser/extensions:/app/browser/extensions:ro
       - ./logs:/app/logs:rw
+      - ./nginx/ssl/:/etc/nginx/ssl/:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /dev/shm:/dev/shm:rw
     profiles:
@@ -111,6 +112,38 @@ services:
       - dev
 
   #================#
+  # NGINX #
+  #================#
+
+  nginx:
+    build:
+      context: .
+      target: nginx
+    container_name: bh_nginx
+    restart: always
+    # depends_on:
+    #   - core
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl/:/etc/nginx/ssl/:ro
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8888:8888"
+    networks:
+      bh_net:
+        aliases:
+          - leak.test
+          - a.test
+          - sub.a.test
+          - sub.sub.a.test
+          - b.test
+          - adition.com
+    profiles:
+      - prod
+      - dev
+
+  #================#
   # NODE FRONT END #
   #================#
 
@@ -118,14 +151,16 @@ services:
     build:
       context: .
       target: ui-build-stage
-    ports:
-      - "5173:5173"
+    networks:
+      bh_net:
+        aliases:
+          - node
     volumes:
-      - ./bci/ui/frontend/public:/app/public:rw
-      - ./bci/ui/frontend/src:/app/src:rw
-      - ./bci/ui/frontend/postcss.config.js:/app/postcss.config.js:rw
-      - ./bci/ui/frontend/tailwind.config.js:/app/tailwind.config.js:rw
-      - ./bci/ui/frontend/vite.config.js:/app/vite.config.js:rw
+      - ./bci/web/vue/public:/app/public:rw
+      - ./bci/web/vue/src:/app/src:rw
+      - ./bci/web/vue/postcss.config.js:/app/postcss.config.js:rw
+      - ./bci/web/vue/tailwind.config.js:/app/tailwind.config.js:rw
+      - ./bci/web/vue/vite.config.js:/app/vite.config.js:rw
     command: ["npm", "run", "dev", "--", "--host"]
     profiles:
       - dev

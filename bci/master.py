@@ -1,6 +1,6 @@
 import logging
 
-from analysis.plot_factory import PlotFactory
+from bci.analysis.plot_factory import PlotFactory
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB, ServerException
 from bci.distribution.worker_manager import WorkerManager

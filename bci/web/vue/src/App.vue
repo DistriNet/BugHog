@@ -196,7 +196,7 @@ export default {
       }
     },
     get_info() {
-      const path = `http://${location.hostname}:5000/api/info/`;
+      const path = `/api/info/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status === "OK") {
@@ -215,7 +215,7 @@ export default {
         });
     },
     get_projects() {
-      const path = `http://${location.hostname}:5000/api/projects/`;
+      const path = `/api/projects/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -227,7 +227,7 @@ export default {
         });
     },
     get_browser_support() {
-      const path = `http://${location.hostname}:5000/api/browsers/`;
+      const path = `/api/browsers/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -239,7 +239,7 @@ export default {
         });
     },
     get_system_info() {
-      const path = `http://${location.hostname}:5000/api/system/`;
+      const path = `/api/system/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -251,7 +251,7 @@ export default {
         });
     },
     get_tests(project) {
-      const path = `http://${location.hostname}:5000/api/tests/${project}/`;
+      const path = `/api/tests/${project}/`;
       axios.get(path)
         .then((res) => {
           this.tests = res.data.tests;
@@ -274,7 +274,7 @@ export default {
       this.browser_settings = browser['options'];
     },
     submit_form() {
-      const path = `http://${location.hostname}:5000/api/evaluation/start/`;
+      const path = `/api/evaluation/start/`;
       axios.post(path, this.eval_params)
         .then((res) => {
 
@@ -284,7 +284,7 @@ export default {
         });
     },
     stop(forcefully) {
-      const path = `http://${location.hostname}:5000/api/evaluation/stop/`;
+      const path = `/api/evaluation/stop/`;
       const data = {};
       if (forcefully) {
         data["forcefully"] = true;
