@@ -1,30 +1,16 @@
+import json
+import logging
 import os
-import threading
 
 from flask import Blueprint, request
 
+from bci.app import sock
 from bci.evaluations.logic import evaluation_factory
 from bci.main import Main as bci_api
+from bci.web.clients import Clients
 
+logger = logging.getLogger(__name__)
 api = Blueprint('api', __name__, url_prefix='/api')
-THREAD = None
-
-
-def instantiate_main_object():
-    bci_api.initialize()
-
-
-def start_thread(func, args=[]) -> bool:
-    global THREAD
-    if THREAD and THREAD.is_alive():
-        return False
-    else:
-        THREAD = threading.Thread(target=func, args=args)
-        THREAD.start()
-        return True
-
-
-start_thread(instantiate_main_object)
 
 
 @api.before_request
@@ -41,7 +27,7 @@ def check_readiness():
 
 @api.after_request
 def add_headers(response):
-    if 'DEVELOPMENT' in os.environ:
+    if 'DEVELOPMENT' in os.environ and os.environ['DEVELOPMENT'] == '1':
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         response.headers['Access-Control-Allow-Methods'] = '*'
@@ -97,16 +83,23 @@ Requesting information
 '''
 
 
-@api.route('/info/', methods=['GET'])
-def get_info():
-    return {
-        'status': 'OK',
-        'info': {
-            'database': bci_api.get_database_info(),
-            'log': bci_api.get_logs(),
-            'running': bci_api.is_running()
-        }
-    }
+@sock.route('/socket/', bp=api)
+def init_websocket(ws):
+    logger.info('Client connected')
+    Clients.add_client(ws)
+    while True:
+        message = ws.receive()
+        if message is None:
+            break
+        try:
+            message = json.loads(message)
+            if params := message.get('params', None):
+                Clients.associate_params(ws, params)
+            if message.get('info', False):
+                Clients.push_info(ws)
+        except ValueError:
+            logger.warning('Ignoring invalid message from client.')
+    ws.send('Connected to BugHog')
 
 
 @api.route('/browsers/', methods=['GET'])

@@ -5,7 +5,7 @@ import os
 from urllib.parse import urlparse
 
 import requests
-from flask import Blueprint, make_response, render_template, request, send_file
+from flask import Blueprint, make_response, render_template, request
 from markupsafe import escape
 
 from bci.web.page_parser import load_experiment_pages
@@ -148,18 +148,6 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
             307,
             {"Location": "https://adition.com/report/", "Allow-CSP-From": "*"},
         )
-
-
-@exp.route("/res/<path:path>")
-def resources(path):
-    file_path = os.path.join("/app/static/res/", path)
-    if not os.path.isfile(file_path):
-        return "Resource not found", 404
-    if path.endswith(".swf"):
-        response = make_response(send_file(file_path))
-        response.headers["Content-Type"] = "application/x-shockwave-flash"
-        return response
-    return send_file(file_path)
 
 
 @exp.route("/<string:project>/<string:experiment>/<string:page>")

@@ -85,32 +85,6 @@ services:
     profiles:
       - prod
 
-  #===================#
-  # EXPERIMENT SERVER #
-  #===================#
-
-  web:
-    image: bughog/web:${BUGHOG_WEB_VERSION}
-    volumes:
-      - ./experiments/pages:/experiments/pages:ro
-      - ./experiments/res:/app/static/res:ro
-    container_name: bh_web
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      bh_net:
-        aliases:
-          - leak.test
-          - a.test
-          - sub.a.test
-          - sub.sub.a.test
-          - b.test
-          - adition.com
-    profiles:
-      - prod
-      - dev
-
   #================#
   # NGINX #
   #================#
@@ -121,15 +95,12 @@ services:
       target: nginx
     container_name: bh_nginx
     restart: always
-    # depends_on:
-    #   - core
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl/:/etc/nginx/ssl/:ro
+      - ./experiments/res/:/www/data/res/:ro
     ports:
       - "80:80"
       - "443:443"
-      - "8888:8888"
     networks:
       bh_net:
         aliases:
@@ -141,6 +112,13 @@ services:
           - adition.com
     profiles:
       - prod
+
+  nginx_dev:
+    extends: nginx
+    container_name: bh_nginx_dev
+    environment:
+      - "DEVELOPMENT=1"
+    profiles:
       - dev
 
   #================#

@@ -7,8 +7,10 @@ RUN npm run build
 
 
 FROM nginx:1.27 AS nginx
+COPY ./nginx/start.sh /usr/local/bin/
+COPY ./nginx/config /etc/nginx/config
 COPY --from=ui-build-stage /app/dist /www/data
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["start.sh"]
 
 
 FROM python:3.11-slim-buster AS base

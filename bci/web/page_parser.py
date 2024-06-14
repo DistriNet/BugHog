@@ -18,7 +18,7 @@ def load_experiment_pages(config_folder_path: str, allowed_domains: list[str]) -
     folder_structure = get_folder_structure(config_folder_path)
 
     projects = [project for project in folder_structure if project["is_folder"]]
-    for project in projects:
+    for project in sorted(projects, key=lambda x: x['name']):
         cases = [case for case in project["subfolders"] if case["is_folder"]]
         for case in cases:
             domains = [domain for domain in case["subfolders"] if domain["is_folder"]]
@@ -42,6 +42,7 @@ def load_experiment_pages(config_folder_path: str, allowed_domains: list[str]) -
                     if not headers_contain_header(experiment_pages[domain["name"]][url_path]["headers"], "Content-Type"):
                         experiment_pages[domain["name"]][url_path]["headers"].append(content_type_header)
 
+        logger.info(f"Project '{project['name']}': Loaded {len(cases)} experiments")
     return experiment_pages
 
 

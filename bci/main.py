@@ -57,7 +57,7 @@ class Main:
 
     @staticmethod
     def format_to_user_log(log: dict) -> str:
-        return f'[{log["asctime"]}] - [{log["levelname"]}] - [{log["hostname"]}] - {log["name"]}: {log["msg"]}'
+        return f'[{log["asctime"]}] [{log["levelname"]}] {log["name"]}: {log["msg"]}'
 
     @staticmethod
     def get_database_info() -> dict:

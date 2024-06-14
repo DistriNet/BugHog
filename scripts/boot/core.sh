@@ -16,8 +16,8 @@ if [[ "$DEVELOPMENT" == "1" ]]; then
 else
     gunicorn 'bci.app:create_app()' \
         --name core \
-        --workers 1 \
-        --threads 2 \
+        --workers 4 \
+        --threads 100 \
         --bind '0.0.0.0:5000' \
         --access-logfile /app/logs/gunicorn_access.log \
         --log-file /app/logs/gunicorn.log \

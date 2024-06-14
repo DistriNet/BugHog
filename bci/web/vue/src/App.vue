@@ -81,6 +81,7 @@ export default {
       hide_advanced: true,
       hide_logs: true,
       system: null,
+      websocket: null,
     }
   },
   computed: {
@@ -141,16 +142,18 @@ export default {
         this.eval_params.target_mech_id = val;
       }
       this.update_results();
+      this.propagate_new_params();
     },
     "eval_params.plot_mech_group": function (val) {
       if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
         this.eval_params.target_mech_id = val;
       }
       this.update_results();
+      this.propagate_new_params();
     },
   },
   mounted: function () {
-    this.get_info();
+    this.init_socket();
     this.update_results();
     this.get_projects();
     this.get_browser_support();
@@ -186,6 +189,29 @@ export default {
     }
   },
   methods: {
+    init_socket() {
+      const url = `/api/socket/`;
+      this.websocket = new WebSocket(url);
+      this.websocket.onopen = this.onSocketOpen;
+      this.websocket.onmessage = this.onSocketMessage;
+      console.log("WebSocket initialized");
+    },
+    onSocketOpen() {
+      this.get_info();
+    },
+    onSocketMessage(event) {
+      const data = JSON.parse(event.data);
+      if (data.hasOwnProperty("results")) {
+        const revision_data = data["results"].revision_data;
+        const version_data = data["results"].version_data;
+        this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
+        this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+      }
+      if (data.hasOwnProperty("info")) {
+        const info = data["info"];
+        this.info = info;
+      }
+    },
     toggle_darkmode(event) {
       let darkmode_toggle_checked = event.srcElement.checked;
       this.darkmode = darkmode_toggle_checked;
@@ -196,23 +222,9 @@ export default {
       }
     },
     get_info() {
-      const path = `/api/info/`;
-      axios.get(path)
-        .then((res) => {
-          if (res.data.status === "OK") {
-            if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
-              this.info = res.data.info;
-              log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
-            }
-            this.fatal_error = false;
-          } else {
-            this.info.log = res.data.info.log;
-            this.fatal_error = true;
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+      this.websocket.send(JSON.stringify({
+        "info": true,
+      }));
     },
     get_projects() {
       const path = `/api/projects/`;
@@ -260,6 +272,14 @@ export default {
           console.error(error);
         });
     },
+    propagate_new_params() {
+      console.log('change in params');
+      this.websocket.send(JSON.stringify(
+        {
+          "params": this.eval_params
+        }
+      ));
+    },
     set_curr_project(project) {
       this.eval_params.project = project;
       this.get_tests(project);
@@ -305,19 +325,20 @@ export default {
       })
     },
     update_results() {
-      this.fetch_results('/api/data/').then((res) => {
-        if (res.data.status === "NOK") {
-          this.results.nb_of_evaluations = 0;
-          return;
-        }
-        let revision_data = res.data.revision;
-        let version_data = res.data.version;
-        this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
-        this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+      // this.fetch_results('/api/data/')
+      // .then((res) => {
+      //   if (res.data.status === "NOK") {
+      //     this.results.nb_of_evaluations = 0;
+      //     return;
+      //   }
+      //   let revision_data = res.data.revision;
+      //   let version_data = res.data.version;
+      //   this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
+      //   this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+      // })
+      // .catch((error) => {
+      //   console.error(error);
+      // });
     },
   },
   beforeDestroy() {
