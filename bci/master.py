@@ -1,13 +1,12 @@
 import logging
 
-from bci.analysis.plot_factory import PlotFactory
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB, ServerException
 from bci.distribution.worker_manager import WorkerManager
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import (DatabaseConnectionParameters,
-                                   EvaluationParameters, PlotParameters,
+                                   EvaluationParameters,
                                    SequenceConfiguration, WorkerParameters)
 from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.evaluations.samesite.samesite_evaluation import \
@@ -19,6 +18,7 @@ from bci.search_strategy.n_ary_sequence import NArySequence, SequenceFinished
 from bci.search_strategy.sequence_strategy import SequenceStrategy
 from bci.version_control import factory
 from bci.version_control.states.state import State
+from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,11 @@ logger = logging.getLogger(__name__)
 class Master:
 
     def __init__(self):
-        self.running = False
+        self.state = {
+            'is_running': False,
+            'reason': 'init',
+            'status': 'idle'
+        }
 
         self.stop_gracefully = False
         self.stop_forcefully = False
@@ -52,9 +56,15 @@ class Master:
             logger.error("Could not connect to database.", exc_info=True)
 
     def run(self, eval_params: EvaluationParameters):
-        self.running = True
+        self.state = {
+            'is_running': True,
+            'reason': 'user',
+            'status': 'running'
+        }
         self.stop_gracefully = False
         self.stop_forcefully = False
+
+        Clients.push_info_to_all('is_running', 'state')
 
         browser_config = eval_params.browser_configuration
         evaluation_config = eval_params.evaluation_configuration
@@ -98,6 +108,7 @@ class Master:
                     current_state = search_strategy.next()
             except SequenceFinished:
                 logger.debug("Last experiment has started")
+                self.state['reason'] = 'finished'
 
         except Exception as e:
             logger.critical("A critical error occurred", exc_info=True)
@@ -106,8 +117,10 @@ class Master:
             # Gracefully exit
             if self.stop_gracefully:
                 logger.info("Gracefully stopping experiment queue due to user end signal...")
+                self.state['reason'] = 'user'
             if self.stop_forcefully:
                 logger.info("Forcefully stopping experiment queue due to user end signal...")
+                self.state['reason'] = 'user'
                 worker_manager.forcefully_stop_all_running_containers()
             else:
                 logger.info("Gracefully stopping experiment queue since last experiment started.")
@@ -115,7 +128,9 @@ class Master:
             logger.info("Waiting for remaining experiments to stop...")
             worker_manager.wait_until_all_evaluations_are_done()
             logger.info("BugHog has finished the evaluation!")
-            self.running = False
+            self.state['is_running'] = False
+            self.state['status'] = 'idle'
+            Clients.push_info_to_all('is_running', 'state')
 
     @staticmethod
     def get_update_outcome_cb(search_strategy: SequenceStrategy, worker_params: WorkerParameters, sequence_config: SequenceConfiguration, checker: OutcomeChecker) -> None:
@@ -124,6 +139,8 @@ class Master:
                 result = MongoDB.get_instance().get_result(worker_params.create_test_params_for(worker_params.mech_groups[0]))
                 outcome = checker.get_outcome(result)
                 search_strategy.update_outcome(worker_params.state, outcome)
+            # Just push results update to all clients. Could be more efficient, but would complicate things...
+            Clients.push_results_to_all()
         return cb
 
     def inititialize_available_evaluation_frameworks(self):
@@ -153,6 +170,12 @@ class Master:
     def activate_stop_gracefully(self):
         if self.evaluation_framework:
             self.stop_gracefully = True
+            self.state = {
+                'is_running': True,
+                'reason': 'user',
+                'status': 'waiting_to_stop'
+            }
+            Clients.push_info_to_all('state')
             self.evaluation_framework.stop_gracefully()
             logger.info("Received user signal to gracefully stop.")
         else:
@@ -161,10 +184,13 @@ class Master:
     def activate_stop_forcefully(self):
         if self.evaluation_framework:
             self.stop_forcefully = True
+            self.state = {
+                'is_running': True,
+                'reason': 'user',
+                'status': 'waiting_to_stop'
+            }
+            Clients.push_info_to_all('state')
             self.evaluation_framework.stop_gracefully()
             logger.info("Received user signal to forcefully stop.")
         else:
             logger.info("Received user signal to forcefully stop, but no evaluation is running.")
-
-    def get_html_plot(self, params: PlotParameters) -> tuple[str, int]:
-        return PlotFactory.create_html_plot_string(params, MongoDB.get_instance())

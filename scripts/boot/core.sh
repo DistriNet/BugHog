@@ -5,6 +5,7 @@ source /app/scripts/boot/setup_environment.sh
 chmod -R 777 /app/browser/binaries/chromium/artisanal
 chmod -R 777 /app/browser/binaries/firefox/artisanal
 
+/app/scripts/boot/generate_certs.sh
 /app/scripts/boot/manage_certs.sh
 
 rm -f /tmp/Xvfb.pid
@@ -16,7 +17,7 @@ if [[ "$DEVELOPMENT" == "1" ]]; then
 else
     gunicorn 'bci.app:create_app()' \
         --name core \
-        --workers 4 \
+        --workers 1 \
         --threads 100 \
         --bind '0.0.0.0:5000' \
         --access-logfile /app/logs/gunicorn_access.log \

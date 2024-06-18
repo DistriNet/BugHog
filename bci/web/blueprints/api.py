@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 
 from flask import Blueprint, request
 
@@ -11,6 +12,19 @@ from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 api = Blueprint('api', __name__, url_prefix='/api')
+
+THREAD = None
+
+
+def start_thread(func, args=None) -> bool:
+    global THREAD
+    if THREAD and THREAD.is_alive():
+        return False
+    else:
+        THREAD = threading.Thread(target=func, args=args)
+        THREAD.start()
+        return True
+
 
 
 @api.before_request
@@ -66,18 +80,6 @@ def stop_evaluation():
     }
 
 
-@api.route('/database/connect/', methods=['POST'])
-def connect_database():
-    if start_thread(bci_api.connect_to_database):
-        return {
-            'status': 'OK'
-        }
-    else:
-        return {
-            'status': 'NOK'
-        }
-
-
 '''
 Requesting information
 '''
@@ -93,10 +95,10 @@ def init_websocket(ws):
             break
         try:
             message = json.loads(message)
-            if params := message.get('params', None):
+            if params := message.get('new_params', None):
                 Clients.associate_params(ws, params)
-            if message.get('info', False):
-                Clients.push_info(ws)
+            if requested_variables := message.get('get', []):
+                Clients.push_info(ws, *requested_variables)
         except ValueError:
             logger.warning('Ignoring invalid message from client.')
     ws.send('Connected to BugHog')
@@ -132,17 +134,6 @@ def get_tests(project: str):
     return {
         'status': 'OK',
         'tests': tests
-    }
-
-
-@api.route('/results/', methods=['PUT'])
-def get_html_plot():
-    params = request.json.copy()
-    plot_html, nb_of_evaluations = bci_api.get_html_plot(params)
-    return {
-        'status': 'OK',
-        'nb_of_evaluations': nb_of_evaluations,
-        'plot_html': plot_html
     }
 
 
