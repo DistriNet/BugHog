@@ -21,14 +21,6 @@ export default {
       browser_settings: [],
       db_collection_suffix: "",
       tests: [],
-      info: {
-        log: [],
-        database: {
-          "host": null,
-          "connected": false
-        },
-        running: false,
-      },
       curr_options: {
         min_browser_version: 0,
         max_browser_version: 100
@@ -66,6 +58,14 @@ export default {
         // For plotting
         plot_mech_group: null,
       },
+      server_info: {
+        db_info: {
+          "host": null,
+          "connected": false
+        },
+        logs: [],
+        state: {},
+      },
       results: {
         nb_of_evaluations: 0,
       },
@@ -81,9 +81,22 @@ export default {
       hide_advanced: true,
       hide_logs: true,
       system: null,
+      websocket: null,
     }
   },
   computed: {
+    "missing_plot_params": function () {
+      const missing_params = [];
+      const required_params_for_plotting = ["browser_name", "project", "plot_mech_group"];
+      for (const index in required_params_for_plotting) {
+        const param = required_params_for_plotting[index];
+        if (this.eval_params[param] === null) {
+          missing_params.push(param);
+        }
+      }
+      return missing_params;
+
+    },
     "db_collection_prefix": function () {
       if (this.eval_params.project === null || this.eval_params.browser_name === null) {
         return "";
@@ -101,8 +114,8 @@ export default {
       if (this.fatal_error) {
         return `A fatal error has occurred! Please, check the logs below...`
       }
-      else if (this.info.database.connected) {
-        return `Connected to MongoDB at ${this.info.database.host}`;
+      else if (this.server_info.db_info.connected) {
+        return `Connected to MongoDB at ${this.server_info.db_info.host}`;
       } else {
         return `Connecting to database...`;
       }
@@ -115,6 +128,7 @@ export default {
     "slider.state": function (val) {
       this.eval_params.lower_version = val[0];
       this.eval_params.upper_version = val[1];
+      this.propagate_new_params();
     },
     "db_collection": function (val) {
       this.eval_params.db_collection = val;
@@ -140,18 +154,22 @@ export default {
       } else {
         this.eval_params.target_mech_id = val;
       }
-      this.update_results();
+      this.propagate_new_params();
     },
     "eval_params.plot_mech_group": function (val) {
       if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
         this.eval_params.target_mech_id = val;
       }
-      this.update_results();
+      this.propagate_new_params();
+    },
+    "eval_params.browser_name": function (val) {
+      // db_collection gets updated too late, so updating manually.
+      this.eval_params.db_collection = this.db_collection;
+      this.propagate_new_params();
     },
   },
   mounted: function () {
-    this.get_info();
-    this.update_results();
+    this.init_socket();
     this.get_projects();
     this.get_browser_support();
     setTimeout(function () {
@@ -169,8 +187,7 @@ export default {
       if (this.system == null) {
         this.get_system_info();
       }
-      this.get_info();
-      this.update_results();
+      this.fetch_server_info(["logs"]);
     }, 2000);
     // Darkmode functionality
     if ('theme' in localStorage) {
@@ -186,6 +203,47 @@ export default {
     }
   },
   methods: {
+    init_socket() {
+      const url = `/api/socket/`;
+      this.websocket = new WebSocket(url);
+      this.websocket.addEventListener("open", () => {
+        console.log("WebSocket initialized");
+        this.get_info();
+      });
+      this.websocket.addEventListener("message", () => {
+        const data = JSON.parse(event.data);
+        if (data.hasOwnProperty("update")) {
+          if (data.update.hasOwnProperty("plot_data")) {
+            const revision_data = data.update.plot_data.revision_data;
+            const version_data = data.update.plot_data.version_data;
+            this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
+            this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+          }
+          else {
+            for (const variable in data.update) {
+              this.server_info[variable] = data.update[variable];
+            }
+          }
+        }
+      });
+      this.websocket.addEventListener("error", () => {
+        console.log("Could not connect to backend socket. Trying again in 5 seconds...");
+        setTimeout(() => {
+          this.init_socket();
+        }, 5000);
+      });
+      this.websocket.addEventListener("close",  () => {
+        console.log("Connection to backend socket was unexpectedly closed. Trying to reconnect...");
+        setTimeout(() => {
+          this.init_socket();
+        }, 500);
+      });
+    },
+    fetch_server_info(info_types) {
+      this.websocket.send(JSON.stringify({
+        "get": info_types
+      }));
+    },
     toggle_darkmode(event) {
       let darkmode_toggle_checked = event.srcElement.checked;
       this.darkmode = darkmode_toggle_checked;
@@ -196,26 +254,12 @@ export default {
       }
     },
     get_info() {
-      const path = `http://${location.hostname}:5000/api/info/`;
-      axios.get(path)
-        .then((res) => {
-          if (res.data.status === "OK") {
-            if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
-              this.info = res.data.info;
-              log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
-            }
-            this.fatal_error = false;
-          } else {
-            this.info.log = res.data.info.log;
-            this.fatal_error = true;
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+      this.websocket.send(JSON.stringify({
+        "get": ["all"],
+      }));
     },
     get_projects() {
-      const path = `http://${location.hostname}:5000/api/projects/`;
+      const path = `/api/projects/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -227,7 +271,7 @@ export default {
         });
     },
     get_browser_support() {
-      const path = `http://${location.hostname}:5000/api/browsers/`;
+      const path = `/api/browsers/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -239,7 +283,7 @@ export default {
         });
     },
     get_system_info() {
-      const path = `http://${location.hostname}:5000/api/system/`;
+      const path = `/api/system/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
@@ -251,7 +295,7 @@ export default {
         });
     },
     get_tests(project) {
-      const path = `http://${location.hostname}:5000/api/tests/${project}/`;
+      const path = `/api/tests/${project}/`;
       axios.get(path)
         .then((res) => {
           this.tests = res.data.tests;
@@ -259,6 +303,18 @@ export default {
         .catch((error) => {
           console.error(error);
         });
+    },
+    propagate_new_params() {
+      if (this.missing_plot_params.length === 0) {
+        console.log('Propagating parameter change');
+        this.websocket.send(JSON.stringify(
+          {
+            "new_params": this.eval_params
+          }
+        ));
+      } else {
+        console.log("Missing plot parameters: ", this.missing_plot_params);
+      }
     },
     set_curr_project(project) {
       this.eval_params.project = project;
@@ -274,7 +330,7 @@ export default {
       this.browser_settings = browser['options'];
     },
     submit_form() {
-      const path = `http://${location.hostname}:5000/api/evaluation/start/`;
+      const path = `/api/evaluation/start/`;
       axios.post(path, this.eval_params)
         .then((res) => {
 
@@ -284,7 +340,7 @@ export default {
         });
     },
     stop(forcefully) {
-      const path = `http://${location.hostname}:5000/api/evaluation/stop/`;
+      const path = `/api/evaluation/stop/`;
       const data = {};
       if (forcefully) {
         data["forcefully"] = true;
@@ -303,21 +359,6 @@ export default {
           'Content-Type': 'application/json',
         }
       })
-    },
-    update_results() {
-      this.fetch_results('/api/data/').then((res) => {
-        if (res.data.status === "NOK") {
-          this.results.nb_of_evaluations = 0;
-          return;
-        }
-        let revision_data = res.data.revision;
-        let version_data = res.data.version;
-        this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
-        this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
-      })
-      .catch((error) => {
-        console.error(error);
-      });
     },
   },
   beforeDestroy() {
@@ -417,7 +458,7 @@ export default {
 
     <!-- Start button and results section -->
     <div class="row-start-2 col-start-2 flex flex-col h-full">
-      <div v-if="this.info.running == false">
+      <div v-if="this.server_info.state.is_running == false">
         <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
       </div>
       <div v-else>
@@ -433,8 +474,18 @@ export default {
           </select>
           <div class="flex flex-wrap">
             <ul class="my-3">
-              <li v-if="this.info.running"> <b>Status:</b> Running &#x2705;</li>
-              <li v-else> <b>Status:</b> Stopped &#x1F6D1;</li>
+              <li v-if="this.server_info.state.status === 'running'"> <b>Status:</b> Running &#x2705;</li>
+              <li v-else-if="this.server_info.state.status === 'waiting_to_stop'" class="flex">
+                <b class="pr-1">Status:</b>
+                <div class="pr-1">Stopping... &#x231B;</div>
+              </li>
+              <li v-else class="flex">
+                <b class="pr-1">Status:</b>
+                <div class="pr-1">Idle</div>
+                <div v-if="this.server_info.state.reason === 'finished'" class="pr-1">(all binaries evaluated)</div>
+                <div v-if="this.server_info.state.reason === 'user'" class="pr-1">(stopped by user)</div>
+                <div>&#x1F6D1;</div>
+              </li>
             </ul>
           </div>
           <div class="flex flex-wrap">
@@ -615,7 +666,7 @@ export default {
       <div :class="hide_logs ? 'hidden' : ''">
         <div id="log_section" class="mt-3 h-96 bg-white overflow-y-scroll flex flex-col dark:bg-dark-3">
           <ul>
-            <li v-for="entry in this.info.log">
+            <li v-for="entry in this.server_info.logs">
               <p>{{ entry }}</p>
             </li>
           </ul>

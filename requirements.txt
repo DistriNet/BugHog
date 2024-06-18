@@ -38,7 +38,10 @@ docker==7.0.0
 flask==3.0.3
     # via
     #   -r requirements.in
+    #   flask-sock
     #   mitmproxy
+flask-sock==0.7.0
+    # via -r requirements.in
 flatten-dict==0.4.2
     # via -r requirements.in
 gunicorn==22.0.0
@@ -116,6 +119,8 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 service-identity==24.1.0
     # via aioquic
+simple-websocket==1.0.0
+    # via flask-sock
 six==1.16.0
     # via flatten-dict
 sortedcontainers==2.4.0
@@ -131,6 +136,8 @@ urwid-mitmproxy==2.1.2.1
 werkzeug==3.0.3
     # via flask
 wsproto==1.2.0
-    # via mitmproxy
+    # via
+    #   mitmproxy
+    #   simple-websocket
 zstandard==0.22.0
     # via mitmproxy

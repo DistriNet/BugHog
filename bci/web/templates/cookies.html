@@ -1,0 +1,23 @@
+{% extends 'base.html' %}}
+
+{% block content %}
+
+{% if to_report %}
+<h2>Reported: </h2>
+
+<p>{{ to_report }}</p>
+{% endif %}
+
+<h2>Cookies</h2>
+<p>Note that the httpOnly cookie is not visible here.</p>
+<ul id="cookies"></ul>
+<script>
+    var elem = document.getElementById("cookies");
+    var cookies = document.cookie.split(';');
+    for (var i = 0 ; i < cookies.length; i++) {
+        var cookie = document.createElement("li");
+        cookie.textContent = cookies[i];
+        elem.appendChild(cookie);
+    }
+</script>
+{% endblock %}

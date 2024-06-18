@@ -124,42 +124,29 @@ class Loggers:
         bci_logger = logging.getLogger('bci')
         bci_logger.setLevel(logging.DEBUG)
 
+        # Configure stream handler
         stream_handler = logging.StreamHandler()
-        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=2)
-        http_handler = CustomHTTPHandler('core:5000', '/api/log/', method='POST', secure=False)
-
         stream_handler.setLevel(logging.DEBUG)
-        file_handler.setLevel(logging.DEBUG)
-        http_handler.setLevel(logging.INFO)
-
         stream_handler.setFormatter(Loggers.formatter)
+        bci_logger.addHandler(stream_handler)
+
+        # Configure file handler
+        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=2)
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(Loggers.formatter)
-        http_handler.setFormatter(Loggers.formatter)
+        bci_logger.addHandler(file_handler)
 
-        # Configure web_logger
-        web_logger = logging.getLogger('web_gui')
-        web_logger.setLevel(logging.DEBUG)
-
-        web_file_handler = logging.handlers.RotatingFileHandler('/app/logs/web_gui.log', mode='a', backupCount=2)
-        web_http_handler = CustomHTTPHandler('host.docker.internal:5000', '/api/log/', method='POST', secure=False)
-
-        web_file_handler.setLevel(logging.DEBUG)
-        web_http_handler.setLevel(logging.INFO)
-
-        web_file_handler.setFormatter(Loggers.formatter)
-        web_http_handler.setFormatter(Loggers.formatter)
-
-        web_logger.addHandler(web_file_handler)
-        web_logger.addHandler(web_http_handler)
+        # Configure http handler for workers
+        if hostname != 'bh_core':
+            http_handler = CustomHTTPHandler('core:5000', '/api/log/', method='POST', secure=False)
+            http_handler.setLevel(logging.INFO)
+            http_handler.setFormatter(Loggers.formatter)
+            bci_logger.addHandler(http_handler)
 
         # Configure memory handler
         Loggers.memory_handler.setLevel(logging.INFO)
         buffer_formatter = logging.handlers.BufferingHandler(Loggers.formatter)
         Loggers.memory_handler.setFormatter(buffer_formatter)
-
-        bci_logger.addHandler(stream_handler)
-        bci_logger.addHandler(file_handler)
-        bci_logger.addHandler(http_handler)
         bci_logger.addHandler(Loggers.memory_handler)
 
         # Log uncaught exceptions
