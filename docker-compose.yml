@@ -29,6 +29,7 @@ services:
       - ./experiments:/app/experiments:rw
       - ./browser/extensions:/app/browser/extensions:ro
       - ./logs:/app/logs:rw
+      - ./nginx/ssl/:/etc/nginx/ssl/:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /dev/shm:/dev/shm:rw
     profiles:
@@ -84,16 +85,19 @@ services:
     profiles:
       - prod
 
-  #===================#
-  # EXPERIMENT SERVER #
-  #===================#
+  #================#
+  # NGINX #
+  #================#
 
-  web:
-    image: bughog/web:${BUGHOG_WEB_VERSION}
+  nginx:
+    build:
+      context: .
+      target: nginx
+    container_name: bh_nginx
+    restart: always
     volumes:
-      - ./experiments/pages:/experiments/pages:ro
-      - ./experiments/res:/app/static/res:ro
-    container_name: bh_web
+      - ./nginx/ssl/:/etc/nginx/ssl/:ro
+      - ./experiments/res/:/www/data/res/:ro
     ports:
       - "80:80"
       - "443:443"
@@ -108,6 +112,13 @@ services:
           - adition.com
     profiles:
       - prod
+
+  nginx_dev:
+    extends: nginx
+    container_name: bh_nginx_dev
+    environment:
+      - "DEVELOPMENT=1"
+    profiles:
       - dev
 
   #================#
@@ -118,14 +129,16 @@ services:
     build:
       context: .
       target: ui-build-stage
-    ports:
-      - "5173:5173"
+    networks:
+      bh_net:
+        aliases:
+          - node
     volumes:
-      - ./bci/ui/frontend/public:/app/public:rw
-      - ./bci/ui/frontend/src:/app/src:rw
-      - ./bci/ui/frontend/postcss.config.js:/app/postcss.config.js:rw
-      - ./bci/ui/frontend/tailwind.config.js:/app/tailwind.config.js:rw
-      - ./bci/ui/frontend/vite.config.js:/app/vite.config.js:rw
+      - ./bci/web/vue/public:/app/public:rw
+      - ./bci/web/vue/src:/app/src:rw
+      - ./bci/web/vue/postcss.config.js:/app/postcss.config.js:rw
+      - ./bci/web/vue/tailwind.config.js:/app/tailwind.config.js:rw
+      - ./bci/web/vue/vite.config.js:/app/vite.config.js:rw
     command: ["npm", "run", "dev", "--", "--host"]
     profiles:
       - dev

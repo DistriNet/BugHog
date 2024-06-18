@@ -1,9 +1,16 @@
 FROM node:lts-alpine as ui-build-stage
 WORKDIR /app
-COPY /bci/ui/frontend/package*.json ./
+COPY /bci/web/vue/package*.json ./
 RUN npm install
-COPY /bci/ui/frontend ./
+COPY /bci/web/vue ./
 RUN npm run build
+
+
+FROM nginx:1.27 AS nginx
+COPY ./nginx/start.sh /usr/local/bin/
+COPY ./nginx/config /etc/nginx/config
+COPY --from=ui-build-stage /app/dist /www/data
+CMD ["start.sh"]
 
 
 FROM python:3.11-slim-buster AS base
@@ -49,53 +56,19 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --user -r /app/requirements.txt
 
 
-################
-# Certificates #
-################
-
-# Commented part below was used for mitmproxy
-# COPY --chown=bci:bci ./bci/proxy/ca_generator.py /home/bci/ca_generator.py
-# # Generate certificates
-# RUN mkdir -p /home/bci/.mitmproxy/ && \
-#     python /home/bci/ca_generator.py /home/bci/.mitmproxy/mitmproxy-ca.pem /home/bci/.mitmproxy/mitmproxy-ca.crt && \
-
-COPY ssl/bughog_ca.crt /home/bci/bughog_ca.crt
-# Add certificates to Chromium
-RUN mkdir -p $HOME/.pki/nssdb && \
-    certutil -d sql:$HOME/.pki/nssdb -A -t TC -n bci-ca -i /home/bci/bughog_ca.crt && \
-# Add certificates to Firefox
-# Legacy se rity databases (cert8.db and key3.db)
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d /app/browser/profiles/firefox/default-67/ && \
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d /app/browser/profiles/firefox/tp-67/ && \
-# New SQL security databases (cert9.db and key4.db)
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:/app/browser/profiles/firefox/default-67/ && \
-    certutil -A -n bci-ca -t CT,c -i /home/bci/bughog_ca.crt -d sql:/app/browser/profiles/firefox/tp-67/
-# # More info: https://support.mozilla.org/en-US/questions/1207165
-# #cp firefox/cert8.db firefox/default-67/ &&\
-# #cp firefox/cert8.db firefox/tp-67/
-
-# # mitmproxy configuration
-# RUN echo "tls_version_client_min: UNBOUND" > /home/bci/.mitmproxy/config.yaml && \
-#     echo "tls_version_server_min: UNBOUND" >> /home/bci/.mitmproxy/config.yaml && \
-#     echo "listen_port: 8081" >> /home/bci/.mitmproxy/config.yaml
-
-
 FROM base AS core
 # Copy rest of source code
 COPY bci /app/bci
-COPY --from=ui-build-stage /app/dist /app/bci/ui/frontend/dist
-COPY analysis /app/analysis
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 
 FROM base AS worker
 # Copy rest of source code
 COPY bci /app/bci
-COPY --from=ui-build-stage /app/dist /app/bci/ui/frontend/dist
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
 
 
 FROM base AS dev
 COPY requirements_dev.txt /app/requirements_dev.txt
 RUN pip install --user -r requirements_dev.txt
-CMD sleep infinity
+ENTRYPOINT [ "/app/scripts/boot/core.sh" ]

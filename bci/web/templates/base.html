@@ -1,0 +1,14 @@
+<!doctype html>
+
+{% block top_html %} <html> {% endblock %}
+
+<head>
+    {% block head %}{% endblock %}
+</head>
+<title>{% block title %}{{ title }}{% endblock %}</title>
+
+<section class="content">
+    {% block content %}{% endblock %}
+</section>
+
+{% block bottom_html %} </html> {% endblock %}

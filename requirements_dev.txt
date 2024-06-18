@@ -83,7 +83,10 @@ flake8==7.0.0
 flask==3.0.3
     # via
     #   -r requirements.txt
+    #   flask-sock
     #   mitmproxy
+flask-sock==0.7.0
+    # via -r requirements.txt
 flatten-dict==0.4.2
     # via -r requirements.txt
 gunicorn==22.0.0
@@ -248,6 +251,10 @@ service-identity==24.1.0
     # via
     #   -r requirements.txt
     #   aioquic
+simple-websocket==1.0.0
+    # via
+    #   -r requirements.txt
+    #   flask-sock
 six==1.16.0
     # via
     #   -r requirements.txt
@@ -281,6 +288,7 @@ wsproto==1.2.0
     # via
     #   -r requirements.txt
     #   mitmproxy
+    #   simple-websocket
 zstandard==0.22.0
     # via
     #   -r requirements.txt

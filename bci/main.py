@@ -1,7 +1,7 @@
 import logging
 
 import bci.browser.binary.factory as binary_factory
-from analysis.plot_factory import PlotFactory
+from bci.analysis.plot_factory import PlotFactory
 from bci.browser.support import get_chromium_support, get_firefox_support
 from bci.configuration import Global, Loggers
 from bci.database.mongo.mongodb import MongoDB
@@ -39,8 +39,8 @@ class Main:
         Main.master.activate_stop_forcefully()
 
     @staticmethod
-    def is_running() -> bool:
-        return Main.master.running
+    def get_state() -> str:
+        return Main.master.state
 
     @staticmethod
     def connect_to_database():
@@ -57,7 +57,7 @@ class Main:
 
     @staticmethod
     def format_to_user_log(log: dict) -> str:
-        return f'[{log["asctime"]}] - [{log["levelname"]}] - [{log["hostname"]}] - {log["name"]}: {log["msg"]}'
+        return f'[{log["asctime"]}] [{log["levelname"]}] {log["name"]}: {log["msg"]}'
 
     @staticmethod
     def get_database_info() -> dict:
@@ -94,7 +94,7 @@ class Main:
         return Main.master.available_evaluation_frameworks["custom"].get_projects()
 
     @staticmethod
-    def get_html_plot(data: dict) -> tuple[str, int]:
+    def convert_to_plotparams(data: dict) -> PlotParameters:
         if data.get("lower_version", None) and data.get("upper_version", None):
             major_version_range = (data["lower_version"], data["upper_version"])
         else:
@@ -106,8 +106,7 @@ class Main:
             )
         else:
             revision_number_range = None
-
-        params = PlotParameters(
+        return PlotParameters(
             data.get("plot_mech_group"),
             data.get("target_mech_id"),
             data.get("browser_name"),
@@ -122,36 +121,10 @@ class Main:
             if data.get("check_for") == "request"
             else data.get("target_cookie_name", "generic"),
         )
-        return Main.master.get_html_plot(params)
 
     @staticmethod
     def get_data_sources(data: dict):
-        if data.get("lower_version", None) and data.get("upper_version", None):
-            major_version_range = (data["lower_version"], data["upper_version"])
-        else:
-            major_version_range = None
-        if data.get("lower_revision_nb", None) and data.get("upper_revision_nb", None):
-            revision_number_range = (
-                data["lower_revision_nb"],
-                data["upper_revision_nb"],
-            )
-        else:
-            revision_number_range = None
-        params = PlotParameters(
-            data.get("plot_mech_group"),
-            data.get("target_mech_id"),
-            data.get("browser_name"),
-            data.get("db_collection"),
-            major_version_range=major_version_range,
-            revision_number_range=revision_number_range,
-            browser_config=data.get("browser_setting", "default"),
-            extensions=data.get("extensions", []),
-            cli_options=data.get("cli_options", []),
-            dirty_allowed=data.get("dirty_allowed", True),
-            target_cookie_name=None
-            if data.get("check_for") == "request"
-            else data.get("target_cookie_name", "generic"),
-        )
+        params = Main.convert_to_plotparams(data)
 
         if PlotFactory.validate_params(params):
             return None, None
