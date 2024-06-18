@@ -2,7 +2,6 @@
 <style src="@vueform/slider/themes/default.css"></style>
 <script>
 import axios from 'axios'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import Gantt from "./components/gantt.vue"
 import PocEditor from "./components/poc-editor.vue"
 import SectionHeader from "./components/section-header.vue";
@@ -185,7 +184,7 @@ export default {
     this.init_socket();
     this.get_projects();
     this.get_browser_support();
-    const path = `http://${location.hostname}:5000/api/poc/domain/`;
+    const path = `/api/poc/domain/`;
     axios.get(path)
     .then((res) => {
       if (res.data.status === "OK") {
@@ -381,7 +380,7 @@ export default {
       })
     },
     create_new_experiment() {
-      const url = `http://${location.hostname}:5000/api/poc/${this.selected.project}/`;
+      const url = `/api/poc/${this.selected.project}/`;
       axios.post(url, {'poc_name': this.dialog.new_experiment_name})
       .then((res) => {
         this.get_tests(this.selected.project);

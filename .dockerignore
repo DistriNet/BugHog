@@ -15,6 +15,7 @@ binaries
 browser-repos
 config
 database
+docs
 Dockerfile
 docker-compose.yaml
 drivers
