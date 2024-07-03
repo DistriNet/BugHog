@@ -28,35 +28,36 @@ This framework has been developed as part of the _"A Bug's Life: Analyzing the L
 BugHog is compatible with UNIX systems running Docker, including WSL on Windows.
 Follow these steps to get started:
 
-1. **Clone this repository:**
+### 1. Clone this repository:
 
-    ```bash
-    git clone https://github.com/DistriNet/BugHog
-    cd BugHog
-    ```
+```bash
+git clone https://github.com/DistriNet/BugHog
+cd BugHog
+```
 
-2. **Obtain images:**
+### 2. Obtain images:
 
-    You will need at least 5 GB of disk space.
-    There are two options available to obtain the BugHog images, and you can switch between them by executing the appropriate command.
+You will need at least 5 GB of disk space.
+There are two options available to obtain the BugHog images, and you can switch between them by executing the appropriate command.
 
-    ***Option A:** Pulling (fastest)*
+#### Option A: Pulling (fastest)
 
-    Use the following command to pull the necessary Docker images:
-    ```bash
-    docker compose pull core worker nginx
-    ```
+Use the following command to pull the necessary Docker images:
+```bash
+docker compose pull core worker nginx
+```
 
-    > :bulb: If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
+> [!NOTE]
+> If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
 
-    ***Option B:** Building*
+#### Option B: Building
 
-    Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
-    ```bash
-    docker compose build core worker nginx
-    ```
-
-    > :bulb: For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
+Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
+```bash
+docker compose build core worker nginx
+```
+> [!NOTE]
+> For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
 
 ## Usage
@@ -66,7 +67,8 @@ Launch BugHog using the following command:
 docker compose up -d core nginx
 ```
 
-> :warning: If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
+> [!WARNING]
+> If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
 > To avoid this, explicitly pass on this variable: `sudo PWD=$PWD docker compose -d up ...`.
 
 Open your web browser and navigate to [http://localhost:5000](http://localhost) to access the graphical interface.
@@ -77,7 +79,8 @@ BugHog can be stopped through:
 docker compose down
 ```
 
-> :warning: BugHog's own MongoDB instance will persist data within the [database](database) folder.
+> [!WARNING]
+> BugHog's own MongoDB instance will persist data within the [database](database) folder.
 > Be sure to back-up accordingly, or use your own MongoDB instance as explained below.
 
 
@@ -93,7 +96,7 @@ If you prefer storing data in your own MongoDB instance, follow these steps:
 
 ### Adding your new experiments
 
-Instructions to add your own custom experiments to the server can be found [here](https://github.com/DistriNet/BugHog-web/blob/main/experiments/README.md).
+Instructions to add your own custom experiments to the server can be found [here](/experiments/README.md).
 Be sure to restart the BugHog framework when you add a new experiment.
 
 ## Development
