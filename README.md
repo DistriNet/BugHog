@@ -28,36 +28,36 @@ This framework has been developed as part of the _"A Bug's Life: Analyzing the L
 BugHog is compatible with UNIX systems running Docker, including WSL on Windows.
 Follow these steps to get started:
 
-1. **Clone this repository:**
+### 1. Clone this repository:
 
     ```bash
     git clone https://github.com/DistriNet/BugHog
     cd BugHog
     ```
 
-2. **Obtain images:**
+### 2. Obtain images:
 
-    You will need at least 5 GB of disk space.
-    There are two options available to obtain the BugHog images, and you can switch between them by executing the appropriate command.
+You will need at least 5 GB of disk space.
+There are two options available to obtain the BugHog images, and you can switch between them by executing the appropriate command.
 
-    ***Option A:** Pulling (fastest)*
+#### Option A: Pulling (fastest)
 
-    Use the following command to pull the necessary Docker images:
-    ```bash
-    docker compose pull core worker nginx
-    ```
+Use the following command to pull the necessary Docker images:
+```bash
+docker compose pull core worker nginx
+```
 
-    > [!NOTE]
-    > If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
+> [!NOTE]
+> If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
 
-    ***Option B:** Building*
+#### Option B: Building
 
-    Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
-    ```bash
-    docker compose build core worker nginx
-    ```
-    > [!NOTE]
-    > For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
+Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
+```bash
+docker compose build core worker nginx
+```
+> [!NOTE]
+> For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
 
 ## Usage
