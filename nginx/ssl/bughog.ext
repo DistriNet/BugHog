@@ -1,0 +1,26 @@
+# authorityKeyIdentifier  = keyid,issuer
+# basicConstraints        = CA:FALSE
+# keyUsage                = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+# [ req ]
+# default_bits       = 2048
+# distinguished_name = req_distinguished_name
+# prompt             = no
+# [ req_distinguished_name ]
+# countryName         = BE
+# stateOrProvinceName = Vlaams-Brabant
+# localityName        = Heverlee
+# organizationName    = DistriNet
+# commonName          = bughog_CA
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = bughog.io
+DNS.2 = a.test
+DNS.3 = sub.a.test
+DNS.4 = sub.sub.a.test
+DNS.5 = b.test
+DNS.6 = sub.b.test
+DNS.7 = leak.test
+DNS.8 = adition.com

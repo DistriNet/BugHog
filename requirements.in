@@ -1,6 +1,6 @@
-bokeh
 docker
 Flask
+flask-sock
 flatten-dict
 gunicorn
 mitmproxy

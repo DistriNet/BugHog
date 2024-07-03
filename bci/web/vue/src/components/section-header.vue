@@ -42,7 +42,7 @@
           },
           "results": {
             "title": "Results",
-            "tooltip": "Choose an experiment from the dropdown menu to visualize its results in the Gantt chart below. Squares represent (approximate) release binaries, while dots represent revision binaries. Disable auto-refresh to prevent chart updates while navigating the chart."
+            "tooltip": "Choose an experiment from the dropdown menu to visualize its results in the Gantt chart below. Squares represent (approximate) release binaries, while dots represent revision binaries. Clicking on a dot will open the web page for the associated revision in the public browser repository."
           },
           "search_strategy": {
             "title": "Search strategy",

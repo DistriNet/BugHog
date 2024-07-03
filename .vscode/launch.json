@@ -8,7 +8,7 @@
             "name": "BugHog",
             "type": "python",
             "request": "launch",
-            "program": "/app/bci/ui/app.py",
+            "program": "/app/bci/app.py",
             "purpose": [
                 "debug-test"
             ],

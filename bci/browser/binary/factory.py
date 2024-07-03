@@ -53,4 +53,4 @@ def __get_object(state: State) -> Binary:
         case 'firefox':
             return FirefoxBinary(state)
         case _:
-            raise ValueError(f'Unknown browser {browser_name}')
+            raise ValueError(f'Unknown browser {state.browser_name}')

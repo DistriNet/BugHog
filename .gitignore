@@ -1,6 +1,8 @@
 test/resources/repositories
 browser/binaries/
 database/data/
+nginx/ssl/certs/*
+nginx/ssl/keys/*
 !**/.gitkeep
 **/node_modules
 **/junit.xml

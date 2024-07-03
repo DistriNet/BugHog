@@ -1,20 +1,22 @@
+import json
+import logging
 import os
 import threading
 
 from flask import Blueprint, request
 
+from bci.app import sock
 from bci.evaluations.logic import evaluation_factory
 from bci.main import Main as bci_api
+from bci.web.clients import Clients
 
+logger = logging.getLogger(__name__)
 api = Blueprint('api', __name__, url_prefix='/api')
+
 THREAD = None
 
 
-def instantiate_main_object():
-    bci_api.initialize()
-
-
-def start_thread(func, args=[]) -> bool:
+def start_thread(func, args=None) -> bool:
     global THREAD
     if THREAD and THREAD.is_alive():
         return False
@@ -23,8 +25,6 @@ def start_thread(func, args=[]) -> bool:
         THREAD.start()
         return True
 
-
-start_thread(instantiate_main_object)
 
 
 @api.before_request
@@ -41,7 +41,7 @@ def check_readiness():
 
 @api.after_request
 def add_headers(response):
-    if 'DEVELOPMENT' in os.environ:
+    if 'DEVELOPMENT' in os.environ and os.environ['DEVELOPMENT'] == '1':
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         response.headers['Access-Control-Allow-Methods'] = '*'
@@ -80,33 +80,28 @@ def stop_evaluation():
     }
 
 
-@api.route('/database/connect/', methods=['POST'])
-def connect_database():
-    if start_thread(bci_api.connect_to_database):
-        return {
-            'status': 'OK'
-        }
-    else:
-        return {
-            'status': 'NOK'
-        }
-
-
 '''
 Requesting information
 '''
 
 
-@api.route('/info/', methods=['GET'])
-def get_info():
-    return {
-        'status': 'OK',
-        'info': {
-            'database': bci_api.get_database_info(),
-            'log': bci_api.get_logs(),
-            'running': bci_api.is_running()
-        }
-    }
+@sock.route('/socket/', bp=api)
+def init_websocket(ws):
+    logger.info('Client connected')
+    Clients.add_client(ws)
+    while True:
+        message = ws.receive()
+        if message is None:
+            break
+        try:
+            message = json.loads(message)
+            if params := message.get('new_params', None):
+                Clients.associate_params(ws, params)
+            if requested_variables := message.get('get', []):
+                Clients.push_info(ws, *requested_variables)
+        except ValueError:
+            logger.warning('Ignoring invalid message from client.')
+    ws.send('Connected to BugHog')
 
 
 @api.route('/browsers/', methods=['GET'])
@@ -142,20 +137,26 @@ def get_tests(project: str):
     }
 
 
-@api.route('/results/', methods=['PUT'])
-def get_html_plot():
-    params = request.json.copy()
-    plot_html, nb_of_evaluations = bci_api.get_html_plot(params)
-    return {
-        'status': 'OK',
-        'nb_of_evaluations': nb_of_evaluations,
-        'plot_html': plot_html
-    }
-
-
 @api.route('/log/', methods=['POST'])
 def log():
     # TODO: emit logs of workers in central log
     return {
         'status': 'OK'
     }
+
+
+@api.route('/data/', methods=['PUT'])
+def data_source():
+    params = request.json.copy()
+    revision_data, version_data = bci_api.get_data_sources(params)
+    if revision_data or version_data:
+        return {
+            'status': 'OK',
+            'revision': revision_data,
+            'version': version_data
+        }
+    else:
+        return {
+            'status': 'NOK',
+            'msg': 'Invalid type'
+        }
