@@ -30,10 +30,10 @@ Follow these steps to get started:
 
 ### 1. Clone this repository:
 
-    ```bash
-    git clone https://github.com/DistriNet/BugHog
-    cd BugHog
-    ```
+```bash
+git clone https://github.com/DistriNet/BugHog
+cd BugHog
+```
 
 ### 2. Obtain images:
 
