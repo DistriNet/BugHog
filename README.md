@@ -71,7 +71,7 @@ docker compose up -d core nginx
 > If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
 > To avoid this, explicitly pass on this variable: `sudo PWD=$PWD docker compose -d up ...`.
 
-Open your web browser and navigate to [http://localhost:5000](http://localhost) to access the graphical interface.
+Open your web browser and navigate to [http://localhost:80](http://localhost:80) to access the graphical interface.
 If BugHog is started on a remote server, substitute 'localhost' with the appropriate IP address.
 
 BugHog can be stopped through:
