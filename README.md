@@ -47,7 +47,8 @@ Follow these steps to get started:
     docker compose pull core worker nginx
     ```
 
-    > :bulb: If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
+    > [!NOTE]
+    > If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
 
     ***Option B:** Building*
 
@@ -55,8 +56,8 @@ Follow these steps to get started:
     ```bash
     docker compose build core worker nginx
     ```
-
-    > :bulb: For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
+    > [!NOTE]
+    > For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
 
 ## Usage
@@ -66,7 +67,8 @@ Launch BugHog using the following command:
 docker compose up -d core nginx
 ```
 
-> :warning: If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
+> [!WARNING]
+> If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
 > To avoid this, explicitly pass on this variable: `sudo PWD=$PWD docker compose -d up ...`.
 
 Open your web browser and navigate to [http://localhost:5000](http://localhost) to access the graphical interface.
@@ -77,7 +79,8 @@ BugHog can be stopped through:
 docker compose down
 ```
 
-> :warning: BugHog's own MongoDB instance will persist data within the [database](database) folder.
+> [!WARNING]
+> BugHog's own MongoDB instance will persist data within the [database](database) folder.
 > Be sure to back-up accordingly, or use your own MongoDB instance as explained below.
 
 
@@ -93,7 +96,7 @@ If you prefer storing data in your own MongoDB instance, follow these steps:
 
 ### Adding your new experiments
 
-Instructions to add your own custom experiments to the server can be found [here](https://github.com/DistriNet/BugHog-web/blob/main/experiments/README.md).
+Instructions to add your own custom experiments to the server can be found [here](/experiments/README.md).
 Be sure to restart the BugHog framework when you add a new experiment.
 
 ## Development
