@@ -97,6 +97,7 @@ services:
     restart: always
     volumes:
       - ./nginx/ssl/:/etc/nginx/ssl/:ro
+      - ./experiments/pages/:/www/data/pages/:ro
       - ./experiments/res/:/www/data/res/:ro
     ports:
       - "80:80"

@@ -1,6 +1,8 @@
 <script>
   import ace from "ace-builds";
   import 'ace-builds/src-min-noconflict/ext-modelist';
+  import 'ace-builds/src-min-noconflict/theme-twilight';
+  import 'ace-builds/src-min-noconflict/theme-xcode';
   import axios from 'axios';
   export default {
     props: {

@@ -156,10 +156,10 @@ class CustomEvaluationFramework(EvaluationFramework):
             return False
         with open(file_path, 'w') as file:
             file.write('')
-        headers_file_path = os.path.join(page_path, 'headers.txt')
+        headers_file_path = os.path.join(page_path, 'headers.json')
         if not os.path.exists(headers_file_path):
             with open(headers_file_path, 'w') as file:
-                file.write('[{"name": "Content-Type", "value": "text/html"}]')
+                file.write('[{"key": "Header-Name", "value": "Header-Value"}]')
         self.sync_with_folders()
         return True
 

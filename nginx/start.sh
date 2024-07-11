@@ -1,7 +1,8 @@
 #!/bin/sh
 
-rm /etc/nginx/nginx.conf;
-ln /etc/nginx/config/nginx.conf /etc/nginx/nginx.conf;
+rm /usr/local/openresty/nginx/conf/nginx.conf;
+rm /usr/local/openresty/nginx/conf/nginx.conf.default;
+ln /etc/nginx/config/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf;
 
 if [ "$DEVELOPMENT" = "1" ]; then
     ln /etc/nginx/config/core_dev.conf /etc/nginx/config/core.conf;
@@ -9,4 +10,7 @@ else
     ln /etc/nginx/config/core_prod.conf /etc/nginx/config/core.conf;
 fi
 
-nginx -g 'daemon off;'
+# Give bh_core a little bit more time to generate the certificates
+sleep 1;
+
+/usr/bin/openresty -g 'daemon off;'
