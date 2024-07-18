@@ -128,15 +128,6 @@ def get_system_info():
     }
 
 
-@api.route('/tests/<string:project>/', methods=['GET'])
-def get_tests(project: str):
-    tests = bci_api.get_mech_groups_of_evaluation_framework('custom', project=project)
-    return {
-        'status': 'OK',
-        'tests': tests
-    }
-
-
 @api.route('/log/', methods=['POST'])
 def log():
     # TODO: emit logs of workers in central log
@@ -159,4 +150,84 @@ def data_source():
         return {
             'status': 'NOK',
             'msg': 'Invalid type'
+        }
+
+
+@api.route('/poc/<string:project>/', methods=['GET'])
+def get_experiments(project: str):
+    experiments = bci_api.get_mech_groups_of_evaluation_framework('custom', project)
+    return {
+        'status': 'OK',
+        'experiments': experiments
+    }
+
+
+@api.route('/poc/<string:project>/<string:poc>/', methods=['GET'])
+def poc(project: str, poc: str):
+    return {
+        'status': 'OK',
+        'tree': bci_api.get_poc(project, poc)
+    }
+
+
+@api.route('/poc/<string:project>/<string:poc>/<string:domain>/<string:path>/<string:file>/', methods=['GET'])
+def poc_file(project: str, poc: str, domain: str, path: str, file: str):
+    return {
+        'status': 'OK',
+        'content': bci_api.get_poc_file(project, poc, domain, path, file)
+    }
+
+
+@api.route('/poc/<string:project>/<string:poc>/<string:domain>/<string:path>/<string:file>/', methods=['POST'])
+def update_poc_file(project: str, poc: str, domain: str, path: str, file: str):
+    data = request.json.copy()
+    success = bci_api.update_poc_file(project, poc, domain, path, file, data['content'])
+    if success:
+        return {
+            'status': 'OK'
+        }
+    else :
+        return {
+            'status': 'NOK'
+        }
+
+
+@api.route('/poc/<string:project>/<string:poc>/', methods=['POST'])
+def add_page(project: str, poc: str):
+    data = request.json.copy()
+    success = bci_api.add_page(project, poc, data['domain'], data['page'], data['file_type'])
+    if success:
+        return {
+            'status': 'OK'
+        }
+    else:
+        return {
+            'status': 'NOK'
+        }
+
+
+@api.route('/poc/domain/', methods=['GET'])
+def get_available_domains():
+    return {
+        'status': 'OK',
+        'domains': bci_api.get_available_domains()
+    }
+
+
+@api.route('/poc/<string:project>/', methods=['POST'])
+def create_experiment(project: str):
+    data = request.json.copy()
+    if 'poc_name' not in data.keys():
+        return {
+            'status': 'NOK',
+            'msg': 'Missing experiment name'
+        }
+    if bci_api.create_empty_poc(project, data['poc_name']):
+        return {
+            'status': 'OK'
+        }
+    else:
+        return {
+            'status': 'NOK',
+            'msg': 'Could not create experiment'
         }

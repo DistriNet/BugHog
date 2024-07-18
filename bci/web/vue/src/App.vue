@@ -3,12 +3,14 @@
 <script>
 import axios from 'axios'
 import Gantt from "./components/gantt.vue"
+import PocEditor from "./components/poc-editor.vue"
 import SectionHeader from "./components/section-header.vue";
 import Slider from '@vueform/slider'
 import Tooltip from "./components/tooltip.vue";
 export default {
   components: {
     Gantt,
+    PocEditor,
     SectionHeader,
     Slider,
     Tooltip,
@@ -73,6 +75,9 @@ export default {
         experiment: null,
         project: null,
       },
+      dialog: {
+        new_experiment_name: null
+      },
       darkmode: null,
       darkmode_toggle: null,
       target_mech_id_input: null,
@@ -80,7 +85,9 @@ export default {
       fatal_error: null,
       hide_advanced: true,
       hide_logs: true,
+      hide_poc_editor: true,
       system: null,
+      available_domains: null,
       websocket: null,
     }
   },
@@ -124,6 +131,11 @@ export default {
   watch: {
     "selected.project": function (val) {
       this.set_curr_project(val);
+    },
+    "selected.experiment": function (val) {
+      if (val !== null) {
+        this.hide_poc_editor = false;
+      }
     },
     "slider.state": function (val) {
       this.eval_params.lower_version = val[0];
@@ -172,6 +184,13 @@ export default {
     this.init_socket();
     this.get_projects();
     this.get_browser_support();
+    const path = `/api/poc/domain/`;
+    axios.get(path)
+    .then((res) => {
+      if (res.data.status === "OK") {
+        this.available_domains = res.data.domains;
+      }
+    })
     setTimeout(function () {
       log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
     },
@@ -295,10 +314,10 @@ export default {
         });
     },
     get_tests(project) {
-      const path = `/api/tests/${project}/`;
+      const path = `/api/poc/${project}/`;
       axios.get(path)
         .then((res) => {
-          this.tests = res.data.tests;
+          this.tests = res.data.experiments;
         })
         .catch((error) => {
           console.error(error);
@@ -360,6 +379,17 @@ export default {
         }
       })
     },
+    create_new_experiment() {
+      const url = `/api/poc/${this.selected.project}/`;
+      axios.post(url, {'poc_name': this.dialog.new_experiment_name})
+      .then((res) => {
+        this.get_tests(this.selected.project);
+        this.dialog.new_experiment_name = null;
+      })
+      .catch((error) => {
+        console.log('Could not create new experiment');
+      });
+    },
   },
   beforeDestroy() {
     clearInterval(this.timer);
@@ -403,11 +433,6 @@ export default {
           </div>
         </div>
 
-        <!-- <div v-for="option in browser_settings" class="radio-item w-full">
-          <input v-model="eval_params.browser_setting" type="radio" :value="option.short">
-          <label :for="option.short">{{ option.pretty }}</label>
-        </div> -->
-
         <div class="form-subsection">
           <h2 class="form-subsection-title">Browser version range</h2>
           <div class="flex flex-wrap">
@@ -443,15 +468,30 @@ export default {
           <option v-for="project in projects">{{ project }}</option>
         </select>
 
-        <div class="h-0 grow overflow-y-auto">
+        <div class="h-0 grow overflow-y-auto overflow-x-hidden">
           <ul class="horizontal-select">
-            <li v-for="test in tests">
+            <li v-for="tuple in tests">
               <div>
-                <input v-model="eval_params.tests" type="checkbox" :value="test">
-                <label for="vue-checkbox-list">{{ test }}</label>
+                <input v-model="eval_params.tests" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
+                <label for="vue-checkbox-list" class="flex group w-full">
+                  <div class="pl-0 w-full">
+                    <div v-if="!tuple[1]" class="text-red-500 font-bold">
+                      !
+                    </div>
+                    <p class="truncate w-0 grow">
+                      {{ tuple[0] }}
+                    </p>
+                  </div>
+                  <div role="button" @click="this.selected.experiment=tuple[0]" class="invisible w-content collapse group-hover:visible">
+                    <v-icon name="fa-regular-edit"/>
+                  </div>
+                </label>
               </div>
             </li>
           </ul>
+        </div>
+        <div v-if="this.selected.project" role="button" class="button mt-2" onclick="create_experiment_dialog.showModal()">
+          Add new experiment
         </div>
       </div>
     </div>
@@ -498,8 +538,34 @@ export default {
       </div>
     </div>
 
+    <!-- PoC editor -->
+    <div class="form-section col-span-2 row-start-3">
+      <div class="flex">
+        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+          Experiment editor
+          <div v-if="this.selected.experiment !== null && !this.hide_poc_editor" class="px-1 font-normal">
+            ({{ this.selected.experiment }})
+          </div>
+        </h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_poc_editor = !this.hide_poc_editor">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="this.hide_poc_editor ? 'hidden w-full' : 'w-full'">
+        <poc-editor
+        :darkmode="this.darkmode"
+        :available_domains="this.available_domains"
+        :project="this.selected.project"
+        :poc="this.selected.experiment"></poc-editor>
+      </div>
+    </div>
+
     <!-- Advanced options -->
-    <div class="form-section h-fit col-span-2 row-start-3">
+    <div class="form-section h-fit col-span-2 row-start-4">
       <div class="flex">
         <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced options</h2>
         <div class="w-full text-right">
@@ -544,21 +610,6 @@ export default {
           <!-- Evaluation settings -->
           <div class="form-subsection w-fit eval_opts col-start-3">
             <section-header section="eval_settings"></section-header>
-
-            <!-- <div class="form-subsection">
-              <section-header section="automation"></section-header>
-              <div class="radio-item">
-                <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option"
-                  value="terminal">
-                <label for="terminal_automation">CLI automation</label>
-              </div>
-
-              <div class="radio-item">
-                <input v-model="eval_params.automation" type="radio" id="automation" name="automation_option" value="selenium">
-                <label for="terminal_automation">Selenium automation</label><br>
-              </div>
-            </div> -->
-
             <div class="form-subsection">
               <section-header section="search_strategy"></section-header>
 
@@ -589,26 +640,6 @@ export default {
                 <tooltip tooltip="sequence_limit"></tooltip>
               </div>
               <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000">
-              <!-- <div id="search_stategy_hidden_options" class="hidden_options">
-                <br>
-
-                <div class="flex items-baseline">
-                  <label for="leak">Request or cookie</label>
-                  <tooltip tooltip="request_or_cookie"></tooltip>
-                </div>
-                <div class="radio-item">
-                  <input v-model="eval_params.check_for" type="radio" id="request" name="leak" value="request">
-                  <label for="request">Request</label>
-                </div>
-                <div class="radio-item">
-                  <input v-model="eval_params.check_for" type="radio" id="cookie" name="leak" value="cookie">
-                  <label for="cookie">Cookie</label>
-                </div>
-                <div v-if="eval_params.check_for == 'cookie'">
-                  <label for="cookie_name">Cookie name</label>
-                  <input v-model="eval_params.target_cookie_name"  type="text" id="cookie_name" name="cookie_name">
-                </div>
-              </div> -->
             </div>
 
             <div class="form-subsection">
@@ -616,43 +647,13 @@ export default {
               <input v-model.number="eval_params.nb_of_containers" class="input-box" type="number" id="nb_of_containers"
                 name="nb_of_containers" min="1" max="16">
             </div>
-
-            <!-- <div class="form-section">
-            <section-header section="browser_config"></section-header>
-
-            <div class="form-subsection flex flex-wrap">
-              <h2 class="form-subsection-title">Settings</h2>
-
-              <div v-for="option in browser_settings" class="radio-item w-full">
-                <input v-model="eval_params.browser_setting" type="radio" :value="option.short">
-                <label :for="option.short">{{ option.pretty }}</label>
-              </div>
-            </div>
-
-            <div class="form-subsection flex flex-wrap">
-              <h2 class="form-subsection-title">Extensions</h2>
-
-              <div v-for="extension in extensions" class="checkbox-item">
-                <input v-model="eval_params.extensions" type="checkbox" :value="extension">
-                <label :for="extension">{{ extension }}</label>
-              </div>
-            </div>
-
-            <div class="form-subsection flex flex-wrap">
-              <h2 class="form-subsection-title">CLI options <i>(beta)</i></h2>
-
-              <textarea v-model="eval_params.cli_options" id="message" rows="4" class="large-text-input"
-                placeholder="--sandbox"></textarea>
-
-            </div>
-          </div> -->
           </div>
         </div>
       </div>
     </div>
 
     <!-- Logs -->
-    <div class="results-section h-fit col-span-2 row-start-4 flex-1">
+    <div class="results-section h-fit col-span-2 row-start-5 flex-1">
       <div class="flex">
         <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
         <div class="w-full text-right">
@@ -674,5 +675,23 @@ export default {
       </div>
     </div>
   </div>
+
+  <!-- Create file dialog -->
+  <dialog id="create_experiment_dialog" class="dialog">
+    <form method="dialog" @submit="create_new_experiment">
+      <p>
+        <label>
+          <div class="pb-5">
+            Enter new experiment name:
+          </div>
+          <input type="text" v-model="dialog.new_experiment_name" class="input-box" required autocomplete="off" />
+        </label>
+      </p>
+      <div class="flex pt-3">
+        <input type="submit" value="Create file" class="button m-2 w-full">
+        <input type="button" value="Cancel" class="button m-2" onclick="create_experiment_dialog.close()">
+      </div>
+    </form>
+  </dialog>
 </template>
 

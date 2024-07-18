@@ -26,7 +26,7 @@ services:
       - ./config:/app/config:ro
       - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
       - ./browser/binaries/firefox/artisanal:/app/browser/binaries/firefox/artisanal:rw
-      - ./experiments:/app/experiments:ro
+      - ./experiments:/app/experiments:rw
       - ./browser/extensions:/app/browser/extensions:ro
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
@@ -97,6 +97,7 @@ services:
     restart: always
     volumes:
       - ./nginx/ssl/:/etc/nginx/ssl/:ro
+      - ./experiments/pages/:/www/data/pages/:ro
       - ./experiments/res/:/www/data/res/:ro
     ports:
       - "80:80"

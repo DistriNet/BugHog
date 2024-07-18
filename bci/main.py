@@ -84,10 +84,10 @@ class Main:
         binary_factory.download_online_binary(browser, rev_number)
 
     @staticmethod
-    def get_mech_groups_of_evaluation_framework(evaluation_name: str, project=None):
+    def get_mech_groups_of_evaluation_framework(evaluation_name: str, project) -> list[tuple[str, bool]]:
         return Main.master.get_specific_evaluation_framework(
             evaluation_name
-        ).get_mech_groups(project=project)
+        ).get_mech_groups(project)
 
     @staticmethod
     def get_projects_of_custom_framework() -> list[str]:
@@ -132,3 +132,28 @@ class Main:
         return \
             PlotFactory.get_plot_revision_data(params, MongoDB.get_instance()), \
             PlotFactory.get_plot_version_data(params, MongoDB.get_instance())
+
+    @staticmethod
+    def get_poc(project: str, poc: str) -> dict:
+        return Main.master.get_specific_evaluation_framework("custom").get_poc_structure(project, poc)
+
+    @staticmethod
+    def get_poc_file(project: str, poc: str, domain: str, path: str, file: str) -> str:
+        return Main.master.get_specific_evaluation_framework("custom").get_poc_file(project, poc, domain, path, file)
+
+    @staticmethod
+    def update_poc_file(project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
+        logger.debug(f'Updating file {file} of project {project} and poc {poc}')
+        return Main.master.get_specific_evaluation_framework("custom").update_poc_file(project, poc, domain, path, file, content)
+
+    @staticmethod
+    def create_empty_poc(project: str, poc_name: str) -> bool:
+        return Main.master.get_specific_evaluation_framework("custom").create_empty_poc(project, poc_name)
+
+    @staticmethod
+    def get_available_domains() -> list[str]:
+        return Global.get_available_domains()
+
+    @staticmethod
+    def add_page(project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
+        return Main.master.get_specific_evaluation_framework("custom").add_page(project, poc, domain, path, file_type)

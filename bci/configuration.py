@@ -28,6 +28,18 @@ class Global:
                 raise ValueError(f'Invalid browser \'{browser}\'')
 
     @staticmethod
+    def get_available_domains() -> list[str]:
+        return [
+            'a.test',
+            'sub.a.test',
+            'sub.sub.a.test',
+            'b.test',
+            'sub.b.test',
+            'leak.test',
+            'adition.com',
+        ]
+
+    @staticmethod
     def check_required_env_parameters() -> bool:
         fatal = False
         # HOST_PWD
