@@ -37,7 +37,7 @@ brotli==1.1.0
     # via
     #   -r requirements.txt
     #   mitmproxy
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -r requirements.txt
     #   aioquic
@@ -233,7 +233,7 @@ pytest-flake8==1.1.1
     # via -r requirements_dev.in
 python-dateutil==2.9.0.post0
     # via botocore
-requests==2.31.0
+requests==2.32.2
     # via
     #   -r requirements.txt
     #   docker
@@ -266,11 +266,11 @@ sortedcontainers==2.4.0
     #   mitmproxy
 tomlkit==0.12.5
     # via pylint
-tornado==6.4
+tornado==6.4.1
     # via
     #   -r requirements.txt
     #   mitmproxy
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   -r requirements.txt
     #   botocore

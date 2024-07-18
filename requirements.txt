@@ -14,7 +14,7 @@ blinker==1.8.2
     # via flask
 brotli==1.1.0
     # via mitmproxy
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   aioquic
     #   mitmproxy
@@ -109,7 +109,7 @@ pyparsing==3.1.2
     # via mitmproxy
 pyperclip==1.8.2
     # via mitmproxy
-requests==2.31.0
+requests==2.32.2
     # via
     #   -r requirements.in
     #   docker
@@ -125,9 +125,9 @@ six==1.16.0
     # via flatten-dict
 sortedcontainers==2.4.0
     # via mitmproxy
-tornado==6.4
+tornado==6.4.1
     # via mitmproxy
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   docker
     #   requests
