@@ -78,7 +78,7 @@ class Master:
         self.evaluation_framework = self.get_specific_evaluation_framework(
             evaluation_config.project
         )
-        worker_manager = WorkerManager(sequence_config.nb_of_containers)
+        self.worker_manager = WorkerManager(sequence_config.nb_of_containers)
 
         try:
             state_list = factory.create_state_collection(browser_config, evaluation_range)
@@ -106,7 +106,7 @@ class Master:
                         continue
 
                     # Start worker to perform evaluation
-                    worker_manager.start_test(worker_params, update_outcome)
+                    self.worker_manager.start_test(worker_params, update_outcome)
 
                     current_state = search_strategy.next()
             except SequenceFinished:
@@ -124,12 +124,12 @@ class Master:
             if self.stop_forcefully:
                 logger.info("Forcefully stopping experiment queue due to user end signal...")
                 self.state['reason'] = 'user'
-                worker_manager.forcefully_stop_all_running_containers()
+                self.worker_manager.forcefully_stop_all_running_containers()
             else:
                 logger.info("Gracefully stopping experiment queue since last experiment started.")
             # MongoDB.disconnect()
             logger.info("Waiting for remaining experiments to stop...")
-            worker_manager.wait_until_all_evaluations_are_done()
+            self.worker_manager.wait_until_all_evaluations_are_done()
             logger.info("BugHog has finished the evaluation!")
             self.state['is_running'] = False
             self.state['status'] = 'idle'
@@ -194,7 +194,8 @@ class Master:
             }
             Clients.push_info_to_all('state')
             self.evaluation_framework.stop_gracefully()
-            self.worker_manager.forcefully_stop_all_running_containers()
+            if self.worker_manager:
+                self.worker_manager.forcefully_stop_all_running_containers()
             logger.info("Received user signal to forcefully stop.")
         else:
             logger.info("Received user signal to forcefully stop, but no evaluation is running.")

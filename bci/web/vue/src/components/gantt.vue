@@ -4,29 +4,36 @@ export default {
         return {
             browser_name: null,
             plot: null,
-            revision_source: null,
-            version_source: null,
+            revision_source: {
+                data: [],
+            },
+            version_source: {
+                data: [],
+            },
+            revision_range: null,
+            x_min: null,
+            x_max: null,
         }
     },
     methods: {
         init_plot() {
             console.log("Initializing Gantt chart...");
 
-            if (this.revision_source.length === 0 && this.version_source.length === 0) {
-                var x_min = 1;
-                var x_max = 100;
+            if (this.revision_source.length === 0 || this.version_source.length === 0) {
+                this.x_min = 1;
+                this.x_max = 1000000;
             } else {
-                var x_min = Math.min(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
-                var x_max = Math.max(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                this.x_min = Math.min(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                this.x_max = Math.max(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
             }
 
             this.plot = Bokeh.Plotting.figure({
                 title: 'Gantt Chart with Points',
-                x_range: [x_min, x_max],
+                x_range: [this.x_min, this.x_max],
                 y_range: ['Error', 'Not reproduced', 'Reproduced'],
                 height: 470,
                 width: 900,
-                tools: 'xwheel_zoom,reset,pan',
+                tools: 'xwheel_zoom,pan',
                 active_scroll: 'xwheel_zoom'
             });
 
@@ -120,8 +127,7 @@ export default {
                 return;
             }
 
-            let init_required = this.revision_source === null || this.browser_name !== browser_name;;
-            // let rescale_required = this.browser_name !== browser_name;
+            let init_required = this.revision_source === null || this.browser_name !== browser_name;
             this.browser_name = browser_name;
 
             if (init_required) {
@@ -133,21 +139,26 @@ export default {
                 this.version_source.data = version_data;
             }
 
-            // if (rescale_required) {
-            //     this.update_x_range()
-            // }
+            this.update_x_range(this.browser_name !== browser_name)
         },
-        update_x_range() {
+        update_x_range(force_update) {
+            console.log("executing update_x_range");
             if (this.plot !== null) {
-                if (this.revision_source.length === 0 && this.version_source.length === 0) {
-                    var x_min = 1;
-                    var x_max = 100;
-                } else {
-                    var x_min = Math.min(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
-                    var x_max = Math.max(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                if (this.revision_source.length !== 0 || this.version_source.length !== 0) {
+                    console.log("calculating new x");
+                    var new_x_min = Math.min(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                    var new_x_max = Math.max(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                    if (new_x_min != this.x_min || force_update === true) {
+                        console.log("updating x_min");
+                        this.x_min = new_x_min;
+                        this.plot.x_range.start = new_x_min;
+                    }
+                    if (new_x_max != this.x_max || force_update === true) {
+                        console.log("updating x_max");
+                        this.x_max = new_x_max;
+                        this.plot.x_range.end = new_x_max;
+                    }
                 }
-                this.plot.x_range.start = x_min;
-                this.plot.x_range.end = x_max;
             }
         },
     },

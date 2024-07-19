@@ -25,7 +25,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via flask
-cryptography==42.0.7
+cryptography==42.0.8
     # via
     #   aioquic
     #   mitmproxy
@@ -33,7 +33,7 @@ cryptography==42.0.7
     #   service-identity
 dnspython==2.6.1
     # via pymongo
-docker==7.0.0
+docker==7.1.0
     # via -r requirements.in
 flask==3.0.3
     # via
@@ -72,19 +72,17 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   werkzeug
-mitmproxy==10.3.0
+mitmproxy==10.3.1
     # via -r requirements.in
 mitmproxy-rs==0.5.2
     # via mitmproxy
 msgpack==1.0.8
     # via mitmproxy
-packaging==24.0
-    # via
-    #   docker
-    #   gunicorn
+packaging==24.1
+    # via gunicorn
 passlib==1.7.4
     # via mitmproxy
-protobuf==5.26.1
+protobuf==5.27.0
     # via mitmproxy
 publicsuffix2==2.20191221
     # via mitmproxy
@@ -99,7 +97,7 @@ pycparser==2.22
     # via cffi
 pylsqpack==0.3.18
     # via aioquic
-pymongo==4.7.2
+pymongo==4.8.0
     # via -r requirements.in
 pyopenssl==24.1.0
     # via
@@ -109,7 +107,7 @@ pyparsing==3.1.2
     # via mitmproxy
 pyperclip==1.8.2
     # via mitmproxy
-requests==2.32.2
+requests==2.32.3
     # via
     #   -r requirements.in
     #   docker
@@ -125,7 +123,7 @@ six==1.16.0
     # via flatten-dict
 sortedcontainers==2.4.0
     # via mitmproxy
-tornado==6.4.1
+tornado==6.4
     # via mitmproxy
 urllib3==2.2.2
     # via
