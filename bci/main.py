@@ -157,3 +157,7 @@ class Main:
     @staticmethod
     def add_page(project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
         return Main.master.get_specific_evaluation_framework("custom").add_page(project, poc, domain, path, file_type)
+
+    @staticmethod
+    def sigint_handler(signum, frame):
+        return Main.master.stop_bughog()

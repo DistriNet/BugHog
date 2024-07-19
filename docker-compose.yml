@@ -69,6 +69,7 @@ services:
     image: bughog/core:${BUGHOG_VERSION}
     hostname: bh_core
     container_name: bh_core
+    init: true
     ports:
       - "5000:5000"
     profiles:

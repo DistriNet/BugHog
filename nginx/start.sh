@@ -13,4 +13,4 @@ fi
 # Give bh_core a little bit more time to generate the certificates
 sleep 1;
 
-/usr/bin/openresty -g 'daemon off;'
+exec /usr/bin/openresty -g 'daemon off;'

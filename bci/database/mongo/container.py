@@ -40,6 +40,14 @@ def run() -> DatabaseConnectionParameters:
         DEFAULT_DB_NAME
     )
 
+def stop():
+    docker_client = docker.from_env()
+    try:
+        mongo_container = docker_client.containers.get(DEFAULT_HOST)
+        mongo_container.stop()
+        LOGGER.debug('MongoDB container has stopped.')
+    except docker.errors.NotFound:
+        LOGGER.debug('No MongoDB container found to stop. This is OK if another MongoDB instance is used.')
 
 def __create_new_container(user: str, pw: str, db_name, db_host):
     docker_client = docker.from_env()

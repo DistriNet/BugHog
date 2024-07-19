@@ -23,89 +23,65 @@ This framework has been developed as part of the _"A Bug's Life: Analyzing the L
     width="100"/>
 
 
-## Installation
+## Getting started :rocket:
 
 BugHog is compatible with UNIX systems running Docker, including WSL on Windows.
+You will need at least 5 GB of disk space.
+
 Follow these steps to get started:
 
-### 1. Clone this repository:
-
 ```bash
+# Clone this repository
 git clone https://github.com/DistriNet/BugHog
 cd BugHog
+
+# Pull our pre-built Docker images
+./scripts/pull.sh
+
+# Start the pulled images
+./scripts/start.sh
 ```
 
-### 2. Obtain images:
-
-You will need at least 5 GB of disk space.
-There are two options available to obtain the BugHog images, and you can switch between them by executing the appropriate command.
-
-#### Option A: Pulling (fastest)
-
-Use the following command to pull the necessary Docker images:
-```bash
-docker compose pull core worker nginx
-```
+Open your web browser and navigate to [http://localhost:80](http://localhost:80) to access the graphical user interface.
+If BugHog is started on a remote server, substitute 'localhost' with the appropriate IP address.
 
 > [!NOTE]
-> If you prefer to use a version other than the latest, simply modify the `BUGHOG_VERSION` and / or `BUGHOG_WEB_VERSION` variables accordingly.
+> Depending on your Docker configuration, you might have to use `sudo ./scripts/[..]`.
 
-#### Option B: Building
+> [!TIP]
+> BugHog in default configuration will spin up its own MongoDB container, which persists data in the [/database](/database/) folder.
+> Configuring BugHog to use your own MongoDB (and other options) are explained [here](https://github.com/DistriNet/BugHog/wiki/Configuration-options).
+
+To stop BugHog, simply run this in the project root:
+
+```bash
+./scripts/stop.sh
+```
+
+
+## Development
 
 Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
+
 ```bash
-docker compose build core worker nginx
+# Build BugHog images
+./scripts/build.sh
+
+# Run the freshly built images
+./scripts/start.sh
 ```
+
 > [!NOTE]
 > For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
 
-## Usage
+### Debugging
 
-Launch BugHog using the following command:
-```bash
-docker compose up -d core nginx
-```
-
-> [!WARNING]
-> If you use `sudo` with this command, the `PWD` environment variable won't be passed to the BugHog containers, which is necessary for dynamically starting worker containers.
-> To avoid this, explicitly pass on this variable: `sudo PWD=$PWD docker compose -d up ...`.
-
-Open your web browser and navigate to [http://localhost:80](http://localhost:80) to access the graphical interface.
-If BugHog is started on a remote server, substitute 'localhost' with the appropriate IP address.
-
-BugHog can be stopped through:
-```bash
-docker compose down
-```
-
-> [!WARNING]
-> BugHog's own MongoDB instance will persist data within the [database](database) folder.
-> Be sure to back-up accordingly, or use your own MongoDB instance as explained below.
-
-
-### Optional: Use your own MongoDB instance
-
-By default, BugHog uses a MongoDB container to store data.
-If you prefer storing data in your own MongoDB instance, follow these steps:
-
-1. Create a `.env` file from `.env.example` (both in the [config](config) folder) and fill in the missing database values.
-
-2. (Re)start BugHog.
-
-
-### Adding your new experiments
-
-Instructions to add your own custom experiments to the server can be found [here](/experiments/README.md).
-Be sure to restart the BugHog framework when you add a new experiment.
-
-## Development
-
-For extending or debugging the Vue UI, the most convenient approach is to launch an interactive Node environment.
+The most convenient debugging approach is to launch an interactive Node environment.
 The UI can be visited at [http://localhost:5173](http://localhost:5173).
 
 ```bash
-docker compose up node_dev
+./scripts/node_dev.sh
 ```
 
 For debugging the core application, consider using the VS Code dev container.
