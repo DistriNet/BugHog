@@ -13,9 +13,9 @@ rm -f /tmp/.X1-lock
 service xvfb start
 
 if [[ "$DEVELOPMENT" == "1" ]]; then
-    sleep infinity;
+    exec sleep infinity;
 else
-    gunicorn 'bci.app:create_app()' \
+    exec gunicorn 'bci.app:create_app()' \
         --name core \
         --workers 1 \
         --threads 100 \

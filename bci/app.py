@@ -1,3 +1,5 @@
+import signal
+
 from flask import Flask
 from flask_sock import Sock
 
@@ -19,6 +21,10 @@ def create_app():
     app.register_blueprint(api)
     app.register_blueprint(exp)
     sock.init_app(app)
+
+    # Configure signal handlers
+    signal.signal(signal.SIGTERM, bci_api.sigint_handler)
+    signal.signal(signal.SIGINT, bci_api.sigint_handler)
 
     return app
 

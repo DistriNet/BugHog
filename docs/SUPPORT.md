@@ -1,9 +1,7 @@
-# Overview of all support pages
-
-
+# Overview support
 
 - [General installation and usage](/README.md)
-- [Adding your own experiments](/experiments/README.md)
+- [Wiki](https://github.com/DistriNet/BugHog/wiki)
 
 
 ## Troubleshooting
@@ -15,8 +13,7 @@ Additionally, feel free to include any relevant logs for further assistance.
 
 ### Consult the logs
 
-- Try launching BugHog without the `-d` flag to view logging output in the terminal, which might provide more information about the issue.
-- For more detailed logs at the `DEBUG` level, check out the [logs](/logs) folder for all logging files.
+- Check out the [logs](/logs) folder for all logging files.
 
 
 ### WSL on Windows

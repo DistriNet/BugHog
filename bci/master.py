@@ -1,16 +1,19 @@
 import logging
 
+import bci.database.mongo.container as mongodb_container
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB, ServerException
 from bci.distribution.worker_manager import WorkerManager
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
 from bci.evaluations.evaluation_framework import EvaluationFramework
-from bci.evaluations.logic import (DatabaseConnectionParameters,
-                                   EvaluationParameters,
-                                   SequenceConfiguration, WorkerParameters)
+from bci.evaluations.logic import (
+    DatabaseConnectionParameters,
+    EvaluationParameters,
+    SequenceConfiguration,
+    WorkerParameters,
+)
 from bci.evaluations.outcome_checker import OutcomeChecker
-from bci.evaluations.samesite.samesite_evaluation import \
-    SameSiteEvaluationFramework
+from bci.evaluations.samesite.samesite_evaluation import SameSiteEvaluationFramework
 from bci.evaluations.xsleaks.evaluation import XSLeaksEvaluation
 from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.n_ary_search import NArySearch
@@ -191,6 +194,14 @@ class Master:
             }
             Clients.push_info_to_all('state')
             self.evaluation_framework.stop_gracefully()
+            self.worker_manager.forcefully_stop_all_running_containers()
             logger.info("Received user signal to forcefully stop.")
         else:
             logger.info("Received user signal to forcefully stop, but no evaluation is running.")
+
+    def stop_bughog(self):
+        logger.info("Stopping all running BugHog containers...")
+        self.activate_stop_forcefully()
+        mongodb_container.stop()
+        logger.info("Stopping BugHog core...")
+        exit(0)
