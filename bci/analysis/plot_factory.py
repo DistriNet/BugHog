@@ -53,6 +53,10 @@ class PlotFactory:
         target_mech_id = params.target_mech_id if params.target_mech_id else params.mech_group
 
         for doc in docs:
+            # DISCLAIMER:
+            # Because Nginx takes care of all HTTPS traffic, flask (which doubles as proxy) only sees HTTP traffic.
+            # Browser <--HTTPS--> Nginx <--HTTP--> Flask
+
             # Backwards compatibility
             requests_to_target = list(filter(lambda x: f'/report/?leak={target_mech_id}' in x['url'], doc['results']['requests']))
             # New way

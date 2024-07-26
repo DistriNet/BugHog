@@ -51,7 +51,7 @@ export default {
         only_release_revisions: true,
         // Sequence config
         nb_of_containers: 8,
-        sequence_limit: 100,
+        sequence_limit: 50,
         target_mech_id: null,
         target_cookie_name: "generic",
         search_strategy: "comp_search",
@@ -615,21 +615,21 @@ export default {
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
-                  value="bin_seq">
+                  value="bin_seq" :disabled="this.eval_params.only_release_revisions">
                 <label for="bin_seq">Binary sequence</label>
                 <tooltip tooltip="bin_seq"></tooltip>
               </div>
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
-                  value="bin_search">
+                  value="bin_search" :disabled="this.eval_params.only_release_revisions">
                 <label for="bin_search">Binary search</label>
                 <tooltip tooltip="bin_search"></tooltip>
               </div>
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
-                  value="comp_search">
+                  value="comp_search" :disabled="this.eval_params.only_release_revisions">
                 <label for="comp_search">Composite search</label>
                 <tooltip tooltip="comp_search"></tooltip>
               </div>
@@ -639,7 +639,7 @@ export default {
                 <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
                 <tooltip tooltip="sequence_limit"></tooltip>
               </div>
-              <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000">
+              <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000" :disabled="this.eval_params.only_release_revisions">
             </div>
 
             <div class="form-subsection">

@@ -32,7 +32,10 @@ class OutcomeChecker:
         requests = result.data.get('requests')
         if requests is None:
             return None
-        regex = rf'^https:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]+\/report\/\?leak={target_mech_id}$'
+        # DISCLAIMER:
+        # Because Nginx takes care of all HTTPS traffic, flask (which doubles as proxy) only sees HTTP traffic.
+        # Browser <--HTTPS--> Nginx <--HTTP--> Flask
+        regex = rf'^https?:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]+\/report\/\?leak={target_mech_id}$'
         requests_to_result_endpoint = [request for request in requests if re.match(regex, request['url'])]
         for request in requests_to_result_endpoint:
             headers = request['headers']
