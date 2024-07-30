@@ -52,7 +52,7 @@ If BugHog is started on a remote server, substitute 'localhost' with the appropr
 > Configuring BugHog to use your own MongoDB and other options are explained [here](https://github.com/DistriNet/BugHog/wiki/Configuration-options).
 
 > [!TIP]
-> Our [tutorial](https://github.com/DistriNet/BugHog/wiki/Tutorial) guide you on how to use BugHog to trace a real bug's lifecycle.
+> Our [30-minute tutorial](https://github.com/DistriNet/BugHog/wiki/Tutorial) will guide you on how to use BugHog to trace a real bug's lifecycle!
 
 To stop BugHog, simply run this in the project root:
 
