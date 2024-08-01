@@ -66,7 +66,7 @@ To stop BugHog, simply run this in the project root:
 ```
 
 
-## Development :computer:
+## Development :hammer_and_wrench:
 
 Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
 
