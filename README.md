@@ -66,7 +66,7 @@ To stop BugHog, simply run this in the project root:
 ```
 
 
-## Development
+## Development :computer:
 
 Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
 
@@ -82,7 +82,7 @@ Use the following commands to build the Docker images yourself, for instance aft
 > For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
 
-### Debugging :computer:
+### Debugging
 
 The most convenient debugging approach is to launch an interactive Node environment.
 The UI can be visited at [http://localhost:5173](http://localhost:5173).
