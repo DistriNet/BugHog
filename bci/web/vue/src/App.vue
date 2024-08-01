@@ -180,22 +180,16 @@ export default {
       this.propagate_new_params();
     },
   },
-  mounted: function () {
-    this.init_socket();
+  created: function () {
+    this.websocket = this.create_socket();
     this.get_projects();
-    this.get_browser_support();
-    const path = `/api/poc/domain/`;
+    this.get_browser_support();const path = `/api/poc/domain/`;
     axios.get(path)
     .then((res) => {
       if (res.data.status === "OK") {
         this.available_domains = res.data.domains;
       }
     })
-    setTimeout(function () {
-      log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
-    },
-      500
-    );
     this.timer = setInterval(() => {
       if (this.projects.length == 0) {
         this.get_projects();
@@ -208,6 +202,13 @@ export default {
       }
       this.fetch_server_info(["logs"]);
     }, 2000);
+  },
+  mounted: function () {
+    setTimeout(function () {
+      log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
+    },
+      500
+    );
     // Darkmode functionality
     if ('theme' in localStorage) {
       this.darkmode = (localStorage.theme === 'dark');
@@ -222,14 +223,19 @@ export default {
     }
   },
   methods: {
-    init_socket() {
+    create_socket() {
       const url = `/api/socket/`;
-      this.websocket = new WebSocket(url);
-      this.websocket.addEventListener("open", () => {
-        console.log("WebSocket initialized");
-        this.get_info();
+      const websocket = new WebSocket(url);
+      websocket.addEventListener("open", () => {
+        console.log("WebSocket opened!");
+        // Get all info upon open
+        this.send_with_socket({
+          "get": ["all"],
+        });
+        // This might be a re-open after connection loss, which means we might have to propagate our params again
+        this.propagate_new_params()
       });
-      this.websocket.addEventListener("message", () => {
+      websocket.addEventListener("message", () => {
         const data = JSON.parse(event.data);
         if (data.hasOwnProperty("update")) {
           if (data.update.hasOwnProperty("plot_data")) {
@@ -245,23 +251,28 @@ export default {
           }
         }
       });
-      this.websocket.addEventListener("error", () => {
-        console.log("Could not connect to backend socket. Trying again in 5 seconds...");
-        setTimeout(() => {
-          this.init_socket();
-        }, 5000);
+      websocket.addEventListener("error", () => {
+        console.log("Could not connect to backend socket.");
       });
-      this.websocket.addEventListener("close",  () => {
-        console.log("Connection to backend socket was unexpectedly closed. Trying to reconnect...");
-        setTimeout(() => {
-          this.init_socket();
-        }, 500);
+      websocket.addEventListener("close",  () => {
+        console.log("Connection to backend socket was unexpectedly closed.");
       });
+      return websocket;
+    },
+    send_with_socket(data_in_dict) {
+      if (this.websocket === undefined || this.websocket.readyState > 1) {
+        console.log(`Websocket connection died, reviving... (readyState: ${this.websocket.readyState})`);
+        this.websocket = this.create_socket();
+      } else if (this.websocket.readyState === 0) {
+        console.log(`Websocket is still trying to connect... (readyState: ${this.websocket.readyState})`);
+      } else {
+        this.websocket.send(JSON.stringify(data_in_dict));
+      }
     },
     fetch_server_info(info_types) {
-      this.websocket.send(JSON.stringify({
+      this.send_with_socket({
         "get": info_types
-      }));
+      });
     },
     toggle_darkmode(event) {
       let darkmode_toggle_checked = event.srcElement.checked;
@@ -271,11 +282,6 @@ export default {
       } else {
         localStorage.setItem('theme', 'light');
       }
-    },
-    get_info() {
-      this.websocket.send(JSON.stringify({
-        "get": ["all"],
-      }));
     },
     get_projects() {
       const path = `/api/projects/`;
@@ -326,11 +332,11 @@ export default {
     propagate_new_params() {
       if (this.missing_plot_params.length === 0) {
         console.log('Propagating parameter change');
-        this.websocket.send(JSON.stringify(
+        this.send_with_socket(
           {
             "new_params": this.eval_params
           }
-        ));
+        );
       } else {
         console.log("Missing plot parameters: ", this.missing_plot_params);
       }
