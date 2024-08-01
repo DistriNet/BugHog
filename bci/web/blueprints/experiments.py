@@ -1,5 +1,6 @@
 import datetime
 import logging
+import threading
 
 import requests
 from flask import Blueprint, make_response, render_template, request
@@ -67,10 +68,14 @@ def report_leak():
         "headers": dict(request.headers),
         "content": request.data.decode("utf-8"),
     }
-    try:
-        requests.post(f"http://{remote_ip}:5001/report/", json=response_data, timeout=5)
-    except requests.exceptions.ConnectionError:
-        logger.info(f"WARNING: Could not propagate request to collector at {remote_ip}:5001")
+
+    def send_report_to_collector():
+        try:
+            requests.post(f"http://{remote_ip}:5001/report/", json=response_data, timeout=5)
+        except requests.exceptions.ConnectionError:
+            logger.warning(f"WARNING: Could not propagate request to collector at {remote_ip}:5001")
+
+    threading.Thread(target=send_report_to_collector).start()
 
     return resp
 
