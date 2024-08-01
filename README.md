@@ -12,8 +12,6 @@ BugHog is a powerful framework designed specifically to address the challenging 
 
 This framework has been developed as part of the _"A Bug's Life: Analyzing the Lifecycle and Mitigation Process of Content Security Policy Bugs"_ paper to identify Content Security Policy bug lifecycles, published at [USENIX Security '23](https://www.usenix.org/conference/usenixsecurity23/presentation/franken).
 
-<br>
-
 <div align="center">
     <img
         src="https://secartifacts.github.io/usenixsec2023/usenixbadges-available.png"
