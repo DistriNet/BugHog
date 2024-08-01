@@ -82,7 +82,7 @@ Use the following commands to build the Docker images yourself, for instance aft
 > For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
 
 
-### Debugging
+### Debugging :computer:
 
 The most convenient debugging approach is to launch an interactive Node environment.
 The UI can be visited at [http://localhost:5173](http://localhost:5173).
@@ -95,7 +95,7 @@ For debugging the core application, consider using the VS Code dev container.
 You can utilize the configuration in [.devcontainer](.devcontainer) for this.
 
 
-## Support and contact
+## Support and contact :phone:
 
 More information on how to use BugHog can be found [here](/docs/SUPPORT.md).
 
