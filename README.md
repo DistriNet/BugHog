@@ -1,26 +1,31 @@
-# BugHog
-
-![pytest_job](https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main)
-<a href="https://hub.docker.com/r/bughog/core">![Docker Image Version (tag)](https://img.shields.io/docker/v/bughog/core/latest?logo=docker)</a>
-<a href="https://hub.docker.com/r/bughog/core">![Docker Image Size](https://img.shields.io/docker/image-size/bughog/core?logo=docker)</a>
-
+<div align="center">
+    <img alt="BugHog logo" src="./assets/bughog_logo_long.svg" height="186"/>
+    <div>
+        <img alt="pytest_job" src="https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main" />
+        <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Version (tag)" src="https://img.shields.io/docker/v/bughog/core/latest?logo=docker" /></a>
+        <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Size" src="https://img.shields.io/docker/image-size/bughog/core?logo=docker" /></a>
+    </div>
+</div>
+<br>
 
 BugHog is a powerful framework designed specifically to address the challenging task of pinpointing the exact code revisions in which a particular browser bug was introduced or fixed.
 
 This framework has been developed as part of the _"A Bug's Life: Analyzing the Lifecycle and Mitigation Process of Content Security Policy Bugs"_ paper to identify Content Security Policy bug lifecycles, published at [USENIX Security '23](https://www.usenix.org/conference/usenixsecurity23/presentation/franken).
 
-<img
-    src="https://secartifacts.github.io/usenixsec2023/usenixbadges-available.png"
-    alt="USENIX Association artifact evaluated badge"
-    width="100"/>
-<img
-    src="https://secartifacts.github.io/usenixsec2023/usenixbadges-functional.png"
-    alt="USENIX Association artifact functional badge"
-    width="100"/>
-<img
-    src="https://secartifacts.github.io/usenixsec2023/usenixbadges-reproduced.png"
-    alt="USENIX Association artifact reproduced badge"
-    width="100"/>
+<div align="center">
+    <img
+        src="https://secartifacts.github.io/usenixsec2023/usenixbadges-available.png"
+        alt="USENIX Association artifact evaluated badge"
+        width="100"/>
+    <img
+        src="https://secartifacts.github.io/usenixsec2023/usenixbadges-functional.png"
+        alt="USENIX Association artifact functional badge"
+        width="100"/>
+    <img
+        src="https://secartifacts.github.io/usenixsec2023/usenixbadges-reproduced.png"
+        alt="USENIX Association artifact reproduced badge"
+        width="100"/>
+</div>
 
 
 ## Getting started :rocket:
@@ -61,7 +66,7 @@ To stop BugHog, simply run this in the project root:
 ```
 
 
-## Development
+## Development :hammer_and_wrench:
 
 Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
 
@@ -90,7 +95,7 @@ For debugging the core application, consider using the VS Code dev container.
 You can utilize the configuration in [.devcontainer](.devcontainer) for this.
 
 
-## Support and contact
+## Support and contact :phone:
 
 More information on how to use BugHog can be found [here](/docs/SUPPORT.md).
 
