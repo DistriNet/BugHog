@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="BugHog logo" src="./assets/bughog_logo_long.svg" />
+    <img alt="BugHog logo" src="./assets/bughog_logo_long.svg" height="256"/>
     <div>
         <img alt="pytest_job" src="https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main" />
         <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Version (tag)" src="https://img.shields.io/docker/v/bughog/core/latest?logo=docker" /></a>
