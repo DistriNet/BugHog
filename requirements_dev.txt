@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements_dev.in
 #
-aioquic==1.0.0
+aioquic==1.2.0
     # via
     #   -r requirements.txt
     #   mitmproxy
@@ -14,7 +14,7 @@ asgiref==3.8.1
     # via
     #   -r requirements.txt
     #   mitmproxy
-astroid==3.2.3
+astroid==3.2.4
     # via pylint
 attrs==23.2.0
     # via
@@ -26,9 +26,9 @@ blinker==1.8.2
     # via
     #   -r requirements.txt
     #   flask
-boto3==1.34.145
+boto3==1.34.152
     # via -r requirements_dev.in
-botocore==1.34.145
+botocore==1.34.152
     # via
     #   -r requirements_dev.in
     #   boto3
@@ -59,7 +59,7 @@ coverage[toml]==7.6.0
     # via
     #   -r requirements_dev.in
     #   pytest-cov
-cryptography==42.0.8
+cryptography==43.0.0
     # via
     #   -r requirements.txt
     #   aioquic
@@ -148,9 +148,9 @@ mccabe==0.7.0
     # via
     #   flake8
     #   pylint
-mitmproxy==10.3.1
+mitmproxy==10.4.2
     # via -r requirements.txt
-mitmproxy-rs==0.5.2
+mitmproxy-rs==0.6.3
     # via
     #   -r requirements.txt
     #   mitmproxy
@@ -172,7 +172,7 @@ platformdirs==4.2.2
     # via pylint
 pluggy==1.5.0
     # via pytest
-protobuf==5.27.0
+protobuf==5.27.3
     # via
     #   -r requirements.txt
     #   mitmproxy
@@ -200,7 +200,7 @@ pycparser==2.22
     #   cffi
 pyflakes==3.2.0
     # via flake8
-pylint==3.2.5
+pylint==3.2.6
     # via -r requirements_dev.in
 pylsqpack==0.3.18
     # via
@@ -208,7 +208,7 @@ pylsqpack==0.3.18
     #   aioquic
 pymongo==4.8.0
     # via -r requirements.txt
-pyopenssl==24.1.0
+pyopenssl==24.2.1
     # via
     #   -r requirements.txt
     #   aioquic
@@ -217,18 +217,18 @@ pyparsing==3.1.2
     # via
     #   -r requirements.txt
     #   mitmproxy
-pyperclip==1.8.2
+pyperclip==1.9.0
     # via
     #   -r requirements.txt
     #   mitmproxy
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements_dev.in
     #   pytest-cov
     #   pytest-flake8
 pytest-cov==5.0.0
     # via -r requirements_dev.in
-pytest-flake8==1.1.3
+pytest-flake8==1.2.1
     # via -r requirements_dev.in
 python-dateutil==2.9.0.post0
     # via botocore
@@ -265,20 +265,28 @@ sortedcontainers==2.4.0
     #   mitmproxy
 tomlkit==0.13.0
     # via pylint
-tornado==6.4
+tornado==6.4.1
     # via
     #   -r requirements.txt
     #   mitmproxy
+typing-extensions==4.12.2
+    # via
+    #   -r requirements.txt
+    #   urwid
 urllib3==2.2.2
     # via
     #   -r requirements.txt
     #   botocore
     #   docker
     #   requests
-urwid-mitmproxy==2.1.2.1
+urwid==2.6.15
     # via
     #   -r requirements.txt
     #   mitmproxy
+wcwidth==0.2.13
+    # via
+    #   -r requirements.txt
+    #   urwid
 werkzeug==3.0.3
     # via
     #   -r requirements.txt
@@ -288,7 +296,7 @@ wsproto==1.2.0
     #   -r requirements.txt
     #   mitmproxy
     #   simple-websocket
-zstandard==0.22.0
+zstandard==0.23.0
     # via
     #   -r requirements.txt
     #   mitmproxy
