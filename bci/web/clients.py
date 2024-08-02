@@ -27,6 +27,19 @@ class Clients:
         Clients.push_results(ws_client)
 
     @staticmethod
+    def associate_project(ws_client: Server, project: str):
+        # Technical debt: this method is to quickly associate a project with a client.
+        # This is necessary to update the `runnable` exclamation mark in the UI when a main page is added to an experiment.
+        # This functionality should be included in the `associate_params`.
+        # Then, missing params should be checked server-side instead of client-side, as is the case now.
+        with Clients.__semaphore:
+            if not (params := Clients.__clients.get(ws_client, None)):
+                params = {}
+            params["project"] = project
+            Clients.__clients[ws_client] = params
+            Clients.push_experiments(ws_client)
+
+    @staticmethod
     def push_results(ws_client: Server):
         from bci.main import Main as bci_api
 
@@ -70,3 +83,18 @@ class Clients:
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
             Clients.push_info(ws_client, *requested_vars)
+
+    @staticmethod
+    def push_experiments(ws_client: Server):
+        from bci.main import Main as bci_api
+
+        project = Clients.__clients[ws_client].get("project", None)
+        if project:
+            experiments = bci_api.get_mech_groups_of_evaluation_framework('custom', project)
+            ws_client.send(json.dumps({"update": {"experiments": experiments}}))
+
+    @staticmethod
+    def push_experiments_to_all():
+        Clients.__remove_disconnected_clients()
+        for ws_client in Clients.__clients.keys():
+            Clients.push_experiments(ws_client)

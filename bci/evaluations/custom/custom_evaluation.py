@@ -4,11 +4,11 @@ from unittest import TestResult
 
 from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
-from bci.evaluations.collector import Collector
-from bci.evaluations.collector import Type
+from bci.evaluations.collector import Collector, Type
 from bci.evaluations.custom.custom_mongodb import CustomMongoDB
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import TestParameters
+from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +140,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         if not os.path.exists(poc_path):
             os.makedirs(poc_path)
             self.sync_with_folders()
+            Clients.push_experiments_to_all()
             return True
         return False
 
@@ -161,6 +162,8 @@ class CustomEvaluationFramework(EvaluationFramework):
             with open(headers_file_path, 'w') as file:
                 file.write('[{"key": "Header-Name", "value": "Header-Value"}]')
         self.sync_with_folders()
+        # Notify clients of change (an experiment might now be runnable)
+        Clients.push_experiments_to_all()
         return True
 
     def sync_with_folders(self):

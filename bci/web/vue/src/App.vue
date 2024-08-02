@@ -244,6 +244,9 @@ export default {
             this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
             this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
           }
+          if (data.update.hasOwnProperty("experiments")) {
+            this.tests = data.update.experiments;
+          }
           else {
             for (const variable in data.update) {
               this.server_info[variable] = data.update[variable];
@@ -319,16 +322,6 @@ export default {
           console.error(error);
         });
     },
-    get_tests(project) {
-      const path = `/api/poc/${project}/`;
-      axios.get(path)
-        .then((res) => {
-          this.tests = res.data.experiments;
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
     propagate_new_params() {
       if (this.missing_plot_params.length === 0) {
         console.log('Propagating parameter change');
@@ -343,7 +336,9 @@ export default {
     },
     set_curr_project(project) {
       this.eval_params.project = project;
-      this.get_tests(project);
+      this.send_with_socket({
+        "select_project": project
+      })
       this.eval_params.tests = [];
     },
     set_curr_browser(browser) {
@@ -389,7 +384,6 @@ export default {
       const url = `/api/poc/${this.selected.project}/`;
       axios.post(url, {'poc_name': this.dialog.new_experiment_name})
       .then((res) => {
-        this.get_tests(this.selected.project);
         this.dialog.new_experiment_name = null;
       })
       .catch((error) => {
