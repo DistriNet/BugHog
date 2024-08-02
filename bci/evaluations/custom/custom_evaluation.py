@@ -1,5 +1,6 @@
 import logging
 import os
+import textwrap
 from unittest import TestResult
 
 from bci.browser.configuration.browser import Browser
@@ -163,7 +164,15 @@ class CustomEvaluationFramework(EvaluationFramework):
         headers_file_path = os.path.join(page_path, 'headers.json')
         if not os.path.exists(headers_file_path):
             with open(headers_file_path, 'w') as file:
-                file.write('[{"key": "Header-Name", "value": "Header-Value"}]')
+                file.write(textwrap.dedent(
+                    '''\
+                        [
+                            {
+                                "key": "Header-Name",
+                                "value": "Header-Value"
+                            }
+                        ]
+                    '''))
         self.sync_with_folders()
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
