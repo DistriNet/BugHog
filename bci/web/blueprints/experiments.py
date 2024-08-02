@@ -1,8 +1,9 @@
 import datetime
 import logging
+import threading
 
 import requests
-from flask import Blueprint, make_response, render_template, request
+from flask import Blueprint, make_response, render_template, request, url_for
 
 from bci.web.page_parser import load_experiment_pages
 
@@ -37,7 +38,7 @@ def index():
 
 
 @exp.route("/report/", methods=["GET", "POST"])
-def report_leak():
+def report():
     leak = request.args.get("leak")
     if leak is not None:
         resp = make_response(
@@ -67,81 +68,74 @@ def report_leak():
         "headers": dict(request.headers),
         "content": request.data.decode("utf-8"),
     }
-    try:
-        requests.post(f"http://{remote_ip}:5001/report/", json=response_data, timeout=5)
-    except requests.exceptions.ConnectionError:
-        logger.info(f"WARNING: Could not propagate request to collector at {remote_ip}:5001")
+
+    def send_report_to_collector():
+        try:
+            requests.post(f"http://{remote_ip}:5001/report/", json=response_data, timeout=5)
+        except requests.exceptions.ConnectionError:
+            logger.warning(f"WARNING: Could not propagate request to collector at {remote_ip}:5001")
+
+    threading.Thread(target=send_report_to_collector).start()
 
     return resp
 
 
-@exp.route("/report/if/using/<string:protocol>")
-def report_leak_if_using_http(protocol):
+@exp.route("/report/if/scheme/<string:target_scheme>/")
+def report_leak_if_using_http(target_scheme):
     """
-    Forces request to /report/?leak=xxx if a request was received over a certain protocol.
+    Triggers request to /report/ if a request was received over the specified `scheme`.
     """
-    leak = request.args.get("leak")
-    if request.url.startswith(f"{protocol}://"):
-        return "Redirect", 307, {"Location": f"https://adition.com/report/?leak={leak}"}
+    used_scheme = request.headers.get("X-Forwarded-Proto")
+    params = get_all_bughog_GET_parameters(request)
+    if used_scheme == target_scheme:
+        return "Redirect", 307, {"Location": url_for("experiments.report", **params)}
     else:
-        return f"Request was not received over {protocol}", 200, {}
+        return f"Request was received over {used_scheme}, instead of {target_scheme}", 200, {}
 
 
-@exp.route("/report/if/<string:expected_header_name>")
+@exp.route("/report/if/<string:expected_header_name>/")
 def report_leak_if_present(expected_header_name: str):
     """
-    Forces request to /report/?leak=xxx if a request header by name of expected_header_name was received.
+    Triggers request to /report/ if a request header by name of `expected_header_name` was received.
     """
     if expected_header_name not in request.headers:
         return f"Header {expected_header_name} not found", 200, {"Allow-CSP-From": "*"}
 
-    leak = request.args.get("leak")
-    if leak is not None:
-        return (
-            "Redirect",
-            307,
-            {
-                "Location": f"https://adition.com/report/?leak={leak}",
-                "Allow-CSP-From": "*",
-            },
-        )
-    else:
-        return (
-            "Redirect",
-            307,
-            {"Location": "https://adition.com/report/", "Allow-CSP-From": "*"},
-        )
+    params = get_all_bughog_GET_parameters(request)
+    return (
+        "Redirect",
+        307,
+        {
+            "Location": url_for("experiments.report", **params),
+            "Allow-CSP-From": "*",
+        },
+    )
 
 
-@exp.route(
-    "/report/if/<string:expected_header_name>/contains/<string:expected_header_value>"
-)
+@exp.route("/report/if/<string:expected_header_name>/contains/<string:expected_header_value>/")
 def report_leak_if_contains(expected_header_name: str, expected_header_value: str):
     """
-    Forces request to /report/?leak=xxx if a request header by name of expected_header_name with value expected_header_value was received.
+    Triggers request to /report/ if a request header `expected_header_name` with value `expected_header_value` was received.
     """
     if expected_header_name not in request.headers:
         return f"Header {expected_header_name} not found", 200, {"Allow-CSP-From": "*"}
     elif expected_header_value not in request.headers[expected_header_name]:
         return (
-            f"Header {expected_header_name} found, but expected value '{expected_header_value}' did not equal real value '{request.headers[expected_header_name]}'",
+            f"Header {expected_header_name} found, but expected value '{expected_header_value}' was not found in the actual value '{request.headers[expected_header_name]}'",
             200,
             {"Allow-CSP-From": "*"},
         )
 
-    leak = request.args.get("leak")
-    if leak is not None:
-        return (
-            "Redirect",
-            307,
-            {
-                "Location": f"https://adition.com/report/?leak={leak}",
-                "Allow-CSP-From": "*",
-            },
-        )
-    else:
-        return (
-            "Redirect",
-            307,
-            {"Location": "https://adition.com/report/", "Allow-CSP-From": "*"},
-        )
+    params = get_all_bughog_GET_parameters(request)
+    return (
+        "Redirect",
+        307,
+        {
+            "Location": url_for("experiments.report", **params),
+            "Allow-CSP-From": "*",
+        },
+    )
+
+
+def get_all_bughog_GET_parameters(request):
+    return {k: v for k, v in request.args.items() if k.startswith("bughog_")}

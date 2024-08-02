@@ -97,6 +97,8 @@ def init_websocket(ws):
             message = json.loads(message)
             if params := message.get('new_params', None):
                 Clients.associate_params(ws, params)
+            if params := message.get('select_project', None):
+                Clients.associate_project(ws, params)
             if requested_variables := message.get('get', []):
                 Clients.push_info(ws, *requested_variables)
         except ValueError:

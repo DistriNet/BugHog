@@ -1,14 +1,15 @@
 import logging
 import os
+import textwrap
 from unittest import TestResult
 
 from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
-from bci.evaluations.collector import Collector
-from bci.evaluations.collector import Type
+from bci.evaluations.collector import Collector, Type
 from bci.evaluations.custom.custom_mongodb import CustomMongoDB
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import TestParameters
+from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +131,9 @@ class CustomEvaluationFramework(EvaluationFramework):
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
         file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file)
         if os.path.isfile(file_path):
+            if content == '':
+                logger.warning('Attempt to save empty file ignored')
+                return False
             with open(file_path, 'w') as file:
                 file.write(content)
             return True
@@ -140,6 +144,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         if not os.path.exists(poc_path):
             os.makedirs(poc_path)
             self.sync_with_folders()
+            Clients.push_experiments_to_all()
             return True
         return False
 
@@ -159,8 +164,18 @@ class CustomEvaluationFramework(EvaluationFramework):
         headers_file_path = os.path.join(page_path, 'headers.json')
         if not os.path.exists(headers_file_path):
             with open(headers_file_path, 'w') as file:
-                file.write('[{"key": "Header-Name", "value": "Header-Value"}]')
+                file.write(textwrap.dedent(
+                    '''\
+                        [
+                            {
+                                "key": "Header-Name",
+                                "value": "Header-Value"
+                            }
+                        ]
+                    '''))
         self.sync_with_folders()
+        # Notify clients of change (an experiment might now be runnable)
+        Clients.push_experiments_to_all()
         return True
 
     def sync_with_folders(self):

@@ -94,21 +94,20 @@ class Firefox(Browser):
         else:
             self._profile_path = prepare_firefox_profile('default-67')
 
-        # Make Firefox trust the proxy CA and server CA
-        # cert9.db  key4.db  pkcs11.txt
+        # Make Firefox trust the bughog CA
+
+        # For newer Firefox versions (> 57):
+        # Generate SQLite database: cert9.db  key4.db  pkcs11.txt
         cli.execute(
             f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}'
             )
-        # Normally: cert8.db  key3.db  secmod.db, however: cert9.db  key4.db  pkcs11.txt
+        # For older Firefox versions (<= 57):
+        # Generate in Berkeley DB database: cert8.db, key3.db, secmod.db
         cli.execute(
-            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d {self._profile_path}'
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}'
             )
 
-        # The certutil in the docker image refuses to create cert8.db, so we copy
-        # an existing cert8.db which accepts the necessary CAs
-        cli.execute(f'cp /app/browser/profiles/firefox/cert8.db {self._profile_path}')
-        # How to create a cert8.db?
-        # Current certutils versions do not support creating cert8.db anymore.
-        # However, older Firefox versions (<= 57) embed an old version the certutils library libnss3.so.
-        # Use this by `LD_LIBRARY_PATH=firefox/libnss3.so certutil -A -n bughog-ca -t CT,c -i /home/bci/bughog_ca.crt -d dbm:.{self._profile_path}`.
-        # Your cert8.db will be created in the current directory.
+        # More info:
+        # - https://support.mozilla.org/en-US/questions/1207165
+        # - https://stackoverflow.com/questions/1435000/programmatically-install-certificate-into-mozilla
+        # - https://ftpdocs.broadcom.com/cadocs/0/CA%20SiteMinder%20r12%20SP3-ENU/Bookshelf_Files/HTML/idocs/792390.html

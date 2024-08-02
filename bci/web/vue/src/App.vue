@@ -51,7 +51,7 @@ export default {
         only_release_revisions: true,
         // Sequence config
         nb_of_containers: 8,
-        sequence_limit: 100,
+        sequence_limit: 50,
         target_mech_id: null,
         target_cookie_name: "generic",
         search_strategy: "comp_search",
@@ -180,22 +180,16 @@ export default {
       this.propagate_new_params();
     },
   },
-  mounted: function () {
-    this.init_socket();
+  created: function () {
+    this.websocket = this.create_socket();
     this.get_projects();
-    this.get_browser_support();
-    const path = `/api/poc/domain/`;
+    this.get_browser_support();const path = `/api/poc/domain/`;
     axios.get(path)
     .then((res) => {
       if (res.data.status === "OK") {
         this.available_domains = res.data.domains;
       }
     })
-    setTimeout(function () {
-      log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
-    },
-      500
-    );
     this.timer = setInterval(() => {
       if (this.projects.length == 0) {
         this.get_projects();
@@ -208,6 +202,13 @@ export default {
       }
       this.fetch_server_info(["logs"]);
     }, 2000);
+  },
+  mounted: function () {
+    setTimeout(function () {
+      log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
+    },
+      500
+    );
     // Darkmode functionality
     if ('theme' in localStorage) {
       this.darkmode = (localStorage.theme === 'dark');
@@ -222,14 +223,19 @@ export default {
     }
   },
   methods: {
-    init_socket() {
+    create_socket() {
       const url = `/api/socket/`;
-      this.websocket = new WebSocket(url);
-      this.websocket.addEventListener("open", () => {
-        console.log("WebSocket initialized");
-        this.get_info();
+      const websocket = new WebSocket(url);
+      websocket.addEventListener("open", () => {
+        console.log("WebSocket opened!");
+        // Get all info upon open
+        this.send_with_socket({
+          "get": ["all"],
+        });
+        // This might be a re-open after connection loss, which means we might have to propagate our params again
+        this.propagate_new_params()
       });
-      this.websocket.addEventListener("message", () => {
+      websocket.addEventListener("message", () => {
         const data = JSON.parse(event.data);
         if (data.hasOwnProperty("update")) {
           if (data.update.hasOwnProperty("plot_data")) {
@@ -238,6 +244,9 @@ export default {
             this.$refs.gantt.update_plot(this.eval_params.browser_name, revision_data, version_data);
             this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
           }
+          if (data.update.hasOwnProperty("experiments")) {
+            this.tests = data.update.experiments;
+          }
           else {
             for (const variable in data.update) {
               this.server_info[variable] = data.update[variable];
@@ -245,23 +254,28 @@ export default {
           }
         }
       });
-      this.websocket.addEventListener("error", () => {
-        console.log("Could not connect to backend socket. Trying again in 5 seconds...");
-        setTimeout(() => {
-          this.init_socket();
-        }, 5000);
+      websocket.addEventListener("error", () => {
+        console.log("Could not connect to backend socket.");
       });
-      this.websocket.addEventListener("close",  () => {
-        console.log("Connection to backend socket was unexpectedly closed. Trying to reconnect...");
-        setTimeout(() => {
-          this.init_socket();
-        }, 500);
+      websocket.addEventListener("close",  () => {
+        console.log("Connection to backend socket was unexpectedly closed.");
       });
+      return websocket;
+    },
+    send_with_socket(data_in_dict) {
+      if (this.websocket === undefined || this.websocket.readyState > 1) {
+        console.log(`Websocket connection died, reviving... (readyState: ${this.websocket.readyState})`);
+        this.websocket = this.create_socket();
+      } else if (this.websocket.readyState === 0) {
+        console.log(`Websocket is still trying to connect... (readyState: ${this.websocket.readyState})`);
+      } else {
+        this.websocket.send(JSON.stringify(data_in_dict));
+      }
     },
     fetch_server_info(info_types) {
-      this.websocket.send(JSON.stringify({
+      this.send_with_socket({
         "get": info_types
-      }));
+      });
     },
     toggle_darkmode(event) {
       let darkmode_toggle_checked = event.srcElement.checked;
@@ -271,11 +285,6 @@ export default {
       } else {
         localStorage.setItem('theme', 'light');
       }
-    },
-    get_info() {
-      this.websocket.send(JSON.stringify({
-        "get": ["all"],
-      }));
     },
     get_projects() {
       const path = `/api/projects/`;
@@ -313,31 +322,23 @@ export default {
           console.error(error);
         });
     },
-    get_tests(project) {
-      const path = `/api/poc/${project}/`;
-      axios.get(path)
-        .then((res) => {
-          this.tests = res.data.experiments;
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
     propagate_new_params() {
       if (this.missing_plot_params.length === 0) {
         console.log('Propagating parameter change');
-        this.websocket.send(JSON.stringify(
+        this.send_with_socket(
           {
             "new_params": this.eval_params
           }
-        ));
+        );
       } else {
         console.log("Missing plot parameters: ", this.missing_plot_params);
       }
     },
     set_curr_project(project) {
       this.eval_params.project = project;
-      this.get_tests(project);
+      this.send_with_socket({
+        "select_project": project
+      })
       this.eval_params.tests = [];
     },
     set_curr_browser(browser) {
@@ -383,7 +384,6 @@ export default {
       const url = `/api/poc/${this.selected.project}/`;
       axios.post(url, {'poc_name': this.dialog.new_experiment_name})
       .then((res) => {
-        this.get_tests(this.selected.project);
         this.dialog.new_experiment_name = null;
       })
       .catch((error) => {
@@ -615,21 +615,21 @@ export default {
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
-                  value="bin_seq">
+                  value="bin_seq" :disabled="this.eval_params.only_release_revisions">
                 <label for="bin_seq">Binary sequence</label>
                 <tooltip tooltip="bin_seq"></tooltip>
               </div>
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
-                  value="bin_search">
+                  value="bin_search" :disabled="this.eval_params.only_release_revisions">
                 <label for="bin_search">Binary search</label>
                 <tooltip tooltip="bin_search"></tooltip>
               </div>
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
-                  value="comp_search">
+                  value="comp_search" :disabled="this.eval_params.only_release_revisions">
                 <label for="comp_search">Composite search</label>
                 <tooltip tooltip="comp_search"></tooltip>
               </div>
@@ -639,7 +639,7 @@ export default {
                 <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
                 <tooltip tooltip="sequence_limit"></tooltip>
               </div>
-              <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000">
+              <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000" :disabled="this.eval_params.only_release_revisions">
             </div>
 
             <div class="form-subsection">
