@@ -130,6 +130,9 @@ class CustomEvaluationFramework(EvaluationFramework):
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
         file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file)
         if os.path.isfile(file_path):
+            if content == '':
+                logger.warning('Attempt to save empty file ignored')
+                return False
             with open(file_path, 'w') as file:
                 file.write(content)
             return True
