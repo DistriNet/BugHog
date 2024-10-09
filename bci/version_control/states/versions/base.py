@@ -43,15 +43,13 @@ class BaseVersion(State):
         from bci.version_control.states.versions.firefox import FirefoxVersion
         match data['browser_name']:
             case 'chromium':
-                return ChromiumVersion(
-                    major_version=data['major_version']
-                )
+                state = ChromiumVersion(major_version=data['major_version'])
             case 'firefox':
-                return FirefoxVersion(
-                    major_version=data['major_version']
-                )
+                state = FirefoxVersion(major_version=data['major_version'])
             case _:
                 raise Exception(f'Unknown browser: {data["browser_name"]}')
+        state.result = data['result']
+        return state
 
     def __str__(self):
         return f'VersionState(version: {self.major_version}, rev: {self._rev_nb})'

@@ -30,6 +30,10 @@ class BaseRevision(State):
     def name(self):
         return f'{self.revision_number}'
 
+    @property
+    def index(self) -> int:
+        return self.revision_number
+
     def to_dict(self, make_complete: bool = True) -> dict:
         '''
         Returns a dictionary representation of the state.
@@ -56,21 +60,17 @@ class BaseRevision(State):
 
     @staticmethod
     def from_dict(data: dict) -> State:
-        from bci.version_control.states.revisions.chromium import \
-            ChromiumRevision
-        from bci.version_control.states.revisions.firefox import \
-            FirefoxRevision
+        from bci.version_control.states.revisions.chromium import ChromiumRevision
+        from bci.version_control.states.revisions.firefox import FirefoxRevision
         match data['browser_name']:
             case 'chromium':
-                return ChromiumRevision(
-                    revision_id=data['revision_id'], revision_number=data['revision_number']
-                )
+                state = ChromiumRevision(revision_id=data['revision_id'], revision_number=data['revision_number'])
             case 'firefox':
-                return FirefoxRevision(
-                    revision_id=data['revision_id'], revision_number=data['revision_number']
-                )
+                state = FirefoxRevision(revision_id=data['revision_id'], revision_number=data['revision_number'])
             case _:
                 raise Exception(f'Unknown browser: {data["browser_name"]}')
+        state.result = data['result']
+        return state
 
     def _has_revision_id(self) -> bool:
         return self._revision_id is not None

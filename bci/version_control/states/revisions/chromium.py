@@ -25,6 +25,9 @@ class ChromiumRevision(BaseRevision):
         MongoDB.store_binary_availability_online_cache('chromium', self, has_binary_online)
         return has_binary_online
 
+    def create_sibling(self, revision_number: int):
+        return ChromiumRevision(revision_number=revision_number)
+
     def get_online_binary_url(self):
         return "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/%s%%2F%s%%2Fchrome-%s.zip?alt=media" % ('Linux_x64', self._revision_number, 'linux')
 

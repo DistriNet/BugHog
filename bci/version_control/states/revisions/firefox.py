@@ -10,7 +10,7 @@ REVISION_NUMBER_MAPPING = request_json(REVISION_NUMBER_MAPPING_URL)["data"]
 
 class FirefoxRevision(BaseRevision):
 
-    def __init__(self, revision_id: str = None, revision_number: str = None, parents=None, children=None, version: int = None):
+    def __init__(self, revision_id: str = None, revision_number: int = None, parents=None, children=None, version: int = None):
         super().__init__(revision_id=revision_id, revision_number=revision_number, parents=parents, children=children)
         self.version = version
 
@@ -39,3 +39,6 @@ class FirefoxRevision(BaseRevision):
             return binary_data.get('revision_number')
         else:
             return None
+
+    def create_sibling(revision_number: int):
+        return FirefoxRevision(revision_number=revision_number)

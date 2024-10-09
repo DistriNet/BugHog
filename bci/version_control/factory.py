@@ -1,10 +1,8 @@
-import re
+from __future__ import annotations
 
-import bci.version_control.repository.online.chromium as chromium_repo
-import bci.version_control.repository.online.firefox as firefox_repo
-
-from bci.evaluations.logic import BrowserConfiguration, EvaluationRange
-from bci.version_control.repository.repository import Repository
+from bci.database.mongo.mongodb import MongoDB
+from bci.evaluations.logic import EvaluationParameters
+from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.version_control.states.revisions.chromium import ChromiumRevision
 from bci.version_control.states.revisions.firefox import FirefoxRevision
 from bci.version_control.states.state import State
@@ -12,70 +10,87 @@ from bci.version_control.states.versions.chromium import ChromiumVersion
 from bci.version_control.states.versions.firefox import FirefoxVersion
 
 
-def create_state_collection(browser_config: BrowserConfiguration, eval_range: EvaluationRange) -> list[State]:
-    if eval_range.only_release_revisions:
-        return __create_version_collection(browser_config, eval_range)
-    else:
-        return __create_revision_collection(browser_config, eval_range)
+class StateFactory:
+    def __init__(
+            self,
+            eval_params: EvaluationParameters,
+            outcome_checker: OutcomeChecker,
+            boundary_indices: tuple[int, int] | None = None)-> None:
+        '''
+        Create a state factory object with the given evaluation parameters and boundary indices.
 
+        :param eval_params: The evaluation parameters.
+        :param boundary_indices: The boundary indices that will overwrite the range defined by eval_params.
+        '''
+        self.eval_params = eval_params
+        self.outcome_checker = outcome_checker
+        self.boundary_indices = boundary_indices
 
-def __create_version_collection(browser_config: BrowserConfiguration, eval_range: EvaluationRange) -> list[State]:
-    if not eval_range.major_version_range:
-        raise ValueError('A major version range is required for creating a version collection')
-    lower_version = eval_range.major_version_range[0]
-    upper_version = eval_range.major_version_range[1]
+    def create_state(self, index: int) -> State:
+        """
+        Create a state object associated with the given index.
+        """
+        eval_range = self.eval_params.evaluation_range
+        if eval_range.major_version_range:
+            return self.__create_version_state(index)
+        elif eval_range.revision_number_range:
+            return self.__create_revision_state(index)
+        else:
+            raise ValueError("No evaluation range specified")
 
-    match browser_config.browser_name:
-        case 'chromium':
-            state_class = ChromiumVersion
-        case 'firefox':
-            state_class = FirefoxVersion
-        case _:
-            raise ValueError(f'Unknown browser name: {browser_config.browser_name}')
+    def create_boundary_states(self) -> tuple[State, State]:
+        """
+        Create the boundary state objects for the evaluation range.
+        """
+        eval_range = self.eval_params.evaluation_range
+        if eval_range.major_version_range:
+            if self.boundary_indices:
+                return tuple(self.create_state(index) for index in self.boundary_indices)
+            else:
+                return tuple(self.create_state(index) for index in eval_range.major_version_range)
+        elif eval_range.revision_number_range:
+            if self.boundary_indices:
+                return tuple(self.create_state(index) for index in self.boundary_indices)
+            else:
+                return tuple(self.create_state(index) for index in eval_range.revision_number_range)
+        else:
+            raise ValueError("No evaluation range specified")
 
-    return [
-        state_class(version)
-        for version in range(lower_version, upper_version + 1)
-    ]
+    def create_evaluated_states(self) -> list[State]:
+        """
+        Create evaluated state objects within the evaluation range where the result is fetched from the database.
+        """
+        db = MongoDB.get_instance()
+        return db.get_evaluated_states(self.eval_params, self.outcome_checker)
 
+    def create_sibling_factory(self, boundary_indices: tuple[int, int]) -> StateFactory:
+        """
+        Create a sibling factory object with the same evaluation parameters.
+        """
+        return StateFactory(self.eval_params, boundary_indices)
 
-def __create_revision_collection(browser_config: BrowserConfiguration, eval_range: EvaluationRange) -> list[State]:
-    if eval_range.major_version_range:
-        repo = __get_repo(browser_config)
-        lower_revision_nb = repo.get_release_revision_number(eval_range.major_version_range[0])
-        upper_revision_nb = repo.get_release_revision_number(eval_range.major_version_range[1])
-    else:
-        lower_revision_nb, upper_revision_nb = eval_range.revision_number_range
+    def __create_version_state(self, index: int) -> State:
+        """
+        Create a version state object associated with the given index.
+        """
+        browser_config = self.eval_params.browser_configuration
+        match browser_config.browser_name:
+            case "chromium":
+                return ChromiumVersion(index)
+            case "firefox":
+                return FirefoxVersion(index)
+            case _:
+                raise ValueError(f"Unknown browser name: {browser_config.browser_name}")
 
-    match browser_config.browser_name:
-        case 'chromium':
-            state_class = ChromiumRevision
-        case 'firefox':
-            state_class = FirefoxRevision
-        case _:
-            raise ValueError(f'Unknown browser name: {browser_config.browser_name}')
-
-    return [
-        state_class(revision_number=rev_nb)
-        for rev_nb in range(lower_revision_nb, upper_revision_nb + 1)
-    ]
-
-
-def __get_short_version(version: str) -> int:
-    if '.' not in version:
-        return int(version)
-    if re.match(r'^[0-9]+$', version):
-        return int(version)
-    if re.match(r'^[0-9]+(\.[0-9]+)+$', version):
-        return int(version.split(".")[0])
-    raise AttributeError(f'Could not convert version \'{version}\' to short version')
-
-
-def __get_repo(browser_config: BrowserConfiguration) -> Repository:
-    match browser_config.browser_name:
-        case 'chromium':
-            return chromium_repo
-        case 'firefox':
-            return firefox_repo
-        case _:
-            raise ValueError(f'Unknown browser name: {browser_config.browser_name}')
+    def __create_revision_state(self, index: int) -> State:
+        """
+        Create a revision state object associated with the given index.
+        """
+        browser_config = self.eval_params.browser_configuration
+        match browser_config.browser_name:
+            case "chromium":
+                return ChromiumRevision(revision_number=index)
+            case "firefox":
+                return FirefoxRevision(revision_number=index)
+            case _:
+                raise ValueError(f"Unknown browser name: {browser_config.browser_name}")
