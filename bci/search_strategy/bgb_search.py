@@ -1,11 +1,25 @@
+import logging
+
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.sequence_strategy import SequenceFinished
 from bci.version_control.factory import StateFactory
 from bci.version_control.states.state import State
 
+logger = logging.getLogger(__name__)
+
 
 class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
+    """
+    This search strategy will split the biggest gap between two states in half and return the state in the middle.
+    It will prioritize gaps with different outcomes and bigger gaps.
+    It stops when there are no more states to evaluate between two states with different outcomes.
+    """
     def __init__(self, state_factory: StateFactory) -> None:
+        """
+        Initializes the search strategy.
+
+        :param state_factory: The factory to create new states.
+        """
         super().__init__(state_factory, 0)
 
     def next(self) -> State:
@@ -36,6 +50,9 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
             if splitter_state is None:
                 self._unavailability_gap_pairs.add(next_pair)
             if splitter_state:
+                logger.debug(
+                    f"Splitting [{next_pair[0].index}]--/{splitter_state.index}/--[{next_pair[1].index}]"
+                )
                 self._add_state(splitter_state)
                 return splitter_state
             pairs.remove(next_pair)

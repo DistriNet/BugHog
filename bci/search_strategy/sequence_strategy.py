@@ -1,6 +1,7 @@
 import logging
 from abc import abstractmethod
 from threading import Thread
+from typing import Optional
 
 from bci.version_control.factory import StateFactory
 from bci.version_control.states.state import State
@@ -9,12 +10,17 @@ logger = logging.getLogger(__name__)
 
 
 class SequenceStrategy:
-    def __init__(self, state_factory: StateFactory, limit: float = float("inf")) -> None:
+    def __init__(self, state_factory: StateFactory, limit) -> None:
+        """
+        Initializes the sequence strategy.
+
+        :param state_factory: The factory to create new states.
+        :param limit: The maximum number of states to evaluate. 0 means no limit.
+        """
         self._state_factory = state_factory
-        self.limit = limit
+        self._limit = limit
         self._lower_state, self._upper_state = self.__create_available_boundary_states()
         self._completed_states = []
-        self._fetch_evaluated_states()
 
     @abstractmethod
     def next(self) -> State:
@@ -42,7 +48,7 @@ class SequenceStrategy:
         self._completed_states = fetched_states
 
     def __create_available_boundary_states(self) -> tuple[State, State]:
-        first_state, last_state = self._state_factory.create_boundary_states()
+        first_state, last_state = self._state_factory.boundary_states
         available_first_state = self._find_closest_state_with_available_binary(first_state, (first_state, last_state))
         available_last_state = self._find_closest_state_with_available_binary(last_state, (first_state, last_state))
         if available_first_state is None or available_last_state is None:
@@ -52,23 +58,36 @@ class SequenceStrategy:
         return available_first_state, available_last_state
 
     def _find_closest_state_with_available_binary(self, target: State, boundaries: tuple[State, State]) -> State | None:
-        '''
+        """
         Finds the closest state with an available binary **strictly** within the given boundaries.
-        '''
+        """
         if target.has_available_binary():
             return target
+
+        def index_has_available_binary(index: int) -> Optional[State]:
+            state = self._state_factory.create_state(index)
+            if state.has_available_binary():
+                return state
+            else:
+                return None
 
         diff = 1
         first_state, last_state = boundaries
         best_splitter_index = target.index
-        while (best_splitter_index - diff) > first_state.index or (best_splitter_index + diff) < last_state.index:
-            for offset in (diff, -diff):
+        while (best_splitter_index - diff - 1) > first_state.index or (best_splitter_index + diff + 1) < last_state.index:
+            threads = []
+            for offset in (-diff, diff, - 1 - diff, 1 + diff):
                 target_index = best_splitter_index + offset
                 if first_state.index < target_index < last_state.index:
-                    target_state = self._state_factory.create_state(target_index)
-                    if target_state.has_available_binary():
-                        return target_state
-            diff += 1
+                    thread = ThreadWithReturnValue(target=index_has_available_binary, args=(target_index,))
+                    thread.start()
+                    threads.append(thread)
+
+            for thread in threads:
+                state = thread.join()
+                if state:
+                    return state
+            diff += 2
         return None
 
 

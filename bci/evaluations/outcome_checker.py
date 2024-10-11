@@ -1,7 +1,7 @@
 import re
 
-from bci.evaluations.logic import SequenceConfiguration, StateResult
-from bci.version_control.states.state import State
+from bci.evaluations.logic import SequenceConfiguration
+from bci.version_control.states.state import StateResult
 
 
 class OutcomeChecker:
@@ -9,7 +9,7 @@ class OutcomeChecker:
     def __init__(self, sequence_config: SequenceConfiguration):
         self.sequence_config = sequence_config
 
-    def get_outcome(self, state: State) -> bool | None:
+    def get_outcome(self, result: StateResult) -> bool | None:
         '''
         Returns the outcome of the test result.
 
@@ -17,7 +17,6 @@ class OutcomeChecker:
         - True if the test was reproduced.
         - False if the test was not reproduced.
         '''
-        result = state.result
         if result.is_dirty:
             return None
         if result.reproduced:

@@ -7,6 +7,7 @@ from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import TestParameters, TestResult, WorkerParameters
+from bci.version_control.states.state import StateCondition
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +40,10 @@ class EvaluationFramework(ABC):
             try:
                 browser.pre_test_setup()
                 result = self.perform_specific_evaluation(browser, test_params)
-
-                state.set_evaluation_outcome(result)
                 self.db_class.get_instance().store_result(result)
                 logger.info(f'Test finalized: {test_params}')
             except Exception as e:
-                state.set_evaluation_error(str(e))
+                state.condition = StateCondition.FAILED
                 logger.error("An error occurred during evaluation", exc_info=True)
                 traceback.print_exc()
             finally:

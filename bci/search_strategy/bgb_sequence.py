@@ -9,19 +9,28 @@ logger = logging.getLogger(__name__)
 
 class BiggestGapBisectionSequence(SequenceStrategy):
     """
-    This search strategy will split the biggest gap between two states in half and return the state in the middle.
+    This sequence strategy will split the biggest gap between two states in half and return the state in the middle.
     """
 
-    def __init__(self, state_factory: StateFactory, limit: int = 0) -> None:
-        super().__init__(state_factory)
-        self._limit = limit
+    def __init__(self, state_factory: StateFactory, limit: int) -> None:
+        """
+        Initializes the sequence strategy.
+
+        :param state_factory: The factory to create new states.
+        :param limit: The maximum number of states to evaluate. 0 means no limit.
+        """
+        super().__init__(state_factory, limit)
         self._unavailability_gap_pairs: set[tuple[State, State]] = set()
-        '''Tuples in this list are **strict** boundaries of ranges without any available binaries.'''
+        """Tuples in this list are **strict** boundaries of ranges without any available binaries."""
 
     def next(self) -> State:
         """
         Returns the next state to evaluate.
         """
+        # Fetch all evaluated states on the first call
+        if not self._completed_states:
+            self._fetch_evaluated_states()
+
         if self._limit and self._limit <= len(self._completed_states):
             raise SequenceFinished()
 
@@ -39,6 +48,9 @@ class BiggestGapBisectionSequence(SequenceStrategy):
             if splitter_state is None:
                 self._unavailability_gap_pairs.add(furthest_pair)
             elif splitter_state:
+                logger.debug(
+                    f"Splitting [{furthest_pair[0].index}]--/{splitter_state.index}/--[{furthest_pair[1].index}]"
+                )
                 self._add_state(splitter_state)
                 return splitter_state
             pairs.remove(furthest_pair)

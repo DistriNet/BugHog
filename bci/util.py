@@ -64,7 +64,7 @@ def read_web_report(file_name):
     report_folder = "/reports"
     path = os.path.join(report_folder, file_name)
     if not os.path.isfile(path):
-        raise AttributeError("Could not find report at '%s'" % path)
+        raise PageNotFound("Could not find report at '%s'" % path)
     with open(path, "r") as file:
         return json.load(file)
 
@@ -72,16 +72,16 @@ def read_web_report(file_name):
 def request_html(url: str):
     LOGGER.debug(f"Requesting {url}")
     resp = requests.get(url, timeout=60)
-    if resp.status_code != 200:
-        raise AttributeError(f"Could not connect to url '{url}'")
+    if resp.status_code >= 400:
+        raise PageNotFound(f"Could not connect to url '{url}'")
     return resp.content
 
 
 def request_json(url: str):
     LOGGER.debug(f"Requesting {url}")
     resp = requests.get(url, timeout=60)
-    if resp.status_code != 200:
-        raise AttributeError(f"Could not connect to url '{url}'")
+    if resp.status_code >= 400:
+        raise PageNotFound(f"Could not connect to url '{url}'")
     LOGGER.debug(f"Request completed")
     return resp.json()
 
@@ -89,7 +89,11 @@ def request_json(url: str):
 def request_final_url(url: str) -> str:
     LOGGER.debug(f"Requesting {url}")
     resp = requests.get(url, timeout=60)
-    if resp.status_code != 200:
-        raise AttributeError(f"Could not connect to url '{url}'")
+    if resp.status_code >= 400:
+        raise PageNotFound(f"Could not connect to url '{url}'")
     LOGGER.debug(f"Request completed")
     return resp.url
+
+
+class PageNotFound(Exception):
+    pass

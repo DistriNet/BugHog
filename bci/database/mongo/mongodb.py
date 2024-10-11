@@ -145,42 +145,35 @@ class MongoDB(ABC):
                 return False
         return True
 
-    def get_evaluated_states(self, params: EvaluationParameters, outcome_checker: OutcomeChecker) -> list[State]:
+    def get_evaluated_states(
+        self, params: EvaluationParameters, boundary_states: tuple[State, State], outcome_checker: OutcomeChecker
+    ) -> list[State]:
         collection = self.get_collection(params.database_collection)
         query = {
             'browser_config': params.browser_configuration.browser_setting,
             'mech_group': params.evaluation_range.mech_groups[0],  # TODO: fix this
             'state.browser_name': params.browser_configuration.browser_name,
             'results': {'$exists': True},
+            'state.type': 'version' if params.evaluation_range.only_release_revisions else 'revision',
+            'state.revision_number': {
+                '$gte': boundary_states[0].revision_nb,
+                '$lte': boundary_states[1].revision_nb,
+            },
         }
-        if params.evaluation_range.major_version_range:
-            query.update(
-                {
-                    'state.type': 'version',
-                    'state.major_version': {
-                        '$gte': params.evaluation_range.major_version_range[0],
-                        '$lte': params.evaluation_range.major_version_range[1],
-                    },
-                }
-            )
-        elif params.evaluation_range.revision_number_range:
-            query.update(
-                {
-                    'state.type': 'revision',
-                    'state.revision_number': {
-                        '$gte': params.evaluation_range.revision_number_range[0],
-                        '$lte': params.evaluation_range.revision_number_range[1],
-                    },
-                }
-            )
-        query['extensions'] = {
-            '$size': len(params.browser_configuration.extensions),
-            '$all': params.browser_configuration.extensions,
-        }
-        query['cli_options'] = {
-            '$size': len(params.browser_configuration.cli_options),
-            '$all': params.browser_configuration.cli_options,
-        }
+        if params.browser_configuration.extensions:
+            query['extensions'] = {
+                '$size': len(params.browser_configuration.extensions),
+                '$all': params.browser_configuration.extensions,
+            }
+        else:
+            query['extensions'] = []
+        if params.browser_configuration.cli_options:
+            query['cli_options'] = {
+                '$size': len(params.browser_configuration.cli_options),
+                '$all': params.browser_configuration.cli_options,
+            }
+        else:
+            query['cli_options'] = []
         cursor = collection.find(query)
         states = []
         for doc in cursor:
@@ -231,7 +224,7 @@ class MongoDB(ABC):
     @staticmethod
     def has_binary_available_online(browser: str, state: State):
         collection = MongoDB.get_binary_availability_collection(browser)
-        document = collection.find_one({'state': state.to_dict(make_complete=False)})
+        document = collection.find_one({'state': state.to_dict()})
         if document is None:
             return None
         return document['binary_online']
@@ -251,10 +244,10 @@ class MongoDB(ABC):
         return result
 
     @staticmethod
-    def get_complete_state_dict_from_binary_availability_cache(state: State):
+    def get_complete_state_dict_from_binary_availability_cache(state: State) -> dict:
         collection = MongoDB.get_binary_availability_collection(state.browser_name)
         # We have to flatten the state dictionary to ignore missing attributes.
-        state_dict = {'state': state.to_dict(make_complete=False)}
+        state_dict = {'state': state.to_dict()}
         query = flatten(state_dict, reducer='dot')
         document = collection.find_one(query)
         if document is None:

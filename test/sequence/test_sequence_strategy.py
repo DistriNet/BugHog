@@ -80,18 +80,18 @@ class TestSequenceStrategy(unittest.TestCase):
 
     def test_find_closest_state_with_available_binary_1(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.always_has_binary)
-        sequence_strategy = SequenceStrategy(state_factory)
+        sequence_strategy = SequenceStrategy(state_factory, 0)
         state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
         assert state.index == 5
 
     def test_find_closest_state_with_available_binary_2(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
-        sequence_strategy = SequenceStrategy(state_factory)
+        sequence_strategy = SequenceStrategy(state_factory, 0)
         state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
         assert state.index == 6
 
     def test_find_closest_state_with_available_binary_3(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
-        sequence_strategy = SequenceStrategy(state_factory)
+        sequence_strategy = SequenceStrategy(state_factory, 0)
         state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(1), (state_factory.create_state(0), state_factory.create_state(2)))
         assert state is None

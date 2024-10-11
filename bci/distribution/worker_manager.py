@@ -10,6 +10,7 @@ import docker.errors
 from bci import worker
 from bci.configuration import Global
 from bci.evaluations.logic import WorkerParameters
+from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ class WorkerManager:
                     ],
                 )
                 logger.debug(f"Container '{container_name}' finished experiments with parameters '{repr(params)}'")
+                Clients.push_results_to_all()
             except docker.errors.APIError:
                 logger.error(
                     f"Could not run container '{container_name}' or container was unexpectedly removed", exc_info=True
@@ -94,7 +96,7 @@ class WorkerManager:
         thread.start()
         logger.info(f"Container '{container_name}' started experiments for '{params.state}'")
         # To avoid race-condition where more than max containers are started
-        time.sleep(5)
+        time.sleep(3)
 
     def get_nb_of_running_worker_containers(self):
         return len(self.get_runnning_containers())

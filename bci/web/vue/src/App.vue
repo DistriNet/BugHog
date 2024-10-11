@@ -615,16 +615,16 @@ export default {
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
-                  value="bin_seq" :disabled="this.eval_params.only_release_revisions">
-                <label for="bin_seq">Binary sequence</label>
-                <tooltip tooltip="bin_seq"></tooltip>
+                  value="bgb_sequence" :disabled="this.eval_params.only_release_revisions">
+                <label for="bgb_sequence">BGB sequence</label>
+                <tooltip tooltip="bgb_sequence"></tooltip>
               </div>
 
               <div class="radio-item">
-                <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
-                  value="bin_search" :disabled="this.eval_params.only_release_revisions">
-                <label for="bin_search">Binary search</label>
-                <tooltip tooltip="bin_search"></tooltip>
+                <input v-model="eval_params.search_strategy" type="radio" id="bgb_search" name="search_strategy_option"
+                  value="bgb_search" :disabled="this.eval_params.only_release_revisions">
+                <label for="bgb_search">BGB search</label>
+                <tooltip tooltip="bgb_search"></tooltip>
               </div>
 
               <div class="radio-item">

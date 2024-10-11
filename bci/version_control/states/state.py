@@ -38,23 +38,23 @@ class StateResult:
 
     @staticmethod
     def from_dict(data: dict, is_dirty: bool = False) -> StateResult:
-        return StateResult(data['requests'], data['request_vars'], data['log_vars'], is_dirty)
+        return StateResult(data['requests'], data['req_vars'], data['log_vars'], is_dirty)
 
 
 class State:
     def __init__(self):
         self.condition = StateCondition.PENDING
         self.result: StateResult
-        self.outcome: bool | None
+        self.outcome: bool | None = None
 
     @property
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         pass
 
     @property
     @abstractmethod
-    def browser_name(self):
+    def browser_name(self) -> str:
         pass
 
     @property
@@ -66,6 +66,10 @@ class State:
         pass
 
     @property
+    @abstractmethod
+    def revision_nb(self) -> int:
+        pass
+
     @abstractmethod
     def to_dict(self) -> dict:
         pass
@@ -103,7 +107,10 @@ class State:
     def __repr__(self) -> str:
         return f'State(index={self.index})'
 
-    def __eq__(self, value: object) -> bool:
-        if not isinstance(value, State):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, State):
             return False
-        return self.index == value.index
+        return self.index == other.index
+
+    def __hash__(self) -> int:
+        return hash((self.index, self.browser_name))
