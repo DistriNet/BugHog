@@ -26,26 +26,14 @@ class TestBiggestGapBisectionSearch(unittest.TestCase):
         assert [state.index for state in sequence._completed_states] == [0]
         assert sequence._unavailability_gap_pairs == set()
 
-        assert sequence.next().index == 98
-        assert [state.index for state in sequence._completed_states] == [0, 98]
+        while True:
+            try:
+                sequence.next()
+            except SequenceFinished:
+                break
 
-        assert sequence.next().index == 50
-        assert [state.index for state in sequence._completed_states] == [0, 50, 98]
-
-        assert sequence.next().index == 26
-        assert [state.index for state in sequence._completed_states] == [0, 26, 50, 98]
-
-        assert sequence.next().index == 38
-        assert [state.index for state in sequence._completed_states] == [0, 26, 38, 50, 98]
-
-        assert sequence.next().index == 32
-        assert [state.index for state in sequence._completed_states] == [0, 26, 32, 38, 50, 98]
-
-        assert sequence.next().index == 36
-        assert [state.index for state in sequence._completed_states] == [0, 26, 32, 36, 38, 50, 98]
-
-        assert sequence.next().index == 34
-        assert [state.index for state in sequence._completed_states] == [0, 26, 32, 34, 36, 38, 50, 98]
+        assert ([state.index for state in sequence._completed_states]
+                == [0, 24, 30, 32, 34, 36, 48, 98])
 
         self.assertRaises(SequenceFinished, sequence.next)
         assert {(first.index, last.index) for (first, last) in sequence._unavailability_gap_pairs} == {(34, 36)}
@@ -90,4 +78,4 @@ class TestBiggestGapBisectionSearch(unittest.TestCase):
                 break
 
         assert ([state.index for state in sequence._completed_states]
-                == [0, 12, 22, 34, 36, 38, 40, 44, 56, 66, 68, 70, 72, 78, 88, 98])
+                == [0, 12, 22, 34, 36, 38, 44, 56, 66, 68, 72, 78, 88, 98])

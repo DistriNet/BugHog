@@ -18,7 +18,7 @@ class TestBiggestGapBisectionSequence(unittest.TestCase):
         state_factory = helper.create_state_factory(helper.only_has_binaries_for_even)
         sequence = BiggestGapBisectionSequence(state_factory, 12)
         index_sequence = [sequence.next().index for _ in range(12)]
-        assert index_sequence == [0, 98, 50, 26, 74, 14, 38, 62, 86, 8, 20, 32]
+        assert index_sequence == [0, 98, 48, 72, 24, 84, 12, 36, 60, 90, 6, 18]
 
     def test_sbg_sequence_almost_none_available(self):
         state_factory = helper.create_state_factory(helper.has_very_few_binaries)

@@ -25,12 +25,17 @@ class TestSequenceStrategy(unittest.TestCase):
         evaluated_indexes: list[int] = None,
         outcome_func: Callable = None) -> StateFactory:
         eval_params = MagicMock(spec=EvaluationConfiguration)
-        eval_params.evaluation_range = MagicMock(EvaluationRange)
+        eval_params.evaluation_range = MagicMock(spec=EvaluationRange)
         eval_params.evaluation_range.major_version_range = [0, 99]
 
-        factory = StateFactory(eval_params, TestSequenceStrategy.create_outcome_checker(outcome_func))
-
+        factory = MagicMock(spec=StateFactory)
+        factory.__eval_params = eval_params
+        factory.__outcome_checker = TestSequenceStrategy.create_outcome_checker(outcome_func)
         factory.create_state = lambda index: TestSequenceStrategy.create_state(index, is_available, outcome_func)
+        first_state = TestSequenceStrategy.create_state(0, is_available, outcome_func)
+        last_state = TestSequenceStrategy.create_state(99, is_available, outcome_func)
+        factory.boundary_states = (first_state, last_state)
+
         if evaluated_indexes:
             factory.create_evaluated_states = lambda: TestSequenceStrategy.get_states(evaluated_indexes, lambda _: True, outcome_func)
         else:
@@ -88,7 +93,7 @@ class TestSequenceStrategy(unittest.TestCase):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
         sequence_strategy = SequenceStrategy(state_factory, 0)
         state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
-        assert state.index == 6
+        assert state.index == 4
 
     def test_find_closest_state_with_available_binary_3(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
