@@ -19,7 +19,7 @@ from bci.evaluations.logic import (
     WorkerParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
-from bci.version_control.states.state import State
+from bci.version_control.states.state import State, StateCondition
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +180,10 @@ class MongoDB(ABC):
             state = State.from_dict(doc['state'])
             state.result = StateResult.from_dict(doc['results'], is_dirty=doc['dirty'])
             state.outcome = outcome_checker.get_outcome(state.result)
+            if doc['dirty']:
+                state.condition = StateCondition.FAILED
+            else:
+                state.condition = StateCondition.COMPLETED
             states.append(state)
         return states
 

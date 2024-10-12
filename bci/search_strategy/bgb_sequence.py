@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bci.version_control.factory import StateFactory
@@ -56,11 +57,13 @@ class BiggestGapBisectionSequence(SequenceStrategy):
             pairs.remove(furthest_pair)
         raise SequenceFinished()
 
-    def _find_best_splitter_state(self, first_state: State, last_state: State) -> State | None:
+    def _find_best_splitter_state(self, first_state: State, last_state: State) -> Optional[State]:
         """
         Returns the most suitable state that splits the gap between the two states.
         The state should be as close as possible to the middle of the gap and should have an available binary.
         """
+        if first_state.index + 1 == last_state.index:
+            return None
         best_splitter_index = first_state.index + (last_state.index - first_state.index) // 2
         target_state = self._state_factory.create_state(best_splitter_index)
         return self._find_closest_state_with_available_binary(target_state, (first_state, last_state))

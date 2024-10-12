@@ -91,7 +91,7 @@ class BaseRevision(State):
         return re.match(r'[0-9]{1,7}', str(revision_number)) is not None
 
     def __str__(self):
-        return f'RevisionState(id: {self._revision_id}, number: {self._revision_nb})'
+        return f'RevisionState(number: {self._revision_nb}, id: {self._revision_id})'
 
     def __repr__(self):
-        return f'RevisionState(id: {self._revision_id}, number: {self._revision_nb})'
+        return f'RevisionState(number: {self._revision_nb}, id: {self._revision_id})'
