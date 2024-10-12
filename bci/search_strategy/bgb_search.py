@@ -15,6 +15,7 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
     It will only consider states where the non-None outcome differs.
     It stops when there are no more states to evaluate between two states with different outcomes.
     """
+
     def __init__(self, state_factory: StateFactory) -> None:
         """
         Initializes the search strategy.
@@ -45,9 +46,7 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
             if splitter_state is None:
                 self._unavailability_gap_pairs.add(next_pair)
             if splitter_state:
-                logger.debug(
-                    f"Splitting [{next_pair[0].index}]--/{splitter_state.index}/--[{next_pair[1].index}]"
-                )
+                logger.debug(f'Splitting [{next_pair[0].index}]--/{splitter_state.index}/--[{next_pair[1].index}]')
                 self._add_state(splitter_state)
                 return splitter_state
         raise SequenceFinished()
@@ -69,6 +68,8 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         # Remove any pair where the same None-outcome state is present in a pair where the sibling states have the same outcome
         pairs_with_failed = [pair for pair in pairs if pair[0].outcome is None or pair[1].outcome is None]
         for i in range(0, len(pairs_with_failed), 2):
+            if i + 1 >= len(pairs_with_failed):
+                break
             first_pair = pairs_with_failed[i]
             second_pair = pairs_with_failed[i + 1]
             if first_pair[0].outcome == second_pair[1].outcome:
