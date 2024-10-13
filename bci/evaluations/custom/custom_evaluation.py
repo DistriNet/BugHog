@@ -1,14 +1,13 @@
 import logging
 import os
 import textwrap
-from unittest import TestResult
 
 from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
-from bci.evaluations.collector import Collector, Type
+from bci.evaluations.collectors.collector import Collector, Type
 from bci.evaluations.custom.custom_mongodb import CustomMongoDB
 from bci.evaluations.evaluation_framework import EvaluationFramework
-from bci.evaluations.logic import TestParameters
+from bci.evaluations.logic import TestParameters, TestResult
 from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -98,17 +97,17 @@ class CustomEvaluationFramework(EvaluationFramework):
             is_dirty = True
         finally:
             collector.stop()
-            data = collector.collect_results()
+            results = collector.collect_results()
             if not is_dirty:
                 # New way to perform sanity check
-                if [var_entry for var_entry in data['req_vars'] if var_entry['var'] == 'sanity_check' and var_entry['val'] == 'OK']:
+                if [var_entry for var_entry in results['req_vars'] if var_entry['var'] == 'sanity_check' and var_entry['val'] == 'OK']:
                     pass
                 # Old way for backwards compatibility
-                elif [request for request in data['requests'] if 'report/?leak=baseline' in request['url']]:
+                elif [request for request in results['requests'] if 'report/?leak=baseline' in request['url']]:
                     pass
                 else:
                     is_dirty = True
-        return params.create_test_result_with(browser_version, binary_origin, data, is_dirty)
+        return params.create_test_result_with(browser_version, binary_origin, results, is_dirty)
 
     def get_mech_groups(self, project: str) -> list[tuple[str, bool]]:
         if project not in self.tests_per_project:
@@ -122,14 +121,14 @@ class CustomEvaluationFramework(EvaluationFramework):
     def get_poc_structure(self, project: str, poc: str) -> dict:
         return self.dir_tree[project][poc]
 
-    def get_poc_file(self, project: str, poc: str, domain: str, path: str, file: str) -> str:
-        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file)
+    def get_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str) -> str:
+        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
         if os.path.isfile(file_path):
             with open(file_path) as file:
                 return file.read()
 
-    def update_poc_file(self, project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
-        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file)
+    def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
+        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
         if os.path.isfile(file_path):
             if content == '':
                 logger.warning('Attempt to save empty file ignored')

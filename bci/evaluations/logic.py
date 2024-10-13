@@ -8,9 +8,9 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 import bci.browser.cli_options.chromium as cli_options_chromium
 import bci.browser.cli_options.firefox as cli_options_firefox
-from bci.version_control.states.state import State
+from bci.version_control.states.state import State, StateResult
 
-logger = logging.getLogger('bci')
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -99,8 +99,8 @@ class EvaluationConfiguration:
 @dataclass(frozen=True)
 class EvaluationRange:
     mech_groups: list[str]
-    major_version_range: tuple[int] | None = None
-    revision_number_range: tuple[int] | None = None
+    major_version_range: tuple[int, int] | None = None
+    revision_number_range: tuple[int, int] | None = None
     only_release_revisions: bool = False
 
     def __post_init__(self):
@@ -251,12 +251,8 @@ class TestResult:
             padded_version.append('0' * (padding_target - len(sub)) + sub)
         return ".".join(padded_version)
 
-    @property
-    def reproduced(self):
-        entry_if_reproduced = {'var': 'reproduced', 'val': 'OK'}
-        reproduced_in_req_vars = [entry for entry in self.data['req_vars'] if entry == entry_if_reproduced] != []
-        reproduced_in_log_vars = [entry for entry in self.data['log_vars'] if entry == entry_if_reproduced] != []
-        return reproduced_in_req_vars or reproduced_in_log_vars
+    def get_state_result(self) -> StateResult:
+        return StateResult.from_dict(self.data, self.is_dirty)
 
 
 @dataclass(frozen=True)
