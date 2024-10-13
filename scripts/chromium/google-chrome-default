@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/usr/bin/google-chrome-proxy --no-sandbox --disable-gpu --use-fake-ui-for-media-stream $*
