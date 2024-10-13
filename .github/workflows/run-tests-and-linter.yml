@@ -34,15 +34,17 @@ jobs:
           genbadge tests -i junit.xml -o pytest.svg
           genbadge coverage -i coverage.xml -o coverage.svg
       - name: Upload tests badge as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: pytest
           path: pytest.svg
+          overwrite: true
       - name: Upload coverage badge as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: coverage.svg
+          overwrite: true
 
   flake8:
     runs-on: ubuntu-latest
@@ -63,7 +65,8 @@ jobs:
         run: |
           genbadge flake8 -i flake8.txt -o flake8.svg
       - name: Upload badge with GitHub pages
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: flake8
           path: flake8.svg
+          overwrite: true
