@@ -87,12 +87,14 @@ class TestSequenceStrategy(unittest.TestCase):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.always_has_binary)
         sequence_strategy = SequenceStrategy(state_factory, 0)
         state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
+        assert state is not None
         assert state.index == 5
 
     def test_find_closest_state_with_available_binary_2(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
         sequence_strategy = SequenceStrategy(state_factory, 0)
         state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
+        assert state is not None
         assert state.index == 4
 
     def test_find_closest_state_with_available_binary_3(self):

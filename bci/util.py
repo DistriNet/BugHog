@@ -10,7 +10,7 @@ import time
 
 import requests
 
-LOGGER = logging.getLogger('bci')
+LOGGER = logging.getLogger(__name__)
 
 
 def safe_move_file(src_path, dst_path):
@@ -82,7 +82,7 @@ def request_json(url: str):
     resp = requests.get(url, timeout=60)
     if resp.status_code >= 400:
         raise PageNotFound(f"Could not connect to url '{url}'")
-    LOGGER.debug(f"Request completed")
+    LOGGER.debug('Request completed')
     return resp.json()
 
 
@@ -91,7 +91,7 @@ def request_final_url(url: str) -> str:
     resp = requests.get(url, timeout=60)
     if resp.status_code >= 400:
         raise PageNotFound(f"Could not connect to url '{url}'")
-    LOGGER.debug(f"Request completed")
+    LOGGER.debug('Request completed')
     return resp.url
 
 

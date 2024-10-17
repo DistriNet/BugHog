@@ -7,7 +7,7 @@ from bci.distribution.worker_manager import WorkerManager
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import (
-    DatabaseConnectionParameters,
+    DatabaseParameters,
     EvaluationParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
@@ -39,12 +39,12 @@ class Master:
         self.chromium_build = None
 
         Global.initialize_folders()
-        self.db_connection_params = Global.get_database_connection_params()
+        self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
         self.inititialize_available_evaluation_frameworks()
         logger.info('BugHog is ready!')
 
-    def connect_to_database(self, db_connection_params: DatabaseConnectionParameters):
+    def connect_to_database(self, db_connection_params: DatabaseParameters):
         try:
             MongoDB.connect(db_connection_params)
         except ServerException:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC
 from datetime import datetime, timezone
 
 from flatten_dict import flatten
@@ -10,7 +9,7 @@ from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
 from bci.evaluations.logic import (
-    DatabaseConnectionParameters,
+    DatabaseParameters,
     EvaluationParameters,
     PlotParameters,
     StateResult,
@@ -28,8 +27,9 @@ CLIENT = None
 DB = None
 
 
-class MongoDB(ABC):
+class MongoDB:
     instance = None
+    binary_cache_limit = 0
 
     binary_availability_collection_names = {
         'chromium': 'chromium_binary_availability',
@@ -37,7 +37,7 @@ class MongoDB(ABC):
     }
 
     def __init__(self):
-        self.client = CLIENT
+        self.client: MongoClient = CLIENT
         self.db = DB
 
     @classmethod
@@ -46,24 +46,26 @@ class MongoDB(ABC):
             cls.instance = cls()
         return cls.instance
 
-    @staticmethod
-    def connect(db_connection_params: DatabaseConnectionParameters):
+    @classmethod
+    def connect(cls, db_params: DatabaseParameters):
         global CLIENT, DB
-        assert db_connection_params is not None
+        assert db_params is not None
 
         CLIENT = MongoClient(
-            host=db_connection_params.host,
+            host=db_params.host,
             port=27017,
-            username=db_connection_params.username,
-            password=db_connection_params.password,
-            authsource=db_connection_params.database_name,
+            username=db_params.username,
+            password=db_params.password,
+            authsource=db_params.database_name,
             retryWrites=False,
             serverSelectionTimeoutMS=10000,
         )
+        cls.binary_cache_limit = db_params.binary_cache_limit
+        logger.info(f'Binary cache limit set to {cls.binary_cache_limit}')
         # Force connection to check whether MongoDB server is reachable
         try:
             CLIENT.server_info()
-            DB = CLIENT[db_connection_params.database_name]
+            DB = CLIENT[db_params.database_name]
             logger.info('Connected to database!')
         except ServerSelectionTimeoutError as e:
             logger.info('A timeout occurred while attempting to establish connection.', exc_info=True)
@@ -84,6 +86,14 @@ class MongoDB(ABC):
         for collection_name in ['chromium_binary_availability', 'firefox_central_binary_availability']:
             if collection_name not in DB.list_collection_names():
                 DB.create_collection(collection_name)
+        if 'fs.files' not in DB.list_collection_names():
+            # Create the 'fs.files' collection with indexes
+            DB.create_collection('fs.files', {})
+            DB['fs.files'].create_index(['state_type', 'browser_name', 'state_index', 'relative_file_path'], unique=True)
+        if 'fs.chunks' not in DB.list_collection_names():
+            # Create the 'fs.chunks' collection with zstd compression
+            DB.create_collection('fs.chunks', storageEngine={'wiredTiger': {'configString': 'block_compressor=zstd'}})
+            DB['fs.chunks'].create_index(['files_id', 'n'], unique=True)
 
     def get_collection(self, name: str):
         if name not in DB.list_collection_names():

@@ -33,6 +33,7 @@ class WorkerManager:
 
         # Single container mode
         worker.run(params)
+        Clients.push_results_to_all()
 
     def __run_container(self, params: WorkerParameters, blocking_wait=True) -> None:
         while blocking_wait and self.get_nb_of_running_worker_containers() >= self.max_nb_of_containers:
@@ -85,7 +86,7 @@ class WorkerManager:
                 )
                 logger.debug(f"Container '{container_name}' finished experiments with parameters '{repr(params)}'")
                 Clients.push_results_to_all()
-            except docker.errors.APIError:
+            except docker.errors.ContainerError:
                 logger.error(
                     f"Could not run container '{container_name}' or container was unexpectedly removed", exc_info=True
                 )

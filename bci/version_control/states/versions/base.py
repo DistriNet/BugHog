@@ -28,6 +28,10 @@ class BaseVersion(State):
         pass
 
     @property
+    def type(self) -> str:
+        return 'version'
+
+    @property
     def index(self) -> int:
         return self.major_version
 
@@ -37,7 +41,7 @@ class BaseVersion(State):
 
     def to_dict(self, make_complete: bool = True) -> dict:
         return {
-            'type': 'version',
+            'type': self.type,
             'browser_name': self.browser_name,
             'major_version': self.major_version,
             'revision_id': self._revision_id,

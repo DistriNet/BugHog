@@ -29,7 +29,7 @@ class ArtisanalBuildManager:
         return sorted(self.meta_info, key=lambda i: int(i["id"]))
 
     def has_artisanal_binary_for(self, state: State) -> bool:
-        return len(list(filter(lambda x: x['id'] == state.revision_number, self.meta_info))) > 0
+        return len(list(filter(lambda x: x['id'] == state.revision_nb, self.meta_info))) > 0
 
     def add_new_subfolders(self, subfolders):
         logger.info("Adding new subfolders to metadata")

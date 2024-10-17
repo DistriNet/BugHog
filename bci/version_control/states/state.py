@@ -59,6 +59,11 @@ class State:
 
     @property
     @abstractmethod
+    def type(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
     def index(self) -> int:
         """
         The index of the element in the sequence.

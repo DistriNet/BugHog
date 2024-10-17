@@ -4,13 +4,12 @@ import os
 import sys
 
 import bci.database.mongo.container as container
-from bci.evaluations.logic import DatabaseConnectionParameters
+from bci.evaluations.logic import DatabaseParameters
 
 logger = logging.getLogger(__name__)
 
 
 class Global:
-
     custom_page_folder = '/app/experiments/pages'
 
     @staticmethod
@@ -25,7 +24,7 @@ class Global:
             case 'firefox':
                 return Firefox
             case _:
-                raise ValueError(f'Invalid browser \'{browser}\'')
+                raise ValueError(f"Invalid browser '{browser}'")
 
     @staticmethod
     def get_available_domains() -> list[str]:
@@ -44,7 +43,9 @@ class Global:
         fatal = False
         # HOST_PWD
         if (host_pwd := os.getenv('HOST_PWD')) in ['', None]:
-            logger.fatal('The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up".')
+            logger.fatal(
+                'The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up".'
+            )
             fatal = True
         else:
             logger.debug(f'HOST_PWD={host_pwd}')
@@ -66,54 +67,49 @@ class Global:
                     file.write('{}')
 
     @staticmethod
-    def get_database_connection_params() -> DatabaseConnectionParameters:
-        required_database_params = [
-            'BCI_MONGO_HOST',
-            'BCI_MONGO_USERNAME',
-            'BCI_MONGO_DATABASE',
-            'BCI_MONGO_PASSWORD'
-        ]
-        missing_database_params = [
-            param for param in required_database_params
-            if os.getenv(param) in ['', None]]
+    def get_database_params() -> DatabaseParameters:
+        required_database_params = ['BCI_MONGO_HOST', 'BCI_MONGO_USERNAME', 'BCI_MONGO_DATABASE', 'BCI_MONGO_PASSWORD']
+        missing_database_params = [param for param in required_database_params if os.getenv(param) in ['', None]]
         if missing_database_params:
             logger.info(f'Could not find database parameters {missing_database_params}, using database container...')
             return container.run()
         else:
-            database_params = DatabaseConnectionParameters(
+            database_params = DatabaseParameters(
                 os.getenv('BCI_MONGO_HOST'),
                 os.getenv('BCI_MONGO_USERNAME'),
                 os.getenv('BCI_MONGO_PASSWORD'),
-                os.getenv('BCI_MONGO_DATABASE')
+                os.getenv('BCI_MONGO_DATABASE'),
+                int(os.getenv('BCI_BINARY_CACHE_LIMIT', 0)),
             )
-            logger.info(f'Found database environment variables \'{database_params}\'')
+            logger.info(f"Found database environment variables '{database_params}'")
             return database_params
 
     @staticmethod
     def get_tag() -> str:
-        '''
+        """
         Returns the Docker image tag of BugHog.
         This should never be empty.
-        '''
-        assert (bughog_version := os.getenv('BUGHOG_VERSION')) not in ['', None]
+        """
+        bughog_version = os.getenv('BUGHOG_VERSION', None)
+        if bughog_version is None or bughog_version == '':
+            raise ValueError('BUGHOG_VERSION is not set')
         return bughog_version
 
 
 class Chromium:
-
     extension_folder = '/app/browser/extensions/chromium'
     repo_to_use = 'online'
 
 
 class Firefox:
-
     extension_folder = '/app/browser/extensions/firefox'
     repo_to_use = 'online'
 
 
 class CustomHTTPHandler(logging.handlers.HTTPHandler):
-
-    def __init__(self, host: str, url: str, method: str = 'GET', secure: bool = False, credentials=None, context=None) -> None:
+    def __init__(
+        self, host: str, url: str, method: str = 'GET', secure: bool = False, credentials=None, context=None
+    ) -> None:
         super().__init__(host, url, method=method, secure=secure, credentials=credentials, context=context)
         self.hostname = os.getenv('HOSTNAME')
 
@@ -124,8 +120,9 @@ class CustomHTTPHandler(logging.handlers.HTTPHandler):
 
 
 class Loggers:
-
-    formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] %(name)s: %(message)s', datefmt='%d-%m-%Y %H:%M:%S')
+    formatter = logging.Formatter(
+        fmt='[%(asctime)s] [%(levelname)s] %(name)s: %(message)s', datefmt='%d-%m-%Y %H:%M:%S'
+    )
     memory_handler = logging.handlers.MemoryHandler(capacity=100, flushLevel=logging.ERROR)
 
     @staticmethod

@@ -34,6 +34,10 @@ class BaseRevision(State):
         return f'{self._revision_nb}'
 
     @property
+    def type(self) -> str:
+        return 'revision'
+
+    @property
     def index(self) -> int:
         return self._revision_nb
 
@@ -45,7 +49,7 @@ class BaseRevision(State):
         """
         Returns a dictionary representation of the state.
         """
-        state_dict = {'type': 'revision', 'browser_name': self.browser_name}
+        state_dict = {'type': self.type, 'browser_name': self.browser_name}
         if self._revision_id:
             state_dict['revision_id'] = self._revision_id
         if self._revision_nb:

@@ -21,7 +21,8 @@ class EvaluationParameters:
     sequence_configuration: SequenceConfiguration
     database_collection: str
 
-    def create_worker_params_for(self, state: State, database_connection_params: DatabaseConnectionParameters) -> WorkerParameters:
+    def create_worker_params_for(
+        self, state: State, database_connection_params: DatabaseParameters) -> WorkerParameters:
         return WorkerParameters(
             self.browser_configuration,
             self.evaluation_configuration,
@@ -34,11 +35,7 @@ class EvaluationParameters:
     def create_test_for(self, state: State, mech_group: str) -> TestParameters:
         assert mech_group in self.evaluation_range.mech_groups
         return TestParameters(
-            self.browser_configuration,
-            self.evaluation_configuration,
-            state,
-            mech_group,
-            self.database_collection
+            self.browser_configuration, self.evaluation_configuration, state, mech_group, self.database_collection
         )
 
     def create_plot_params(self, mech_group: str, target_mech_id: str, dirty_allowed: bool = True) -> PlotParameters:
@@ -54,7 +51,7 @@ class EvaluationParameters:
             self.browser_configuration.extensions,
             self.browser_configuration.cli_options,
             dirty_allowed,
-            self.sequence_configuration.target_cookie_name
+            self.sequence_configuration.target_cookie_name,
         )
 
 
@@ -71,10 +68,7 @@ class BrowserConfiguration:
     @staticmethod
     def from_dict(data: dict) -> BrowserConfiguration:
         return BrowserConfiguration(
-            data['browser_name'],
-            data['browser_setting'],
-            data['cli_options'],
-            data['extensions']
+            data['browser_name'], data['browser_setting'], data['cli_options'], data['extensions']
         )
 
 
@@ -89,11 +83,7 @@ class EvaluationConfiguration:
 
     @staticmethod
     def from_dict(data: dict) -> EvaluationConfiguration:
-        return EvaluationConfiguration(
-            data['project'],
-            data['automation'],
-            data['seconds_per_visit']
-        )
+        return EvaluationConfiguration(data['project'], data['automation'], data['seconds_per_visit'])
 
 
 @dataclass(frozen=True)
@@ -122,23 +112,19 @@ class SequenceConfiguration:
 
 
 @dataclass(frozen=True)
-class DatabaseConnectionParameters:
+class DatabaseParameters:
     host: str
     username: str
     password: str
     database_name: str
+    binary_cache_limit: int
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @staticmethod
-    def from_dict(data: dict) -> DatabaseConnectionParameters:
-        return DatabaseConnectionParameters(
-            data['host'],
-            data['username'],
-            data['password'],
-            data['database_name']
-        )
+    def from_dict(data: dict) -> DatabaseParameters:
+        return DatabaseParameters(data['host'], data['username'], data['password'], data['database_name'], data['binary_cache_limit'])
 
     def __str__(self) -> str:
         return f'{self.username}@{self.host}:27017/{self.database_name}'
@@ -151,16 +137,12 @@ class WorkerParameters:
     state: State
     mech_groups: list[str]
     database_collection: str
-    database_connection_params: DatabaseConnectionParameters
+    database_connection_params: DatabaseParameters
 
     def create_test_params_for(self, mech_group: str) -> TestParameters:
         assert mech_group in self.mech_groups
         return TestParameters(
-            self.browser_configuration,
-            self.evaluation_configuration,
-            self.state,
-            mech_group,
-            self.database_collection
+            self.browser_configuration, self.evaluation_configuration, self.state, mech_group, self.database_collection
         )
 
     def create_all_test_params(self) -> list[TestParameters]:
@@ -170,8 +152,10 @@ class WorkerParameters:
                 self.evaluation_configuration,
                 self.state,
                 mech_group,
-                self.database_collection)
-            for mech_group in self.mech_groups]
+                self.database_collection,
+            )
+            for mech_group in self.mech_groups
+        ]
 
     def _to_dict(self):
         return {
@@ -200,14 +184,9 @@ class WorkerParameters:
         state = State.from_dict(data['state'])
         mech_groups = data['mech_groups']
         database_collection = data['database_collection']
-        database_connection_params = DatabaseConnectionParameters.from_dict(data['database_connection_params'])
+        database_connection_params = DatabaseParameters.from_dict(data['database_connection_params'])
         return WorkerParameters(
-            browser_config,
-            eval_config,
-            state,
-            mech_groups,
-            database_collection,
-            database_connection_params
+            browser_config, eval_config, state, mech_groups, database_collection, database_connection_params
         )
 
     def __str__(self) -> str:
@@ -223,13 +202,7 @@ class TestParameters:
     database_collection: str
 
     def create_test_result_with(self, browser_version: str, binary_origin: str, data: dict, dirty: bool) -> TestResult:
-        return TestResult(
-            self,
-            browser_version,
-            binary_origin,
-            data,
-            dirty
-        )
+        return TestResult(self, browser_version, binary_origin, data, dirty)
 
 
 @dataclass(frozen=True)
@@ -245,11 +218,11 @@ class TestResult:
     def padded_browser_version(self):
         padding_target = 4
         padded_version = []
-        for sub in self.browser_version.split("."):
+        for sub in self.browser_version.split('.'):
             if len(sub) > padding_target:
-                raise AttributeError(f'Version \'{self.browser_version}\' is too big to be padded')
+                raise AttributeError(f"Version '{self.browser_version}' is too big to be padded")
             padded_version.append('0' * (padding_target - len(sub)) + sub)
-        return ".".join(padded_version)
+        return '.'.join(padded_version)
 
     def get_state_result(self) -> StateResult:
         return StateResult.from_dict(self.data, self.is_dirty)
@@ -273,47 +246,38 @@ class PlotParameters:
 @staticmethod
 def evaluation_factory(kwargs: ImmutableMultiDict) -> EvaluationParameters:
     browser_configuration = BrowserConfiguration(
-        kwargs.get('browser_name'),
-        kwargs.get('browser_setting'),
-        __get_cli_arguments(kwargs),
-        __get_extensions(kwargs)
+        kwargs.get('browser_name'), kwargs.get('browser_setting'), __get_cli_arguments(kwargs), __get_extensions(kwargs)
     )
     evaluation_configuration = EvaluationConfiguration(
-        kwargs.get('project'),
-        kwargs.get('automation'),
-        int(kwargs.get('seconds_per_visit', 5))
+        kwargs.get('project'), kwargs.get('automation'), int(kwargs.get('seconds_per_visit', 5))
     )
     evaluation_range = EvaluationRange(
         kwargs.get('tests', []),
         __get_version_range(kwargs),
         __get_revision_number_range(kwargs),
-        kwargs.get('only_release_revisions', False)
+        kwargs.get('only_release_revisions', False),
     )
     sequence_configuration = SequenceConfiguration(
         int(kwargs.get('nb_of_containers')),
         int(kwargs.get('sequence_limit')),
         kwargs.get('target_mech_id', None),
         __get_cookie_name(kwargs),
-        kwargs.get('search_strategy')
+        kwargs.get('search_strategy'),
     )
     database_collection = kwargs.get('db_collection')
     evaluation_params = EvaluationParameters(
-        browser_configuration,
-        evaluation_configuration,
-        evaluation_range,
-        sequence_configuration,
-        database_collection
+        browser_configuration, evaluation_configuration, evaluation_range, sequence_configuration, database_collection
     )
     return evaluation_params
 
 
 @staticmethod
 def __get_cookie_name(form_data: dict[str, str]) -> str | None:
-    if form_data["check_for"] == "request":
+    if form_data['check_for'] == 'request':
         return None
-    if "cookie_name" in form_data:
-        return form_data["cookie_name"]
-    return "generic"
+    if 'cookie_name' in form_data:
+        return form_data['cookie_name']
+    return 'generic'
 
 
 @staticmethod
@@ -340,11 +304,11 @@ def __get_revision_number_range(form_data: dict[str, str]) -> tuple[int, int] | 
 def __get_extensions(form_data: dict[str, str]) -> list[str]:
     return list(
         map(
-            lambda x: x.replace("ext_", ""),
+            lambda x: x.replace('ext_', ''),
             filter(
-                lambda x: x.startswith("ext_") and form_data[x] == "true",
+                lambda x: x.startswith('ext_') and form_data[x] == 'true',
                 form_data.keys(),
-            )
+            ),
         )
     )
 
@@ -358,5 +322,5 @@ def __get_cli_arguments(form_data: dict[str, str]) -> list[str]:
         case 'firefox':
             available_cli_options = cli_options_firefox.get_all_cli_options()
         case _:
-            raise AttributeError(f'Unknown browser \'{browser}\'')
+            raise AttributeError(f"Unknown browser '{browser}'")
     return list(filter(lambda x: x in form_data, available_cli_options))
