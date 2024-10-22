@@ -84,7 +84,7 @@ class WorkerManager:
                         '/dev/shm:/dev/shm',
                     ],
                 )
-                logger.debug(f"Container '{container_name}' finished experiments with parameters '{repr(params)}'")
+                logger.debug(f"Container '{container_name}' finished experiments for '{params.state}'")
                 Clients.push_results_to_all()
             except docker.errors.ContainerError:
                 logger.error(

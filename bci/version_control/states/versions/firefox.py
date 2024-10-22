@@ -11,7 +11,7 @@ class FirefoxVersion(BaseVersion):
     def _get_rev_nb(self) -> int:
         return get_release_revision_number(self.major_version)
 
-    def _get_rev_id(self):
+    def _get_rev_id(self) -> str:
         return get_release_revision_id(self.major_version)
 
     @property

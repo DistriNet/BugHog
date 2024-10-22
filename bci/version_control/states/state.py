@@ -109,6 +109,9 @@ class State:
                 self.condition = StateCondition.UNAVAILABLE
             return has_available_binary
 
+    def get_previous_and_next_state_with_binary(self) -> tuple[State, State]:
+        raise NotImplementedError(f'This function is not implemented for {self}')
+
     def __repr__(self) -> str:
         return f'State(index={self.index})'
 

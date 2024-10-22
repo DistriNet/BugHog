@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 
 from flatten_dict import flatten
-from pymongo import MongoClient
+from pymongo import ASCENDING, MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -83,17 +83,25 @@ class MongoDB:
 
     @staticmethod
     def __initialize_collections():
-        for collection_name in ['chromium_binary_availability', 'firefox_central_binary_availability']:
+        for collection_name in ['chromium_binary_availability']:
             if collection_name not in DB.list_collection_names():
                 DB.create_collection(collection_name)
+
+        # Binary cache
         if 'fs.files' not in DB.list_collection_names():
             # Create the 'fs.files' collection with indexes
-            DB.create_collection('fs.files', {})
+            DB.create_collection('fs.files')
             DB['fs.files'].create_index(['state_type', 'browser_name', 'state_index', 'relative_file_path'], unique=True)
         if 'fs.chunks' not in DB.list_collection_names():
             # Create the 'fs.chunks' collection with zstd compression
             DB.create_collection('fs.chunks', storageEngine={'wiredTiger': {'configString': 'block_compressor=zstd'}})
             DB['fs.chunks'].create_index(['files_id', 'n'], unique=True)
+
+        # Revision cache
+        if 'firefox_binary_availability' not in DB.list_collection_names():
+            DB.create_collection('firefox_binary_availability')
+            DB['firefox_binary_availability'].create_index([('revision_number', ASCENDING)])
+            DB['firefox_binary_availability'].create_index(['node'])
 
     def get_collection(self, name: str):
         if name not in DB.list_collection_names():

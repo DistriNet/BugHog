@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from bci.version_control.factory import StateFactory
@@ -64,6 +64,14 @@ class SequenceStrategy:
         if target.has_available_binary():
             return target
 
+        try:
+            if state := self.__get_closest_available_state(target, boundaries):
+                return state
+            else:
+                return None
+        except FunctionalityNotAvailable:
+            pass
+
         def index_has_available_binary(index: int) -> Optional[State]:
             state = self._state_factory.create_state(index)
             if state.has_available_binary():
@@ -74,36 +82,44 @@ class SequenceStrategy:
         diff = 1
         first_state, last_state = boundaries
         best_splitter_index = target.index
-        while (best_splitter_index - diff - 1) > first_state.index or (best_splitter_index + diff + 1) < last_state.index:
-            threads = []
-            for offset in (-diff, diff, - 1 - diff, 1 + diff):
-                target_index = best_splitter_index + offset
-                if first_state.index < target_index < last_state.index:
-                    thread = ThreadWithReturnValue(target=index_has_available_binary, args=(target_index,))
-                    thread.start()
-                    threads.append(thread)
+        while (best_splitter_index - diff) > first_state.index or (best_splitter_index + diff) < last_state.index:
+            with ThreadPoolExecutor(max_workers=6) as executor:
+                futures = []
+                for offset in (-diff, diff, - 1 - diff, 1 + diff, - 2 - diff, 2 + diff):
+                    target_index = best_splitter_index + offset
+                    if first_state.index < target_index < last_state.index:
+                        futures.append(executor.submit(index_has_available_binary, target_index))
 
-            for thread in threads:
-                state = thread.join()
-                if state:
-                    return state
+                for future in futures:
+                    state = future.result()
+                    if state:
+                        return state
+
             diff += 2
         return None
+
+
+    def __get_closest_available_state(self, target: State, boundaries: tuple[State, State]) -> State | None:
+        """
+        Return the closest state with an available binary.
+        """
+        try:
+            states = target.get_previous_and_next_state_with_binary()
+            states = [state for state in states if state is not None]
+            ordered_states = sorted(states, key=lambda x: abs(target.revision_nb - x.revision_nb))
+
+            for state in ordered_states:
+                if boundaries[0].revision_nb < state.revision_nb < boundaries[1].revision_nb:
+                    return state
+
+            return None
+
+        except NotImplementedError as e:
+            raise FunctionalityNotAvailable() from e
 
 
 class SequenceFinished(Exception):
     pass
 
-
-class ThreadWithReturnValue(Thread):
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
-        Thread.__init__(self, group=group, target=target, name=name, args=args, kwargs=kwargs)
-        self._return = None
-
-    def run(self):
-        if self._target is not None:
-            self._return = self._target(*self._args, **self._kwargs)
-
-    def join(self, *args):
-        Thread.join(self, *args)
-        return self._return
+class FunctionalityNotAvailable(Exception):
+    pass

@@ -3,6 +3,7 @@ import logging
 import bci.database.mongo.container as mongodb_container
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB, ServerException
+from bci.database.mongo.revision_cache import RevisionCache
 from bci.distribution.worker_manager import WorkerManager
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
 from bci.evaluations.evaluation_framework import EvaluationFramework
@@ -18,6 +19,7 @@ from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bci.version_control.factory import StateFactory
+from bci.version_control.states.revisions.firefox import BINARY_AVAILABILITY_MAPPING
 from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ class Master:
         Global.initialize_folders()
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
+        RevisionCache.store_firefox_binary_availability(BINARY_AVAILABILITY_MAPPING)  # TODO: find better place
         self.inititialize_available_evaluation_frameworks()
         logger.info('BugHog is ready!')
 

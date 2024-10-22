@@ -44,13 +44,14 @@ class BiggestGapBisectionSequence(SequenceStrategy):
 
         pairs = list(zip(self._completed_states, self._completed_states[1:]))
         while pairs:
-            furthest_pair = max(pairs, key=lambda x: x[1].index - x[0].index)
+            filtered_pairs = [pair for pair in pairs if not self._pair_is_in_unavailability_gap(pair)]
+            furthest_pair = max(filtered_pairs, key=lambda x: x[1].index - x[0].index)
             splitter_state = self._find_best_splitter_state(furthest_pair[0], furthest_pair[1])
             if splitter_state is None:
                 self._unavailability_gap_pairs.add(furthest_pair)
             elif splitter_state:
                 logger.debug(
-                    f"Splitting [{furthest_pair[0].index}]--/{splitter_state.index}/--[{furthest_pair[1].index}]"
+                    f'Splitting [{furthest_pair[0].index}]--/{splitter_state.index}/--[{furthest_pair[1].index}]'
                 )
                 self._add_state(splitter_state)
                 return splitter_state
@@ -74,5 +75,17 @@ class BiggestGapBisectionSequence(SequenceStrategy):
         """
         for pair in self._unavailability_gap_pairs:
             if pair[0].index < state.index < pair[1].index:
+                return True
+        return False
+
+    def _pair_is_in_unavailability_gap(self, pair: tuple[State, State]) -> bool:
+        """
+        Returns True if the pair of states is in a gap between two states without any available binaries
+        """
+        for gap_pair in self._unavailability_gap_pairs:
+            if (
+                gap_pair[0].index < pair[0].index < gap_pair[1].index
+                and gap_pair[0].index < pair[1].index < gap_pair[1].index
+            ):
                 return True
         return False
