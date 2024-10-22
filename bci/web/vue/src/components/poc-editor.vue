@@ -2,7 +2,7 @@
   import ace from "ace-builds";
   import { Mode as HtmlMode } from 'ace-builds/src-noconflict/mode-html';
   import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
-  import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-javascript';
+  import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
   import 'ace-builds/src-min-noconflict/ext-modelist';
   import 'ace-builds/src-min-noconflict/theme-twilight';
   import 'ace-builds/src-min-noconflict/theme-xcode';
