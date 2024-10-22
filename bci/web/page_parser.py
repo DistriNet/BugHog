@@ -68,6 +68,10 @@ def get_content(subdir_folder_path: str):
         {
             "file_name": "index.js",
             "content_type": "text/javascript"
+        },
+        {
+            "file_name": "index.py",
+            "content_type": "text/x-python"
         }
     ]
     content = None
