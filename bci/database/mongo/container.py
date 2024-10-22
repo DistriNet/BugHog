@@ -47,6 +47,8 @@ def stop():
 
 
 def __create_new_container(user: str, pw: str, db_name, db_host):
+    if (host_pwd := os.getenv('HOST_PWD', None)) is None:
+        raise AttributeError("Could not create container because of missing HOST_PWD environment variable")
     docker_client = docker.from_env()
     docker_client.containers.run(
         'mongo:5.0.17',
@@ -56,7 +58,7 @@ def __create_new_container(user: str, pw: str, db_name, db_host):
         detach=True,
         remove=True,
         labels=['bh_db'],
-        volumes=[os.path.join(os.getenv('HOST_PWD'), 'database/data') + ':/data/db'],
+        volumes=[os.path.join(host_pwd, 'database/data') + ':/data/db'],
         ports={'27017/tcp': 27017},
         environment={'MONGO_INITDB_ROOT_USERNAME': DEFAULT_ROOT_USER, 'MONGO_INITDB_ROOT_PASSWORD': DEFAULT_ROOT_PW},
     )

@@ -4,8 +4,8 @@ import textwrap
 
 from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
+from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.collectors.collector import Collector, Type
-from bci.evaluations.custom.custom_mongodb import CustomMongoDB
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import TestParameters, TestResult
 from bci.web.clients import Clients
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class CustomEvaluationFramework(EvaluationFramework):
 
-    db_class = CustomMongoDB
+    db_class = MongoDB
 
     def __init__(self):
         super().__init__()

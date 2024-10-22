@@ -12,10 +12,10 @@ class RevisionCache:
     @staticmethod
     def store_firefox_binary_availability(data: dict) -> None:
         values = list(data.values())
-        collection = MongoDB.get_instance().db['firefox_binary_availability']
+        collection = MongoDB().get_collection('firefox_binary_availability')
 
         if (n := len(values)) == collection.count_documents({}):
-            logger.debug(f'Reivision Cache was not updated ({n} documents).')
+            logger.debug(f'Revision Cache was not updated ({n} documents).')
             return
 
         collection.delete_many({})
@@ -24,13 +24,15 @@ class RevisionCache:
 
     @staticmethod
     def firefox_get_revision_number(revision_id: str) -> int:
-        collection = MongoDB.get_instance().db['firefox_binary_availability']
+        collection = MongoDB().get_collection('firefox_binary_availability')
         result = collection.find_one({'revision_id': revision_id}, {'revision_number': 1})
+        if result is None or 'revision_number' not in result:
+            raise AttributeError(f"Could not find 'revision_number' in {result}")
         return result['revision_number']
 
     @staticmethod
     def firefox_has_binary_for(revision_nb: Optional[int], revision_id: Optional[str]) -> bool:
-        collection = MongoDB.get_instance().db['firefox_binary_availability']
+        collection = MongoDB().get_collection('firefox_binary_availability')
         if revision_nb:
             result = collection.find_one({'revision_number': revision_nb})
         elif revision_id:
@@ -40,13 +42,13 @@ class RevisionCache:
         return result is not None
 
     @staticmethod
-    def firefox_get_binary_info(revision_id: str) -> dict:
-        collection = MongoDB.get_instance().db['firefox_binary_availability']
+    def firefox_get_binary_info(revision_id: str) -> Optional[dict]:
+        collection = MongoDB().get_collection('firefox_binary_availability')
         return collection.find_one({'revision_id': revision_id}, {'files_url': 1, 'app_version': 1})
 
     @staticmethod
-    def firefox_get_previous_and_next_revision_nb_with_binary(revision_nb: int) -> tuple[int, int]:
-        collection = MongoDB.get_instance().db['firefox_binary_availability']
+    def firefox_get_previous_and_next_revision_nb_with_binary(revision_nb: int) -> tuple[Optional[int], Optional[int]]:
+        collection = MongoDB().get_collection('firefox_binary_availability')
 
         previous_revision_nbs = collection.find({'revision_number': {'$lt': revision_nb}}).sort(
             {'revision_number': DESCENDING}

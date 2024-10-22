@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import Optional
 
 from flatten_dict import flatten
+from gridfs import GridFS
 from pymongo import ASCENDING, MongoClient
 from pymongo.collection import Collection
+from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
 
 from bci.evaluations.logic import (
@@ -22,11 +25,19 @@ from bci.version_control.states.state import State, StateCondition
 
 logger = logging.getLogger(__name__)
 
-# pylint: disable=global-statement
-CLIENT = None
-DB = None
+
+def singleton(class_):
+    instances = {}
+
+    def get_instance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+
+    return get_instance
 
 
+@singleton
 class MongoDB:
     instance = None
     binary_cache_limit = 0
@@ -37,21 +48,13 @@ class MongoDB:
     }
 
     def __init__(self):
-        self.client: MongoClient = CLIENT
-        self.db = DB
+        self.client: Optional[MongoClient] = None
+        self._db: Optional[Database] = None
 
-    @classmethod
-    def get_instance(cls) -> MongoDB:
-        if cls.instance is None:
-            cls.instance = cls()
-        return cls.instance
-
-    @classmethod
-    def connect(cls, db_params: DatabaseParameters):
-        global CLIENT, DB
+    def connect(self, db_params: DatabaseParameters) -> None:
         assert db_params is not None
 
-        CLIENT = MongoClient(
+        self.client = MongoClient(
             host=db_params.host,
             port=27017,
             username=db_params.username,
@@ -60,54 +63,68 @@ class MongoDB:
             retryWrites=False,
             serverSelectionTimeoutMS=10000,
         )
-        cls.binary_cache_limit = db_params.binary_cache_limit
-        logger.info(f'Binary cache limit set to {cls.binary_cache_limit}')
+        logger.info(f'Binary cache limit set to {db_params.binary_cache_limit}')
         # Force connection to check whether MongoDB server is reachable
         try:
-            CLIENT.server_info()
-            DB = CLIENT[db_params.database_name]
+            self.client.server_info()
+            self._db = self.client[db_params.database_name]
             logger.info('Connected to database!')
         except ServerSelectionTimeoutError as e:
             logger.info('A timeout occurred while attempting to establish connection.', exc_info=True)
             raise ServerException from e
 
         # Initialize collections
-        MongoDB.__initialize_collections()
+        self.__initialize_collections()
 
-    @staticmethod
-    def disconnect():
-        global CLIENT, DB
-        CLIENT.close()
-        CLIENT = None
-        DB = None
+    def disconnect(self):
+        if self.client:
+            self.client.close()
+        self.client = None
+        self._db = None
 
-    @staticmethod
-    def __initialize_collections():
+    def __initialize_collections(self):
+        if self._db is None:
+            raise
+
         for collection_name in ['chromium_binary_availability']:
-            if collection_name not in DB.list_collection_names():
-                DB.create_collection(collection_name)
+            if collection_name not in self._db.list_collection_names():
+                self._db.create_collection(collection_name)
 
         # Binary cache
-        if 'fs.files' not in DB.list_collection_names():
+        if 'fs.files' not in self._db.list_collection_names():
             # Create the 'fs.files' collection with indexes
-            DB.create_collection('fs.files')
-            DB['fs.files'].create_index(['state_type', 'browser_name', 'state_index', 'relative_file_path'], unique=True)
-        if 'fs.chunks' not in DB.list_collection_names():
+            self._db.create_collection('fs.files')
+            self._db['fs.files'].create_index(
+                ['state_type', 'browser_name', 'state_index', 'relative_file_path'], unique=True
+            )
+        if 'fs.chunks' not in self._db.list_collection_names():
             # Create the 'fs.chunks' collection with zstd compression
-            DB.create_collection('fs.chunks', storageEngine={'wiredTiger': {'configString': 'block_compressor=zstd'}})
-            DB['fs.chunks'].create_index(['files_id', 'n'], unique=True)
+            self._db.create_collection(
+                'fs.chunks', storageEngine={'wiredTiger': {'configString': 'block_compressor=zstd'}}
+            )
+            self._db['fs.chunks'].create_index(['files_id', 'n'], unique=True)
 
         # Revision cache
-        if 'firefox_binary_availability' not in DB.list_collection_names():
-            DB.create_collection('firefox_binary_availability')
-            DB['firefox_binary_availability'].create_index([('revision_number', ASCENDING)])
-            DB['firefox_binary_availability'].create_index(['node'])
+        if 'firefox_binary_availability' not in self._db.list_collection_names():
+            self._db.create_collection('firefox_binary_availability')
+            self._db['firefox_binary_availability'].create_index([('revision_number', ASCENDING)])
+            self._db['firefox_binary_availability'].create_index(['node'])
 
-    def get_collection(self, name: str):
-        if name not in DB.list_collection_names():
-            logger.info(f"Collection '{name}' does not exist, creating it...")
-            DB.create_collection(name)
-        return DB[name]
+    def get_collection(self, name: str, create_if_not_found: bool = False) -> Collection:
+        if self._db is None:
+            raise ServerException('Database server does not have a database')
+        if name not in self._db.list_collection_names():
+            if create_if_not_found:
+                return self._db.create_collection(name)
+            else:
+                raise ServerException(f"Could not find collection '{name}'")
+        return self._db[name]
+
+    @property
+    def gridfs(self) -> GridFS:
+        if self._db is None:
+            raise ServerException('Database server does not have a database')
+        return GridFS(self._db)
 
     def store_result(self, result: TestResult):
         browser_config = result.params.browser_configuration
@@ -140,7 +157,7 @@ class MongoDB:
 
         collection.insert_one(document)
 
-    def get_result(self, params: TestParameters) -> TestResult:
+    def get_result(self, params: TestParameters) -> Optional[TestResult]:
         collection = self.__get_data_collection(params)
         query = self.__to_query(params)
         document = collection.find_one(query)
@@ -150,6 +167,7 @@ class MongoDB:
             )
         else:
             logger.error(f'Could not find document for query {query}')
+            return None
 
     def has_result(self, params: TestParameters) -> bool:
         collection = self.__get_data_collection(params)
@@ -230,30 +248,23 @@ class MongoDB:
 
     def __get_data_collection(self, test_params: TestParameters) -> Collection:
         collection_name = test_params.database_collection
-        if collection_name not in self.db.list_collection_names():
-            return self.db.create_collection(collection_name)
-        return self.db[collection_name]
+        return self.get_collection(collection_name, create_if_not_found=True)
 
-    @staticmethod
-    def get_binary_availability_collection(browser_name: str):
-        collection_name = MongoDB.binary_availability_collection_names[browser_name]
-        if collection_name not in DB.list_collection_names():
-            raise AttributeError("Collection '%s' not found in database" % collection_name)
-        return DB[collection_name]
+    def get_binary_availability_collection(self, browser_name: str):
+        collection_name = self.binary_availability_collection_names[browser_name]
+        return self.get_collection(collection_name, create_if_not_found=True)
 
     # Caching of online binary availability
 
-    @staticmethod
-    def has_binary_available_online(browser: str, state: State):
-        collection = MongoDB.get_binary_availability_collection(browser)
+    def has_binary_available_online(self, browser: str, state: State):
+        collection = self.get_binary_availability_collection(browser)
         document = collection.find_one({'state': state.to_dict()})
         if document is None:
             return None
         return document['binary_online']
 
-    @staticmethod
-    def get_stored_binary_availability(browser):
-        collection = MongoDB.get_binary_availability_collection(browser)
+    def get_stored_binary_availability(self, browser):
+        collection = MongoDB().get_binary_availability_collection(browser)
         result = collection.find(
             {'binary_online': True},
             {
@@ -265,9 +276,8 @@ class MongoDB:
             result.sort('build_id', -1)
         return result
 
-    @staticmethod
-    def get_complete_state_dict_from_binary_availability_cache(state: State) -> dict:
-        collection = MongoDB.get_binary_availability_collection(state.browser_name)
+    def get_complete_state_dict_from_binary_availability_cache(self, state: State) -> Optional[dict]:
+        collection = MongoDB().get_binary_availability_collection(state.browser_name)
         # We have to flatten the state dictionary to ignore missing attributes.
         state_dict = {'state': state.to_dict()}
         query = flatten(state_dict, reducer='dot')
@@ -276,9 +286,10 @@ class MongoDB:
             return None
         return document['state']
 
-    @staticmethod
-    def store_binary_availability_online_cache(browser: str, state: State, binary_online: bool, url: str = None):
-        collection = MongoDB.get_binary_availability_collection(browser)
+    def store_binary_availability_online_cache(
+        self, browser: str, state: State, binary_online: bool, url: Optional[str] = None
+    ):
+        collection = MongoDB().get_binary_availability_collection(browser)
         collection.update_one(
             {'state': state.to_dict()},
             {
@@ -292,9 +303,8 @@ class MongoDB:
             upsert=True,
         )
 
-    @staticmethod
-    def get_build_id_firefox(state: State):
-        collection = MongoDB.get_binary_availability_collection('firefox')
+    def get_build_id_firefox(self, state: State):
+        collection = MongoDB().get_binary_availability_collection('firefox')
 
         result = collection.find_one({'state': state.to_dict()}, {'_id': False, 'build_id': 1})
         # Result can only be None if the binary associated with the state_id is artisanal:
@@ -309,11 +319,11 @@ class MongoDB:
             'mech_group': params.mech_group,
             'browser_config': params.browser_config,
             'state.type': 'version' if releases else 'revision',
+            'extensions': {'$size': len(params.extensions) if params.extensions else 0},
+            'cli_options': {'$size': len(params.cli_options) if params.cli_options else 0}
         }
-        query['extensions'] = {'$size': len(params.extensions) if params.extensions else 0}
         if params.extensions:
             query['extensions']['$all'] = params.extensions
-        query['cli_options'] = {'$size': len(params.cli_options) if params.cli_options else 0}
         if params.cli_options:
             query['cli_options']['$all'] = params.cli_options
         if params.revision_number_range:
@@ -336,10 +346,9 @@ class MongoDB:
         )
         return list(docs)
 
-    @staticmethod
-    def get_info() -> dict:
-        if CLIENT and CLIENT.address:
-            return {'type': 'mongo', 'host': CLIENT.address[0], 'connected': True}
+    def get_info(self) -> dict:
+        if self.client and self.client.address:
+            return {'type': 'mongo', 'host': self.client.address[0], 'connected': True}
         else:
             return {'type': 'mongo', 'host': None, 'connected': False}
 

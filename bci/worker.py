@@ -15,7 +15,7 @@ def run(params: WorkerParameters):
 
     # Only perform configuration steps for separate workers
     if __name__ == '__main__':
-        MongoDB.connect(params.database_connection_params)
+        MongoDB().connect(params.database_connection_params)
 
     # click passes options with multiple=True as a tuple, so we convert it to a list
     # browser_cli_options = list(browser_cli_options)

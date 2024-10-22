@@ -63,8 +63,7 @@ class StateFactory:
         """
         Create evaluated state objects within the evaluation range where the result is fetched from the database.
         """
-        db = MongoDB.get_instance()
-        return db.get_evaluated_states(self.__eval_params, self.boundary_states, self.__outcome_checker)
+        return MongoDB().get_evaluated_states(self.__eval_params, self.boundary_states, self.__outcome_checker)
 
     def __create_version_state(self, index: int) -> BaseVersion:
         """

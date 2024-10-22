@@ -21,13 +21,13 @@ class ChromiumVersion(BaseVersion):
         return 'chromium'
 
     def has_online_binary(self):
-        cached_binary_available_online = MongoDB.has_binary_available_online('chromium', self)
+        cached_binary_available_online = MongoDB().has_binary_available_online('chromium', self)
         if cached_binary_available_online is not None:
             return cached_binary_available_online
         url = f'https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{self._revision_nb}%2Fchrome-linux.zip'
         req = requests.get(url)
         has_binary_online = req.status_code == 200
-        MongoDB.store_binary_availability_online_cache('chromium', self, has_binary_online)
+        MongoDB().store_binary_availability_online_cache('chromium', self, has_binary_online)
         return has_binary_online
 
     def get_online_binary_url(self):

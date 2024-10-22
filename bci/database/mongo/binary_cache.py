@@ -30,8 +30,7 @@ class BinaryCache:
         if MongoDB.binary_cache_limit <= 0:
             return False
 
-        db = MongoDB.get_instance().db
-        files_collection = db['fs.files']
+        files_collection = MongoDB().get_collection('fs.files')
 
         query = {
             'file_type': 'binary',
@@ -58,7 +57,7 @@ class BinaryCache:
             os.chmod(file_path, 0o744)
 
         grid_cursor = files_collection.find(query)
-        fs = gridfs.GridFS(db)
+        fs = MongoDB().gridfs
         start_time = time.time()
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             for grid_doc in grid_cursor:
@@ -89,8 +88,7 @@ class BinaryCache:
                 return False
             BinaryCache.__remove_least_used_revision_binary_files()
 
-        db = MongoDB.get_instance().db
-        fs = gridfs.GridFS(db)
+        fs = MongoDB().gridfs
         binary_folder_path = os.path.dirname(binary_executable_path)
         start_time = time.time()
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -122,8 +120,7 @@ class BinaryCache:
         :param state_type: The type of the state.
         :return: The number of cached binaries.
         """
-        db = MongoDB.get_instance()
-        files_collection = db.get_collection('fs.files')
+        files_collection = MongoDB().get_collection('fs.files')
         if state_type:
             query = {'file_type': 'binary', 'state_type': state_type}
         else:
@@ -135,9 +132,8 @@ class BinaryCache:
         """
         Removes the least used revision binary files from the database.
         """
-        db = MongoDB.get_instance().db
-        fs = gridfs.GridFS(db)
-        files_collection = db.get_collection('fs.files')
+        fs = MongoDB().gridfs
+        files_collection = MongoDB().get_collection('fs.files')
 
         grid_cursor = files_collection.find(
             {'file_type': 'binary', 'state_type': 'revision'},

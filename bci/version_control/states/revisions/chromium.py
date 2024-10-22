@@ -18,13 +18,13 @@ class ChromiumRevision(BaseRevision):
         return 'chromium'
 
     def has_online_binary(self) -> bool:
-        cached_binary_available_online = MongoDB.has_binary_available_online('chromium', self)
+        cached_binary_available_online = MongoDB().has_binary_available_online('chromium', self)
         if cached_binary_available_online is not None:
             return cached_binary_available_online
         url = f'https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{self._revision_nb}%2Fchrome-linux.zip'
         req = requests.get(url)
         has_binary_online = req.status_code == 200
-        MongoDB.store_binary_availability_online_cache('chromium', self, has_binary_online)
+        MongoDB().store_binary_availability_online_cache('chromium', self, has_binary_online)
         return has_binary_online
 
     def get_online_binary_url(self):
@@ -41,7 +41,7 @@ class ChromiumRevision(BaseRevision):
         # First check if the missing data is available in the cache
         if self._revision_id and self._revision_nb:
             return
-        if state := MongoDB.get_complete_state_dict_from_binary_availability_cache(self):
+        if state := MongoDB().get_complete_state_dict_from_binary_availability_cache(self):
             if self._revision_id is None:
                 self._revision_id = state.get('revision_id', None)
             if self._revision_nb is None:

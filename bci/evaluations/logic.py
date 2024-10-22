@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import asdict, dataclass
+from typing import Optional
 
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -234,13 +235,13 @@ class PlotParameters:
     target_mech_id: str
     browser_name: str
     database_collection: str
-    major_version_range: tuple[int] = None
-    revision_number_range: tuple[int] = None
+    major_version_range: Optional[tuple[int,int]] = None
+    revision_number_range: Optional[tuple[int,int]] = None
     browser_config: str = 'default'
-    extensions: list[str] = None
-    cli_options: list[str] = None
+    extensions: Optional[list[str]] = None
+    cli_options: Optional[list[str]] = None
     dirty_allowed: bool = True
-    target_cookie_name: str = None
+    target_cookie_name: Optional[str] = None
 
 
 @staticmethod

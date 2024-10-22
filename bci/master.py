@@ -6,14 +6,11 @@ from bci.database.mongo.mongodb import MongoDB, ServerException
 from bci.database.mongo.revision_cache import RevisionCache
 from bci.distribution.worker_manager import WorkerManager
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
-from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import (
     DatabaseParameters,
     EvaluationParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
-from bci.evaluations.samesite.samesite_evaluation import SameSiteEvaluationFramework
-from bci.evaluations.xsleaks.evaluation import XSLeaksEvaluation
 from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.composite_search import CompositeSearch
@@ -32,10 +29,7 @@ class Master:
         self.stop_gracefully = False
         self.stop_forcefully = False
 
-        # self.evaluations = []
-        self.evaluation_framework = None
         self.worker_manager = None
-        self.available_evaluation_frameworks = {}
 
         self.firefox_build = None
         self.chromium_build = None
@@ -44,12 +38,12 @@ class Master:
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
         RevisionCache.store_firefox_binary_availability(BINARY_AVAILABILITY_MAPPING)  # TODO: find better place
-        self.inititialize_available_evaluation_frameworks()
+        self.evaluation_framework = CustomEvaluationFramework()
         logger.info('BugHog is ready!')
 
     def connect_to_database(self, db_connection_params: DatabaseParameters):
         try:
-            MongoDB.connect(db_connection_params)
+            MongoDB().connect(db_connection_params)
         except ServerException:
             logger.error('Could not connect to database.', exc_info=True)
 
@@ -61,14 +55,13 @@ class Master:
         Clients.push_info_to_all('is_running', 'state')
 
         browser_config = eval_params.browser_configuration
-        evaluation_config = eval_params.evaluation_configuration
+        # evaluation_config = eval_params.evaluation_configuration
         evaluation_range = eval_params.evaluation_range
         sequence_config = eval_params.sequence_configuration
 
         logger.info(
             f'Running experiments for {browser_config.browser_name} ({", ".join(evaluation_range.mech_groups)})'
         )
-        self.evaluation_framework = self.get_specific_evaluation_framework(evaluation_config.project)
         self.worker_manager = WorkerManager(sequence_config.nb_of_containers)
 
         try:
@@ -111,11 +104,6 @@ class Master:
             self.state['status'] = 'idle'
             Clients.push_info_to_all('is_running', 'state')
 
-    def inititialize_available_evaluation_frameworks(self):
-        self.available_evaluation_frameworks['samesite'] = SameSiteEvaluationFramework()
-        self.available_evaluation_frameworks['custom'] = CustomEvaluationFramework()
-        self.available_evaluation_frameworks['xsleaks'] = XSLeaksEvaluation()
-
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
         sequence_config = eval_params.sequence_configuration
@@ -133,13 +121,6 @@ class Master:
         else:
             raise AttributeError("Unknown search strategy option '%s'" % search_strategy)
         return strategy
-
-    def get_specific_evaluation_framework(self, evaluation_name: str) -> EvaluationFramework:
-        # TODO: we always use 'custom', in which evaluation_name is a project
-        evaluation_name = 'custom'
-        if evaluation_name not in self.available_evaluation_frameworks.keys():
-            raise AttributeError("Could not find a framework for '%s'" % evaluation_name)
-        return self.available_evaluation_frameworks[evaluation_name]
 
     def activate_stop_gracefully(self):
         if self.evaluation_framework:

@@ -61,7 +61,7 @@ class Main:
 
     @staticmethod
     def get_database_info() -> dict:
-        return MongoDB.get_info()
+        return MongoDB().get_info()
 
     @staticmethod
     def get_browser_support() -> list[dict]:
@@ -85,13 +85,11 @@ class Main:
 
     @staticmethod
     def get_mech_groups_of_evaluation_framework(evaluation_name: str, project) -> list[tuple[str, bool]]:
-        return Main.master.get_specific_evaluation_framework(
-            evaluation_name
-        ).get_mech_groups(project)
+        return Main.master.evaluation_framework.get_mech_groups(project)
 
     @staticmethod
     def get_projects_of_custom_framework() -> list[str]:
-        return Main.master.available_evaluation_frameworks["custom"].get_projects()
+        return Main.master.evaluation_framework.get_projects()
 
     @staticmethod
     def convert_to_plotparams(data: dict) -> PlotParameters:
@@ -130,25 +128,25 @@ class Main:
             return None, None
 
         return \
-            PlotFactory.get_plot_revision_data(params, MongoDB.get_instance()), \
-            PlotFactory.get_plot_version_data(params, MongoDB.get_instance())
+            PlotFactory.get_plot_revision_data(params, MongoDB()), \
+            PlotFactory.get_plot_version_data(params, MongoDB())
 
     @staticmethod
     def get_poc(project: str, poc: str) -> dict:
-        return Main.master.get_specific_evaluation_framework("custom").get_poc_structure(project, poc)
+        return Main.master.evaluation_framework.get_poc_structure(project, poc)
 
     @staticmethod
     def get_poc_file(project: str, poc: str, domain: str, path: str, file: str) -> str:
-        return Main.master.get_specific_evaluation_framework("custom").get_poc_file(project, poc, domain, path, file)
+        return Main.master.gevaluation_framework.get_poc_file(project, poc, domain, path, file)
 
     @staticmethod
     def update_poc_file(project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
         logger.debug(f'Updating file {file} of project {project} and poc {poc}')
-        return Main.master.get_specific_evaluation_framework("custom").update_poc_file(project, poc, domain, path, file, content)
+        return Main.master.evaluation_framework.update_poc_file(project, poc, domain, path, file, content)
 
     @staticmethod
     def create_empty_poc(project: str, poc_name: str) -> bool:
-        return Main.master.get_specific_evaluation_framework("custom").create_empty_poc(project, poc_name)
+        return Main.master.evaluation_framework.create_empty_poc(project, poc_name)
 
     @staticmethod
     def get_available_domains() -> list[str]:
@@ -156,7 +154,7 @@ class Main:
 
     @staticmethod
     def add_page(project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
-        return Main.master.get_specific_evaluation_framework("custom").add_page(project, poc, domain, path, file_type)
+        return Main.master.evaluation_framework.add_page(project, poc, domain, path, file_type)
 
     @staticmethod
     def sigint_handler(signum, frame):

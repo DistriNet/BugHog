@@ -56,12 +56,6 @@ class EvaluationFramework(ABC):
     def perform_specific_evaluation(self, browser: Browser, params: TestParameters) -> TestResult:
         pass
 
-    @property
-    @classmethod
-    @abstractmethod
-    def db_class(cls) -> MongoDB:
-        pass
-
     @classmethod
     def has_result(cls: MongoDB, test_params: TestParameters) -> bool:
         return cls.db_class.get_instance().has_result(test_params)
