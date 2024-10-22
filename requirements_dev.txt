@@ -6,7 +6,7 @@
 #
 anybadge==1.14.0
     # via -r requirements_dev.in
-astroid==3.2.4
+astroid==3.3.5
     # via pylint
 autopep8==2.3.1
     # via -r requirements_dev.in
@@ -14,18 +14,18 @@ blinker==1.8.2
     # via
     #   -r requirements.txt
     #   flask
-boto3==1.34.152
+boto3==1.35.45
     # via -r requirements_dev.in
-botocore==1.34.152
+botocore==1.35.45
     # via
     #   -r requirements_dev.in
     #   boto3
     #   s3transfer
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -r requirements.txt
     #   requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via
     #   -r requirements.txt
     #   requests
@@ -33,21 +33,21 @@ click==8.1.7
     # via
     #   -r requirements.txt
     #   flask
-coverage[toml]==7.6.0
+coverage[toml]==7.6.4
     # via
     #   -r requirements_dev.in
     #   pytest-cov
-debugpy==1.8.2
+debugpy==1.8.7
     # via -r requirements_dev.in
-dill==0.3.8
+dill==0.3.9
     # via pylint
-dnspython==2.6.1
+dnspython==2.7.0
     # via
     #   -r requirements.txt
     #   pymongo
 docker==7.1.0
     # via -r requirements.txt
-flake8==7.1.0
+flake8==7.1.1
     # via
     #   -r requirements_dev.in
     #   pytest-flake8
@@ -59,13 +59,13 @@ flask-sock==0.7.0
     # via -r requirements.txt
 flatten-dict==0.4.2
     # via -r requirements.txt
-gunicorn==22.0.0
+gunicorn==23.0.0
     # via -r requirements.txt
 h11==0.14.0
     # via
     #   -r requirements.txt
     #   wsproto
-idna==3.7
+idna==3.10
     # via
     #   -r requirements.txt
     #   requests
@@ -87,7 +87,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   -r requirements.txt
     #   jinja2
@@ -102,21 +102,21 @@ packaging==24.1
     #   anybadge
     #   gunicorn
     #   pytest
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via pylint
 pluggy==1.5.0
     # via pytest
-pycodestyle==2.12.0
+pycodestyle==2.12.1
     # via
     #   autopep8
     #   flake8
 pyflakes==3.2.0
     # via flake8
-pylint==3.2.6
+pylint==3.3.1
     # via -r requirements_dev.in
-pymongo==4.8.0
+pymongo==4.10.1
     # via -r requirements.txt
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements_dev.in
     #   pytest-cov
@@ -131,9 +131,9 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   docker
-s3transfer==0.10.2
+s3transfer==0.10.3
     # via boto3
-simple-websocket==1.0.0
+simple-websocket==1.1.0
     # via
     #   -r requirements.txt
     #   flask-sock
@@ -142,15 +142,15 @@ six==1.16.0
     #   -r requirements.txt
     #   flatten-dict
     #   python-dateutil
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -r requirements.txt
     #   botocore
     #   docker
     #   requests
-werkzeug==3.0.3
+werkzeug==3.0.4
     # via
     #   -r requirements.txt
     #   flask
