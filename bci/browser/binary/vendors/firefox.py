@@ -9,8 +9,6 @@ import requests
 from bci import cli, util
 from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.browser.binary.binary import Binary
-from bci.version_control.states.revisions.firefox import (BINARY_AVAILABILITY_MAPPING,
-                                                REVISION_NUMBER_MAPPING)
 from bci.version_control.states.state import State
 
 logger = logging.getLogger('bci')

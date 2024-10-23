@@ -14,4 +14,13 @@
         "test_*.py"
     ],
     "python.testing.unittestEnabled": true,
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.rulers": [100, 120],
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "editor.formatOnType": true
+    },
 }

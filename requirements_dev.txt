@@ -4,50 +4,28 @@
 #
 #    pip-compile requirements_dev.in
 #
-aioquic==1.2.0
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
 anybadge==1.14.0
     # via -r requirements_dev.in
-asgiref==3.8.1
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-astroid==3.2.4
+astroid==3.3.5
     # via pylint
-attrs==23.2.0
-    # via
-    #   -r requirements.txt
-    #   service-identity
 autopep8==2.3.1
     # via -r requirements_dev.in
 blinker==1.8.2
     # via
     #   -r requirements.txt
     #   flask
-boto3==1.34.152
+boto3==1.35.45
     # via -r requirements_dev.in
-botocore==1.34.152
+botocore==1.35.45
     # via
     #   -r requirements_dev.in
     #   boto3
     #   s3transfer
-brotli==1.1.0
+certifi==2024.8.30
     # via
     #   -r requirements.txt
-    #   mitmproxy
-certifi==2024.7.4
-    # via
-    #   -r requirements.txt
-    #   aioquic
-    #   mitmproxy
     #   requests
-cffi==1.16.0
-    # via
-    #   -r requirements.txt
-    #   cryptography
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via
     #   -r requirements.txt
     #   requests
@@ -55,28 +33,21 @@ click==8.1.7
     # via
     #   -r requirements.txt
     #   flask
-coverage[toml]==7.6.0
+coverage[toml]==7.6.4
     # via
     #   -r requirements_dev.in
     #   pytest-cov
-cryptography==43.0.1
-    # via
-    #   -r requirements.txt
-    #   aioquic
-    #   mitmproxy
-    #   pyopenssl
-    #   service-identity
-debugpy==1.8.2
+debugpy==1.8.7
     # via -r requirements_dev.in
-dill==0.3.8
+dill==0.3.9
     # via pylint
-dnspython==2.6.1
+dnspython==2.7.0
     # via
     #   -r requirements.txt
     #   pymongo
 docker==7.1.0
     # via -r requirements.txt
-flake8==7.1.0
+flake8==7.1.1
     # via
     #   -r requirements_dev.in
     #   pytest-flake8
@@ -84,32 +55,17 @@ flask==3.0.3
     # via
     #   -r requirements.txt
     #   flask-sock
-    #   mitmproxy
 flask-sock==0.7.0
     # via -r requirements.txt
 flatten-dict==0.4.2
     # via -r requirements.txt
-gunicorn==22.0.0
+gunicorn==23.0.0
     # via -r requirements.txt
 h11==0.14.0
     # via
     #   -r requirements.txt
-    #   mitmproxy
     #   wsproto
-h2==4.1.0
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-hpack==4.0.0
-    # via
-    #   -r requirements.txt
-    #   h2
-hyperframe==6.0.1
-    # via
-    #   -r requirements.txt
-    #   h2
-    #   mitmproxy
-idna==3.7
+idna==3.10
     # via
     #   -r requirements.txt
     #   requests
@@ -131,15 +87,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-kaitaistruct==0.10
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-ldap3==2.9.1
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   -r requirements.txt
     #   jinja2
@@ -148,80 +96,27 @@ mccabe==0.7.0
     # via
     #   flake8
     #   pylint
-mitmproxy==10.4.2
-    # via -r requirements.txt
-mitmproxy-rs==0.6.3
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-msgpack==1.0.8
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
 packaging==24.1
     # via
     #   -r requirements.txt
     #   anybadge
     #   gunicorn
     #   pytest
-passlib==1.7.4
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via pylint
 pluggy==1.5.0
     # via pytest
-protobuf==5.27.3
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-publicsuffix2==2.20191221
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-pyasn1==0.6.0
-    # via
-    #   -r requirements.txt
-    #   ldap3
-    #   pyasn1-modules
-    #   service-identity
-pyasn1-modules==0.4.0
-    # via
-    #   -r requirements.txt
-    #   service-identity
-pycodestyle==2.12.0
+pycodestyle==2.12.1
     # via
     #   autopep8
     #   flake8
-pycparser==2.22
-    # via
-    #   -r requirements.txt
-    #   cffi
 pyflakes==3.2.0
     # via flake8
-pylint==3.2.6
+pylint==3.3.1
     # via -r requirements_dev.in
-pylsqpack==0.3.18
-    # via
-    #   -r requirements.txt
-    #   aioquic
-pymongo==4.8.0
+pymongo==4.10.1
     # via -r requirements.txt
-pyopenssl==24.2.1
-    # via
-    #   -r requirements.txt
-    #   aioquic
-    #   mitmproxy
-pyparsing==3.1.2
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-pyperclip==1.9.0
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements_dev.in
     #   pytest-cov
@@ -236,21 +131,9 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   docker
-ruamel-yaml==0.18.6
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-ruamel-yaml-clib==0.2.8
-    # via
-    #   -r requirements.txt
-    #   ruamel-yaml
-s3transfer==0.10.2
+s3transfer==0.10.3
     # via boto3
-service-identity==24.1.0
-    # via
-    #   -r requirements.txt
-    #   aioquic
-simple-websocket==1.0.0
+simple-websocket==1.1.0
     # via
     #   -r requirements.txt
     #   flask-sock
@@ -259,44 +142,19 @@ six==1.16.0
     #   -r requirements.txt
     #   flatten-dict
     #   python-dateutil
-sortedcontainers==2.4.0
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
-tornado==6.4.1
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-typing-extensions==4.12.2
-    # via
-    #   -r requirements.txt
-    #   urwid
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -r requirements.txt
     #   botocore
     #   docker
     #   requests
-urwid==2.6.15
-    # via
-    #   -r requirements.txt
-    #   mitmproxy
-wcwidth==0.2.13
-    # via
-    #   -r requirements.txt
-    #   urwid
-werkzeug==3.0.3
+werkzeug==3.0.4
     # via
     #   -r requirements.txt
     #   flask
 wsproto==1.2.0
     # via
     #   -r requirements.txt
-    #   mitmproxy
     #   simple-websocket
-zstandard==0.23.0
-    # via
-    #   -r requirements.txt
-    #   mitmproxy

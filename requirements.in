@@ -3,6 +3,5 @@ Flask
 flask-sock
 flatten-dict
 gunicorn
-mitmproxy
 pymongo
 requests

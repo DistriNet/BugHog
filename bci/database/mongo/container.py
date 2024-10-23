@@ -5,7 +5,7 @@ import docker
 import docker.errors
 from pymongo import MongoClient
 
-from bci.evaluations.logic import DatabaseConnectionParameters
+from bci.evaluations.logic import DatabaseParameters
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ DEFAULT_DB_NAME = 'bci'
 DEFAULT_HOST = 'bh_db'
 
 
-def run() -> DatabaseConnectionParameters:
+def run() -> DatabaseParameters:
     docker_client = docker.from_env()
     try:
         mongo_container = docker_client.containers.get(DEFAULT_HOST)
@@ -33,12 +33,8 @@ def run() -> DatabaseConnectionParameters:
         LOGGER.debug('MongoDB container not found, creating a new one...')
         __create_new_container(DEFAULT_USER, DEFAULT_PW, DEFAULT_DB_NAME, DEFAULT_HOST)
     LOGGER.debug('MongoDB container has started!')
-    return DatabaseConnectionParameters(
-        DEFAULT_HOST,
-        DEFAULT_USER,
-        DEFAULT_PW,
-        DEFAULT_DB_NAME
-    )
+    return DatabaseParameters(DEFAULT_HOST, DEFAULT_USER, DEFAULT_PW, DEFAULT_DB_NAME, 0)
+
 
 def stop():
     docker_client = docker.from_env()
@@ -49,25 +45,23 @@ def stop():
     except docker.errors.NotFound:
         LOGGER.debug('No MongoDB container found to stop. This is OK if another MongoDB instance is used.')
 
+
 def __create_new_container(user: str, pw: str, db_name, db_host):
+    if (host_pwd := os.getenv('HOST_PWD', None)) is None:
+        raise AttributeError("Could not create container because of missing HOST_PWD environment variable")
     docker_client = docker.from_env()
     docker_client.containers.run(
-            'mongo:5.0.17',
-            name=db_host,
-            hostname=db_host,
-            network=NETWORK_NAME,
-            detach=True,
-            remove=True,
-            labels=['bh_db'],
-            volumes=[
-                os.path.join(os.getenv('HOST_PWD'), 'database/data') + ':/data/db'
-            ],
-            ports={'27017/tcp': 27017},
-            environment={
-                'MONGO_INITDB_ROOT_USERNAME': DEFAULT_ROOT_USER,
-                'MONGO_INITDB_ROOT_PASSWORD': DEFAULT_ROOT_PW
-            }
-        )
+        'mongo:5.0.17',
+        name=db_host,
+        hostname=db_host,
+        network=NETWORK_NAME,
+        detach=True,
+        remove=True,
+        labels=['bh_db'],
+        volumes=[os.path.join(host_pwd, 'database/data') + ':/data/db'],
+        ports={'27017/tcp': 27017},
+        environment={'MONGO_INITDB_ROOT_USERNAME': DEFAULT_ROOT_USER, 'MONGO_INITDB_ROOT_PASSWORD': DEFAULT_ROOT_PW},
+    )
 
     mongo_client = MongoClient(
         host=db_host,
@@ -75,16 +69,9 @@ def __create_new_container(user: str, pw: str, db_name, db_host):
         username=DEFAULT_ROOT_USER,
         password=DEFAULT_ROOT_PW,
         authsource='admin',
-        retryWrites=False
+        retryWrites=False,
     )
 
     db = mongo_client[db_name]
     if not db.command('usersInfo', user)['users']:
-        db.command(
-            'createUser',
-            user,
-            pwd=pw,
-            roles=[{
-                'role': 'readWrite',
-                'db': db_name
-            }])
+        db.command('createUser', user, pwd=pw, roles=[{'role': 'readWrite', 'db': db_name}])
