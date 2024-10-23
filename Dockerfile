@@ -6,7 +6,7 @@ COPY /bci/web/vue ./
 RUN npm run build
 
 
-FROM openresty/openresty:1.25.3.1-3-bullseye AS nginx
+FROM openresty/openresty:1.27.1.1-bullseye AS nginx
 COPY ./nginx/start.sh /usr/local/bin/
 COPY ./nginx/config /etc/nginx/config
 COPY --from=ui-build-stage /app/dist /www/data
