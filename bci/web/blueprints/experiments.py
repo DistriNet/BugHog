@@ -155,7 +155,7 @@ def python_evaluation(project: str, experiment: str, directory: str):
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
 
-    return module.main()
+    return module.main(request)
 
 
 def get_all_bughog_GET_parameters(request):
