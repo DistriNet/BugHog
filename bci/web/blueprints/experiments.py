@@ -1,6 +1,8 @@
 import datetime
 import logging
 import threading
+import importlib.util
+import sys
 
 import requests
 from flask import Blueprint, make_response, render_template, request, url_for
@@ -144,8 +146,16 @@ def python_evaluation(project: str, experiment: str, directory: str):
     """
     host = request.host.lower()
 
-    logger.warning(f"Received evaluation request '{host}' - '{project}' - '{experiment}' - '{directory}'")
-    return f"Received evaluation request '{host}' - '{project}' - '{experiment}' - '{directory}'"
+    module_name = f"{host}/{project}/{experiment}/{directory}"
+    path = f"experiments/pages/{project}/{experiment}/{host}/{directory}/index.py"
+
+    # Dynamically import the file
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+
+    return module.main()
 
 
 def get_all_bughog_GET_parameters(request):
