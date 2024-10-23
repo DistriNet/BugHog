@@ -160,23 +160,39 @@ class CustomEvaluationFramework(EvaluationFramework):
         if os.path.exists(file_path):
             return False
         with open(file_path, 'w') as file:
-            file.write('')
-        headers_file_path = os.path.join(page_path, 'headers.json')
-        if not os.path.exists(headers_file_path):
-            with open(headers_file_path, 'w') as file:
-                file.write(textwrap.dedent(
-                    '''\
-                        [
-                            {
-                                "key": "Header-Name",
-                                "value": "Header-Value"
-                            }
-                        ]
-                    '''))
+            file.write(self.get_default_file_content(file_type))
+
+        if self.include_file_headers(file_type):
+            headers_file_path = os.path.join(page_path, 'headers.json')
+            if not os.path.exists(headers_file_path):
+                with open(headers_file_path, 'w') as file:
+                    file.write(textwrap.dedent(
+                        '''\
+                            [
+                                {
+                                    "key": "Header-Name",
+                                    "value": "Header-Value"
+                                }
+                            ]
+                        '''))
         self.sync_with_folders()
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
         return True
+
+    @staticmethod
+    def get_default_file_content(file_type: str) -> str:
+        if file_type != 'py':
+            return ''
+
+        with open('experiments/pages/Support/PythonServer/a.test/py-server/index.py', 'r') as file:
+            template_content = file.read()
+
+        return template_content
+
+    @staticmethod
+    def include_file_headers(file_type: str) -> bool:
+        return file_type != 'py'
 
     def sync_with_folders(self):
         self.dir_tree = self.initialize_dir_tree()

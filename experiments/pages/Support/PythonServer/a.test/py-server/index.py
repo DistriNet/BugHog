@@ -1,7 +1,9 @@
 from flask import Request
 
+# Make sure that your page directory starts with 'py-'
+
 def main(req: Request):
-    # TODO - implement your functionality
+    # TODO - implement your functionality and return a Flask response
     
     return {
         "agent": req.headers.get("User-Agent"),
