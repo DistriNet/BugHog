@@ -137,7 +137,7 @@ class Main:
 
     @staticmethod
     def get_poc_file(project: str, poc: str, domain: str, path: str, file: str) -> str:
-        return Main.master.gevaluation_framework.get_poc_file(project, poc, domain, path, file)
+        return Main.master.evaluation_framework.get_poc_file(project, poc, domain, path, file)
 
     @staticmethod
     def update_poc_file(project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:

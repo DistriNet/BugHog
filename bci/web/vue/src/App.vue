@@ -500,12 +500,12 @@ export default {
 
     <!-- Start button and results section -->
     <div class="row-start-2 col-start-2 flex flex-col h-full">
-      <div v-if="this.server_info.state.is_running == false">
-        <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
-      </div>
-      <div v-else>
+      <div v-if="this.server_info.state.is_running == true">
         <button @click="stop(false)" class="w-1/2 bg-yellow-300 dark:bg-yellow-500">Stop gracefully</button>
         <button @click="stop(true)" class="w-1/2 bg-red-400 dark:bg-red-800">Stop forcefully</button>
+      </div>
+      <div v-else>
+        <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
       </div>
       <div class="results-section mt-2 h-full flex flex-col">
         <section-header section="results" left></section-header>
