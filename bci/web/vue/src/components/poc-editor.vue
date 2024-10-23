@@ -1,5 +1,9 @@
 <script>
   import ace from "ace-builds";
+  import { Mode as HtmlMode } from 'ace-builds/src-noconflict/mode-html';
+  import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
+  import { Mode as JsonMode } from 'ace-builds/src-noconflict/mode-json';
+  import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
   import 'ace-builds/src-min-noconflict/ext-modelist';
   import 'ace-builds/src-min-noconflict/theme-twilight';
   import 'ace-builds/src-min-noconflict/theme-xcode';
@@ -38,6 +42,7 @@
         available_file_types: [
           'html',
           'js',
+          'py',
         ],
         dialog: {
           domain: {
@@ -73,6 +78,7 @@
             this.editor.setValue(res.data.content);
             this.editor.clearSelection();
             this.active_file.should_update_server = true;
+            this.update_editor_mode(file_name);
           }
         })
         .catch((error) => {
@@ -123,13 +129,19 @@
         });
       },
       update_editor_mode(file_name) {
-        file_ext = file_name.split('.').pop();
+        const file_ext = file_name.split('.').pop();
         switch (file_ext) {
           case "html":
-            this.editor.session.setMode("ace/mode/html");
+            this.editor.session.setMode(new HtmlMode());
             break;
           case "js":
-            this.editor.session.setMode("ace/mode/js");
+            this.editor.session.setMode(new JsMode());
+            break;
+          case "json":
+            this.editor.session.setMode(new JsonMode());
+            break;
+          case "py":
+            this.editor.session.setMode(new PyMode());
             break;
         }
       },
