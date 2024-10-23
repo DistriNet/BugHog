@@ -5,8 +5,6 @@ import os
 import time
 from typing import Optional
 
-import gridfs
-
 from bci.database.mongo.mongodb import MongoDB
 from bci.version_control.states.state import State
 
@@ -27,7 +25,7 @@ class BinaryCache:
         :param state: The state of the binary.
         :return: True if the binary was fetched, False otherwise.
         """
-        if MongoDB.binary_cache_limit <= 0:
+        if MongoDB().binary_cache_limit <= 0:
             return False
 
         files_collection = MongoDB().get_collection('fs.files')
@@ -79,7 +77,7 @@ class BinaryCache:
         :param state: The state of the binary.
         :return: True if the binary was stored, False otherwise.
         """
-        if MongoDB.binary_cache_limit <= 0:
+        if MongoDB().binary_cache_limit <= 0:
             return False
 
         while BinaryCache.__count_cached_binaries() >= MongoDB.binary_cache_limit:

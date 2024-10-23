@@ -58,6 +58,8 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         # Make pairwise list of states and remove pairs with the same outcome
         states = self._completed_states
         pairs = [(state1, state2) for state1, state2 in zip(states, states[1:]) if state1.outcome != state2.outcome]
+        if not pairs:
+            return None
         # Remove the first and last pair if they have a first and last state with a None outcome, respectively
         if pairs[0][0].outcome is None:
             pairs = pairs[1:]

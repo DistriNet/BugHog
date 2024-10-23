@@ -4,7 +4,6 @@ import textwrap
 
 from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
-from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.collectors.collector import Collector, Type
 from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import TestParameters, TestResult
@@ -14,9 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class CustomEvaluationFramework(EvaluationFramework):
-
-    db_class = MongoDB
-
     def __init__(self):
         super().__init__()
         self.dir_tree = self.initialize_dir_tree()
@@ -30,7 +26,8 @@ class CustomEvaluationFramework(EvaluationFramework):
             if os.path.isdir(path):
                 return {
                     sub_folder: path_to_dict(os.path.join(path, sub_folder))
-                    for sub_folder in os.listdir(path) if sub_folder != 'url_queue.txt'
+                    for sub_folder in os.listdir(path)
+                    if sub_folder != 'url_queue.txt'
                 }
             else:
                 return os.path.basename(path)
@@ -46,26 +43,31 @@ class CustomEvaluationFramework(EvaluationFramework):
             project_path = os.path.join(page_folder_path, project)
             experiments_per_project[project] = {}
             for experiment in experiments:
-                url_queue_file_path = os.path.join(project_path, experiment, 'url_queue.txt')
-                if os.path.isfile(url_queue_file_path):
-                    # If an URL queue is specified, it is parsed and used
-                    with open(url_queue_file_path) as file:
-                        url_queue = file.readlines()
-                else:
-                    # Otherwise, a default URL queue is used, based on the domain that hosts the main page
-                    experiment_path = os.path.join(project_path, experiment)
-                    for domain in os.listdir(experiment_path):
-                        main_folder_path = os.path.join(experiment_path, domain, 'main')
-                        if os.path.exists(main_folder_path):
-                            url_queue = [
-                                f'https://{domain}/{project}/{experiment}/main',
-                                'https://a.test/report/?bughog_sanity_check=OK'
-                            ]
+                url_queue = CustomEvaluationFramework.__get_url_queue(project, project_path, experiment)
                 experiments_per_project[project][experiment] = {
                     'url_queue': url_queue,
-                    'runnable': CustomEvaluationFramework.is_runnable_experiment(project, experiment, dir_tree)
+                    'runnable': CustomEvaluationFramework.is_runnable_experiment(project, experiment, dir_tree),
                 }
         return experiments_per_project
+
+    @staticmethod
+    def __get_url_queue(project: str, project_path: str, experiment: str) -> list[str]:
+        url_queue_file_path = os.path.join(project_path, experiment, 'url_queue.txt')
+        if os.path.isfile(url_queue_file_path):
+            # If an URL queue is specified, it is parsed and used
+            with open(url_queue_file_path) as file:
+                return file.readlines()
+        else:
+            # Otherwise, a default URL queue is used, based on the domain that hosts the main page
+            experiment_path = os.path.join(project_path, experiment)
+            for domain in os.listdir(experiment_path):
+                main_folder_path = os.path.join(experiment_path, domain, 'main')
+                if os.path.exists(main_folder_path):
+                    return [
+                        f'https://{domain}/{project}/{experiment}/main',
+                        'https://a.test/report/?bughog_sanity_check=OK',
+                    ]
+        raise AttributeError(f"Could not infer url queue for experiment '{experiment}' in project '{project}'")
 
     @staticmethod
     def is_runnable_experiment(project: str, poc: str, dir_tree: dict) -> bool:
@@ -100,7 +102,11 @@ class CustomEvaluationFramework(EvaluationFramework):
             results = collector.collect_results()
             if not is_dirty:
                 # New way to perform sanity check
-                if [var_entry for var_entry in results['req_vars'] if var_entry['var'] == 'sanity_check' and var_entry['val'] == 'OK']:
+                if [
+                    var_entry
+                    for var_entry in results['req_vars']
+                    if var_entry['var'] == 'sanity_check' and var_entry['val'] == 'OK'
+                ]:
                     pass
                 # Old way for backwards compatibility
                 elif [request for request in results['requests'] if 'report/?leak=baseline' in request['url']]:
@@ -126,6 +132,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         if os.path.isfile(file_path):
             with open(file_path) as file:
                 return file.read()
+        raise AttributeError(f"Could not find PoC file at expected path '{file_path}'")
 
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
         file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
@@ -163,15 +170,18 @@ class CustomEvaluationFramework(EvaluationFramework):
         headers_file_path = os.path.join(page_path, 'headers.json')
         if not os.path.exists(headers_file_path):
             with open(headers_file_path, 'w') as file:
-                file.write(textwrap.dedent(
-                    '''\
+                file.write(
+                    textwrap.dedent(
+                        """\
                         [
                             {
                                 "key": "Header-Name",
                                 "value": "Header-Value"
                             }
                         ]
-                    '''))
+                    """
+                    )
+                )
         self.sync_with_folders()
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()

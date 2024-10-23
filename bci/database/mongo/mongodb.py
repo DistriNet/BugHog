@@ -175,19 +175,13 @@ class MongoDB:
         nb_of_documents = collection.count_documents(query)
         return nb_of_documents > 0
 
-    def has_all_results(self, params: WorkerParameters) -> bool:
-        for test_params in map(params.create_test_params_for, params.mech_groups):
-            if not self.has_result(test_params):
-                return False
-        return True
-
     def get_evaluated_states(
         self, params: EvaluationParameters, boundary_states: tuple[State, State], outcome_checker: OutcomeChecker
     ) -> list[State]:
         collection = self.get_collection(params.database_collection)
         query = {
             'browser_config': params.browser_configuration.browser_setting,
-            'mech_group': params.evaluation_range.mech_groups[0],  # TODO: fix this
+            'mech_group': params.evaluation_range.mech_group,
             'state.browser_name': params.browser_configuration.browser_name,
             'results': {'$exists': True},
             'state.type': 'version' if params.evaluation_range.only_release_revisions else 'revision',

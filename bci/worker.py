@@ -19,23 +19,10 @@ def run(params: WorkerParameters):
 
     # click passes options with multiple=True as a tuple, so we convert it to a list
     # browser_cli_options = list(browser_cli_options)
-    evaluation_framework = get_evaluation_framework(params)
+    evaluation_framework = CustomEvaluationFramework()
     # browser_build, repo_state = get_browser_build_and_repo_state(params)
 
     evaluation_framework.evaluate(params)
-
-
-def get_evaluation_framework(params: WorkerParameters):
-    # TODO: we always select custom now, but still have to clean this up
-    return CustomEvaluationFramework()
-    # if params.evaluation_configuration.evaluation_framework == 'samesite':
-    #     return SameSiteEvaluationFramework()
-    # elif params.evaluation_configuration.evaluation_framework == 'custom':
-    #     return CustomEvaluationFramework()
-    # elif params.evaluation_configuration.evaluation_framework == 'xsleaks':
-    #     return XSLeaksEvaluation()
-    # else:
-    #     raise AttributeError(f'Unknown framework name \'{params.evaluation_configuration.evaluation_framework}\'')
 
 
 if __name__ == '__main__':

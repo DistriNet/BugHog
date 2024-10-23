@@ -28,21 +28,19 @@ class EvaluationParameters:
             self.browser_configuration,
             self.evaluation_configuration,
             state,
-            self.evaluation_range.mech_groups,
+            self.evaluation_range.mech_group,
             self.database_collection,
             database_connection_params
         )
 
-    def create_test_for(self, state: State, mech_group: str) -> TestParameters:
-        assert mech_group in self.evaluation_range.mech_groups
+    def create_test_for(self, state: State) -> TestParameters:
         return TestParameters(
-            self.browser_configuration, self.evaluation_configuration, state, mech_group, self.database_collection
+            self.browser_configuration, self.evaluation_configuration, state, self.evaluation_range.mech_group, self.database_collection
         )
 
-    def create_plot_params(self, mech_group: str, target_mech_id: str, dirty_allowed: bool = True) -> PlotParameters:
-        assert mech_group in self.evaluation_range.mech_groups
+    def create_plot_params(self, target_mech_id: str, dirty_allowed: bool = True) -> PlotParameters:
         return PlotParameters(
-            mech_group,
+            self.evaluation_range.mech_group,
             target_mech_id,
             self.browser_configuration.browser_name,
             self.database_collection,
@@ -89,7 +87,7 @@ class EvaluationConfiguration:
 
 @dataclass(frozen=True)
 class EvaluationRange:
-    mech_groups: list[str]
+    mech_group: str
     major_version_range: tuple[int, int] | None = None
     revision_number_range: tuple[int, int] | None = None
     only_release_revisions: bool = False
@@ -136,34 +134,21 @@ class WorkerParameters:
     browser_configuration: BrowserConfiguration
     evaluation_configuration: EvaluationConfiguration
     state: State
-    mech_groups: list[str]
+    mech_group: str
     database_collection: str
     database_connection_params: DatabaseParameters
 
-    def create_test_params_for(self, mech_group: str) -> TestParameters:
-        assert mech_group in self.mech_groups
+    def create_test_params(self) -> TestParameters:
         return TestParameters(
-            self.browser_configuration, self.evaluation_configuration, self.state, mech_group, self.database_collection
+            self.browser_configuration, self.evaluation_configuration, self.state, self.mech_group, self.database_collection
         )
-
-    def create_all_test_params(self) -> list[TestParameters]:
-        return [
-            TestParameters(
-                self.browser_configuration,
-                self.evaluation_configuration,
-                self.state,
-                mech_group,
-                self.database_collection,
-            )
-            for mech_group in self.mech_groups
-        ]
 
     def _to_dict(self):
         return {
             'browser_configuration': self.browser_configuration.to_dict(),
             'evaluation_configuration': self.evaluation_configuration.to_dict(),
             'state': self.state.to_dict(),
-            'mech_groups': self.mech_groups,
+            'mech_group': self.mech_group,
             'database_collection': self.database_collection,
             'database_connection_params': self.database_connection_params.to_dict()
         }
@@ -183,15 +168,15 @@ class WorkerParameters:
         browser_config = BrowserConfiguration.from_dict(data['browser_configuration'])
         eval_config = EvaluationConfiguration.from_dict(data['evaluation_configuration'])
         state = State.from_dict(data['state'])
-        mech_groups = data['mech_groups']
+        mech_group = data['mech_group']
         database_collection = data['database_collection']
         database_connection_params = DatabaseParameters.from_dict(data['database_connection_params'])
         return WorkerParameters(
-            browser_config, eval_config, state, mech_groups, database_collection, database_connection_params
+            browser_config, eval_config, state, mech_group, database_collection, database_connection_params
         )
 
     def __str__(self) -> str:
-        return f'Eval({self.state}: [{", ".join(self.mech_groups)}])'
+        return f'Eval({self.state}: [{", ".join(self.mech_group)}])'
 
 
 @dataclass(frozen=True)
@@ -245,18 +230,12 @@ class PlotParameters:
 
 
 @staticmethod
-def evaluation_factory(kwargs: ImmutableMultiDict) -> EvaluationParameters:
+def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]:
     browser_configuration = BrowserConfiguration(
         kwargs.get('browser_name'), kwargs.get('browser_setting'), __get_cli_arguments(kwargs), __get_extensions(kwargs)
     )
     evaluation_configuration = EvaluationConfiguration(
         kwargs.get('project'), kwargs.get('automation'), int(kwargs.get('seconds_per_visit', 5))
-    )
-    evaluation_range = EvaluationRange(
-        kwargs.get('tests', []),
-        __get_version_range(kwargs),
-        __get_revision_number_range(kwargs),
-        kwargs.get('only_release_revisions', False),
     )
     sequence_configuration = SequenceConfiguration(
         int(kwargs.get('nb_of_containers')),
@@ -265,11 +244,20 @@ def evaluation_factory(kwargs: ImmutableMultiDict) -> EvaluationParameters:
         __get_cookie_name(kwargs),
         kwargs.get('search_strategy'),
     )
-    database_collection = kwargs.get('db_collection')
-    evaluation_params = EvaluationParameters(
-        browser_configuration, evaluation_configuration, evaluation_range, sequence_configuration, database_collection
-    )
-    return evaluation_params
+    evaluation_params_list = []
+    for mech_group in kwargs.get('tests', []):
+        evaluation_range = EvaluationRange(
+            mech_group,
+            __get_version_range(kwargs),
+            __get_revision_number_range(kwargs),
+            kwargs.get('only_release_revisions', False),
+        )
+        database_collection = kwargs.get('db_collection')
+        evaluation_params = EvaluationParameters(
+            browser_configuration, evaluation_configuration, evaluation_range, sequence_configuration, database_collection
+        )
+        evaluation_params_list.append(evaluation_params)
+    return evaluation_params_list
 
 
 @staticmethod

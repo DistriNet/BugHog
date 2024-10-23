@@ -13,18 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 class EvaluationFramework(ABC):
-
     def __init__(self):
         self.should_stop = False
 
     def evaluate(self, worker_params: WorkerParameters):
-        test_params_list = worker_params.create_all_test_params()
-        test_params_list_to_evaluate: list[TestParameters] = list(filter(
-            lambda x: not self.has_result(x),
-            test_params_list
-        ))
-        logger.info(f'Pending tests for state {worker_params}: {len(test_params_list_to_evaluate)}/{len(test_params_list)}')
-        if len(test_params_list_to_evaluate) == 0:
+        test_params = worker_params.create_test_params()
+
+        if MongoDB().has_result(test_params):
+            logger.warning(
+                f"Experiment '{test_params.mech_group}' for '{test_params.state}' was already performed, skipping."
+            )
             return
 
         browser_config = worker_params.browser_configuration
@@ -33,21 +31,20 @@ class EvaluationFramework(ABC):
         browser = Browser.get_browser(browser_config, eval_config, state)
         browser.pre_evaluation_setup()
 
-        for test_params in test_params_list_to_evaluate:
-            if self.should_stop:
-                self.should_stop = False
-                return
-            try:
-                browser.pre_test_setup()
-                result = self.perform_specific_evaluation(browser, test_params)
-                self.db_class.get_instance().store_result(result)
-                logger.info(f'Test finalized: {test_params}')
-            except Exception as e:
-                state.condition = StateCondition.FAILED
-                logger.error("An error occurred during evaluation", exc_info=True)
-                traceback.print_exc()
-            finally:
-                browser.post_test_cleanup()
+        if self.should_stop:
+            self.should_stop = False
+            return
+        try:
+            browser.pre_test_setup()
+            result = self.perform_specific_evaluation(browser, test_params)
+            MongoDB().store_result(result)
+            logger.info(f'Test finalized: {test_params}')
+        except Exception as e:
+            state.condition = StateCondition.FAILED
+            logger.error('An error occurred during evaluation', exc_info=True)
+            traceback.print_exc()
+        finally:
+            browser.post_test_cleanup()
 
         browser.post_evaluation_cleanup()
         logger.debug('Evaluation finished')
@@ -55,18 +52,6 @@ class EvaluationFramework(ABC):
     @abstractmethod
     def perform_specific_evaluation(self, browser: Browser, params: TestParameters) -> TestResult:
         pass
-
-    @classmethod
-    def has_result(cls: MongoDB, test_params: TestParameters) -> bool:
-        return cls.db_class.get_instance().has_result(test_params)
-
-    @classmethod
-    def get_result(cls: MongoDB, test_params: TestParameters) -> TestResult:
-        return cls.db_class.get_instance().get_result(test_params)
-
-    @classmethod
-    def has_all_results(cls: MongoDB, worker_params: WorkerParameters) -> bool:
-        return cls.db_class.get_instance().has_all_results(worker_params)
 
     @staticmethod
     def get_extension_path(browser: str, extension_file: str):
@@ -80,7 +65,7 @@ class EvaluationFramework(ABC):
         self.should_stop = True
 
     @abstractmethod
-    def get_mech_groups(self, project):
+    def get_mech_groups(self, project: str) -> list[tuple[str, bool]]:
         """
         Returns the available mechanism groups for this evaluation framework.
         """

@@ -7,6 +7,7 @@ import PocEditor from "./components/poc-editor.vue"
 import SectionHeader from "./components/section-header.vue";
 import Slider from '@vueform/slider'
 import Tooltip from "./components/tooltip.vue";
+import EvaluationStatus from './components/evaluation_status.vue';
 export default {
   components: {
     Gantt,
@@ -14,6 +15,7 @@ export default {
     SectionHeader,
     Slider,
     Tooltip,
+    EvaluationStatus,
   },
   data() {
     return {
@@ -513,20 +515,8 @@ export default {
             <option v-for="test in eval_params.tests">{{ test }}</option>
           </select>
           <div class="flex flex-wrap">
-            <ul class="my-3">
-              <li v-if="this.server_info.state.status === 'running'"> <b>Status:</b> Running &#x2705;</li>
-              <li v-else-if="this.server_info.state.status === 'waiting_to_stop'" class="flex">
-                <b class="pr-1">Status:</b>
-                <div class="pr-1">Stopping... &#x231B;</div>
-              </li>
-              <li v-else class="flex">
-                <b class="pr-1">Status:</b>
-                <div class="pr-1">Idle</div>
-                <div v-if="this.server_info.state.reason === 'finished'" class="pr-1">(all binaries evaluated)</div>
-                <div v-if="this.server_info.state.reason === 'user'" class="pr-1">(stopped by user)</div>
-                <div>&#x1F6D1;</div>
-              </li>
-            </ul>
+            <evaluation-status :server_info="this.server_info">
+            </evaluation-status>
           </div>
           <div class="flex flex-wrap">
             <ul class="my-3 w-64">

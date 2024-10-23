@@ -60,6 +60,8 @@ class WorkerManager:
                     for container in active_containers:
                         logger.info(f'Removing old container \'{container.attrs["Name"]}\' to start new one')
                         container.remove(force=True)
+                if (host_pwd := os.getenv('HOST_PWD', None)) is None:
+                    raise AttributeError('Could not find HOST_PWD environment var')
                 self.client.containers.run(
                     f'bughog/worker:{Global.get_tag()}',
                     name=container_name,
@@ -72,15 +74,15 @@ class WorkerManager:
                     labels=['bh_worker'],
                     command=[params.serialize()],
                     volumes=[
-                        os.path.join(os.getenv('HOST_PWD'), 'config') + ':/app/config:ro',
-                        os.path.join(os.getenv('HOST_PWD'), 'browser/binaries/chromium/artisanal')
+                        os.path.join(host_pwd, 'config') + ':/app/config:ro',
+                        os.path.join(host_pwd, 'browser/binaries/chromium/artisanal')
                         + ':/app/browser/binaries/chromium/artisanal:rw',
-                        os.path.join(os.getenv('HOST_PWD'), 'browser/binaries/firefox/artisanal')
+                        os.path.join(host_pwd, 'browser/binaries/firefox/artisanal')
                         + ':/app/browser/binaries/firefox/artisanal:rw',
-                        os.path.join(os.getenv('HOST_PWD'), 'experiments') + ':/app/experiments:ro',
-                        os.path.join(os.getenv('HOST_PWD'), 'browser/extensions') + ':/app/browser/extensions:ro',
-                        os.path.join(os.getenv('HOST_PWD'), 'logs') + ':/app/logs:rw',
-                        os.path.join(os.getenv('HOST_PWD'), 'nginx/ssl') + ':/etc/nginx/ssl:ro',
+                        os.path.join(host_pwd, 'experiments') + ':/app/experiments:ro',
+                        os.path.join(host_pwd, 'browser/extensions') + ':/app/browser/extensions:ro',
+                        os.path.join(host_pwd, 'logs') + ':/app/logs:rw',
+                        os.path.join(host_pwd, 'nginx/ssl') + ':/etc/nginx/ssl:ro',
                         '/dev/shm:/dev/shm',
                     ],
                 )
@@ -102,8 +104,11 @@ class WorkerManager:
     def get_nb_of_running_worker_containers(self):
         return len(self.get_runnning_containers())
 
-    def get_runnning_containers(self):
-        return self.client.containers.list(filters={'label': 'bh_worker', 'status': 'running'}, ignore_removed=True)
+    @staticmethod
+    def get_runnning_containers():
+        return docker.from_env().containers.list(
+            filters={'label': 'bh_worker', 'status': 'running'}, ignore_removed=True
+        )
 
     def wait_until_all_evaluations_are_done(self):
         if self.max_nb_of_containers == 1:
@@ -113,8 +118,7 @@ class WorkerManager:
                 break
             time.sleep(5)
 
-    def forcefully_stop_all_running_containers(self):
-        if self.max_nb_of_containers == 1:
-            return
-        for container in self.get_runnning_containers():
+    @staticmethod
+    def forcefully_stop_all_running_containers():
+        for container in WorkerManager.get_runnning_containers():
             container.remove(force=True)

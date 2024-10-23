@@ -23,16 +23,16 @@ logger = logging.getLogger(__name__)
 
 
 class Master:
-    def __init__(self):
+    def __init__(self) -> None:
         self.state = {'is_running': False, 'reason': 'init', 'status': 'idle'}
 
         self.stop_gracefully = False
         self.stop_forcefully = False
 
-        self.worker_manager = None
-
         self.firefox_build = None
         self.chromium_build = None
+
+        self.eval_queue = []
 
         Global.initialize_folders()
         self.db_connection_params = Global.get_database_params()
@@ -41,46 +41,26 @@ class Master:
         self.evaluation_framework = CustomEvaluationFramework()
         logger.info('BugHog is ready!')
 
-    def connect_to_database(self, db_connection_params: DatabaseParameters):
+    def connect_to_database(self, db_connection_params: DatabaseParameters) -> None:
         try:
             MongoDB().connect(db_connection_params)
         except ServerException:
             logger.error('Could not connect to database.', exc_info=True)
 
-    def run(self, eval_params: EvaluationParameters):
-        self.state = {'is_running': True, 'reason': 'user', 'status': 'running'}
-        self.stop_gracefully = False
-        self.stop_forcefully = False
-
-        Clients.push_info_to_all('is_running', 'state')
-
-        browser_config = eval_params.browser_configuration
-        # evaluation_config = eval_params.evaluation_configuration
-        evaluation_range = eval_params.evaluation_range
-        sequence_config = eval_params.sequence_configuration
-
-        logger.info(
-            f'Running experiments for {browser_config.browser_name} ({", ".join(evaluation_range.mech_groups)})'
-        )
-        self.worker_manager = WorkerManager(sequence_config.nb_of_containers)
-
+    def run(self, eval_params_list: list[EvaluationParameters]) -> None:
+        # Sequence_configuration settings are the same over evaluation parameters (quick fix)
+        worker_manager = WorkerManager(eval_params_list[0].sequence_configuration.nb_of_containers)
         try:
-            search_strategy = self.create_sequence_strategy(eval_params)
+            self.__init_eval_queue(eval_params_list)
+            for eval_params in eval_params_list:
+                self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'active')
+                self.__update_state(is_running=True,reason='user', status='running', queue=self.eval_queue)
 
-            try:
-                while (self.stop_gracefully or self.stop_forcefully) is False:
-                    # Update search strategy with new potentially new results
-                    current_state = search_strategy.next()
+                self.stop_gracefully = False
+                self.stop_forcefully = False
 
-                    # Prepare worker parameters
-                    worker_params = eval_params.create_worker_params_for(current_state, self.db_connection_params)
-
-                    # Start worker to perform evaluation
-                    self.worker_manager.start_test(worker_params)
-
-            except SequenceFinished:
-                logger.debug('Last experiment has started')
-                self.state['reason'] = 'finished'
+                self.run_single_evaluation(eval_params, worker_manager)
+                self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'done')
 
         except Exception as e:
             logger.critical('A critical error occurred', exc_info=True)
@@ -93,16 +73,37 @@ class Master:
             if self.stop_forcefully:
                 logger.info('Forcefully stopping experiment queue due to user end signal...')
                 self.state['reason'] = 'user'
-                self.worker_manager.forcefully_stop_all_running_containers()
+                worker_manager.forcefully_stop_all_running_containers()
             else:
                 logger.info('Gracefully stopping experiment queue since last experiment started.')
             # MongoDB.disconnect()
             logger.info('Waiting for remaining experiments to stop...')
-            self.worker_manager.wait_until_all_evaluations_are_done()
+            worker_manager.wait_until_all_evaluations_are_done()
             logger.info('BugHog has finished the evaluation!')
-            self.state['is_running'] = False
-            self.state['status'] = 'idle'
-            Clients.push_info_to_all('is_running', 'state')
+            self.__update_state(is_running=False, status='idle', queue=self.eval_queue)
+
+    def run_single_evaluation(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
+        browser_config = eval_params.browser_configuration
+        evaluation_range = eval_params.evaluation_range
+
+        logger.info(f'Running experiments for {browser_config.browser_name} ({evaluation_range.mech_group})')
+
+        search_strategy = self.create_sequence_strategy(eval_params)
+
+        try:
+            while (self.stop_gracefully or self.stop_forcefully) is False:
+                # Update search strategy with new potentially new results
+                current_state = search_strategy.next()
+
+                # Prepare worker parameters
+                worker_params = eval_params.create_worker_params_for(current_state, self.db_connection_params)
+
+                # Start worker to perform evaluation
+                worker_manager.start_test(worker_params)
+
+        except SequenceFinished:
+            logger.debug('Last experiment has started')
+            self.state['reason'] = 'finished'
 
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
@@ -125,28 +126,43 @@ class Master:
     def activate_stop_gracefully(self):
         if self.evaluation_framework:
             self.stop_gracefully = True
-            self.state = {'is_running': True, 'reason': 'user', 'status': 'waiting_to_stop'}
-            Clients.push_info_to_all('state')
+            self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
             self.evaluation_framework.stop_gracefully()
             logger.info('Received user signal to gracefully stop.')
         else:
             logger.info('Received user signal to gracefully stop, but no evaluation is running.')
 
-    def activate_stop_forcefully(self):
+    def activate_stop_forcefully(self) -> None:
         if self.evaluation_framework:
             self.stop_forcefully = True
-            self.state = {'is_running': True, 'reason': 'user', 'status': 'waiting_to_stop'}
-            Clients.push_info_to_all('state')
+            self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
             self.evaluation_framework.stop_gracefully()
-            if self.worker_manager:
-                self.worker_manager.forcefully_stop_all_running_containers()
+            WorkerManager.forcefully_stop_all_running_containers()
             logger.info('Received user signal to forcefully stop.')
         else:
             logger.info('Received user signal to forcefully stop, but no evaluation is running.')
 
-    def stop_bughog(self):
+    def stop_bughog(self) -> None:
         logger.info('Stopping all running BugHog containers...')
         self.activate_stop_forcefully()
         mongodb_container.stop()
         logger.info('Stopping BugHog core...')
         exit(0)
+
+    def __update_state(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            self.state[key] = value
+        Clients.push_info_to_all('state')
+
+    def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
+        for eval_params in eval_params_list:
+            self.eval_queue.append({
+                'experiment': eval_params.evaluation_range.mech_group,
+                'state': 'pending'
+            })
+
+    def __update_eval_queue(self, experiment: str, state: str) -> None:
+        for eval in self.eval_queue:
+            if eval['experiment'] == experiment:
+                eval['state'] = state
+                return
