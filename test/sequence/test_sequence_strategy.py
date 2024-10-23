@@ -50,6 +50,7 @@ class TestSequenceStrategy(unittest.TestCase):
         state.outcome = outcome_func(index) if outcome_func else None
         state.__eq__ = State.__eq__
         state.__repr__ = State.__repr__
+        state.get_previous_and_next_state_with_binary = lambda: State.get_previous_and_next_state_with_binary(state)
         return state
 
     @staticmethod
