@@ -137,5 +137,16 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
     )
 
 
+@exp.route("/<string:project>/<string:experiment>/<string:directory>/")
+def python_evaluation(project: str, experiment: str, directory: str):
+    """
+    Evaluates the python script and returns its result.
+    """
+    host = request.host.lower()
+
+    logger.warning(f"Received evaluation request '{host}' - '{project}' - '{experiment}' - '{directory}'")
+    return f"Received evaluation request '{host}' - '{project}' - '{experiment}' - '{directory}'"
+
+
 def get_all_bughog_GET_parameters(request):
     return {k: v for k, v in request.args.items() if k.startswith("bughog_")}
