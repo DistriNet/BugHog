@@ -50,17 +50,16 @@ class Master:
     def run(self, eval_params_list: list[EvaluationParameters]) -> None:
         # Sequence_configuration settings are the same over evaluation parameters (quick fix)
         worker_manager = WorkerManager(eval_params_list[0].sequence_configuration.nb_of_containers)
+        self.stop_gracefully = False
+        self.stop_forcefully = False
         try:
             self.__init_eval_queue(eval_params_list)
             for eval_params in eval_params_list:
+                if self.stop_gracefully or self.stop_forcefully:
+                    break
                 self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'active')
                 self.__update_state(is_running=True,reason='user', status='running', queue=self.eval_queue)
-
-                self.stop_gracefully = False
-                self.stop_forcefully = False
-
                 self.run_single_evaluation(eval_params, worker_manager)
-                self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'done')
 
         except Exception as e:
             logger.critical('A critical error occurred', exc_info=True)
@@ -83,10 +82,10 @@ class Master:
             self.__update_state(is_running=False, status='idle', queue=self.eval_queue)
 
     def run_single_evaluation(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
-        browser_config = eval_params.browser_configuration
-        evaluation_range = eval_params.evaluation_range
+        browser_name = eval_params.browser_configuration.browser_name
+        experiment_name = eval_params.evaluation_range.mech_group
 
-        logger.info(f'Running experiments for {browser_config.browser_name} ({evaluation_range.mech_group})')
+        logger.info(f"Starting evaluation for experiment '{experiment_name}' with browser '{browser_name}'")
 
         search_strategy = self.create_sequence_strategy(eval_params)
 
@@ -104,6 +103,7 @@ class Master:
         except SequenceFinished:
             logger.debug('Last experiment has started')
             self.state['reason'] = 'finished'
+            self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'done')
 
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
@@ -155,6 +155,7 @@ class Master:
         Clients.push_info_to_all('state')
 
     def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
+        self.eval_queue = []
         for eval_params in eval_params_list:
             self.eval_queue.append({
                 'experiment': eval_params.evaluation_range.mech_group,

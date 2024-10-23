@@ -19,7 +19,6 @@
 
 <template>
   <div class="tooltip pl-1">
-
     <ul class="my-3">
       <li v-if="this.server_info.state.status === 'running'">
         <b>Status:</b> Running &#x2705;
@@ -36,7 +35,7 @@
         <div>&#x1F6D1;</div>
       </li>
     </ul>
-    <span class="tooltiptext">
+    <span v-if="this.server_info.state.queue" class="tooltiptext">
       <ul v-for="evaluation in this.server_info.state.queue">
         <li>{{get_emoji(evaluation['state'])}} {{ evaluation['experiment'] }}</li>
       </ul>
