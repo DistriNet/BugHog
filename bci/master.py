@@ -3,206 +3,167 @@ import logging
 import bci.database.mongo.container as mongodb_container
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB, ServerException
+from bci.database.mongo.revision_cache import RevisionCache
 from bci.distribution.worker_manager import WorkerManager
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
-from bci.evaluations.evaluation_framework import EvaluationFramework
 from bci.evaluations.logic import (
-    DatabaseConnectionParameters,
+    DatabaseParameters,
     EvaluationParameters,
-    SequenceConfiguration,
-    WorkerParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
-from bci.evaluations.samesite.samesite_evaluation import SameSiteEvaluationFramework
-from bci.evaluations.xsleaks.evaluation import XSLeaksEvaluation
+from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
+from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.composite_search import CompositeSearch
-from bci.search_strategy.n_ary_search import NArySearch
-from bci.search_strategy.n_ary_sequence import NArySequence, SequenceFinished
-from bci.search_strategy.sequence_strategy import SequenceStrategy
-from bci.version_control import factory
-from bci.version_control.states.state import State
+from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
+from bci.version_control.factory import StateFactory
+from bci.version_control.states.revisions.firefox import BINARY_AVAILABILITY_MAPPING
 from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
 
 class Master:
-
-    def __init__(self):
-        self.state = {
-            'is_running': False,
-            'reason': 'init',
-            'status': 'idle'
-        }
+    def __init__(self) -> None:
+        self.state = {'is_running': False, 'reason': 'init', 'status': 'idle'}
 
         self.stop_gracefully = False
         self.stop_forcefully = False
-
-        # self.evaluations = []
-        self.evaluation_framework = None
-        self.worker_manager = None
-        self.available_evaluation_frameworks = {}
 
         self.firefox_build = None
         self.chromium_build = None
 
+        self.eval_queue = []
+
         Global.initialize_folders()
-        self.db_connection_params = Global.get_database_connection_params()
+        self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
-        self.inititialize_available_evaluation_frameworks()
-        logger.info("BugHog is ready!")
+        RevisionCache.store_firefox_binary_availability(BINARY_AVAILABILITY_MAPPING)  # TODO: find better place
+        self.evaluation_framework = CustomEvaluationFramework()
+        logger.info('BugHog is ready!')
 
-    def connect_to_database(self, db_connection_params: DatabaseConnectionParameters):
+    def connect_to_database(self, db_connection_params: DatabaseParameters) -> None:
         try:
-            MongoDB.connect(db_connection_params)
+            MongoDB().connect(db_connection_params)
         except ServerException:
-            logger.error("Could not connect to database.", exc_info=True)
+            logger.error('Could not connect to database.', exc_info=True)
 
-    def run(self, eval_params: EvaluationParameters):
-        self.state = {
-            'is_running': True,
-            'reason': 'user',
-            'status': 'running'
-        }
+    def run(self, eval_params_list: list[EvaluationParameters]) -> None:
+        # Sequence_configuration settings are the same over evaluation parameters (quick fix)
+        worker_manager = WorkerManager(eval_params_list[0].sequence_configuration.nb_of_containers)
         self.stop_gracefully = False
         self.stop_forcefully = False
-
-        Clients.push_info_to_all('is_running', 'state')
-
-        browser_config = eval_params.browser_configuration
-        evaluation_config = eval_params.evaluation_configuration
-        evaluation_range = eval_params.evaluation_range
-        sequence_config = eval_params.sequence_configuration
-
-        logger.info(f'Running experiments for {browser_config.browser_name} ({", ".join(evaluation_range.mech_groups)})')
-        self.evaluation_framework = self.get_specific_evaluation_framework(
-            evaluation_config.project
-        )
-        self.worker_manager = WorkerManager(sequence_config.nb_of_containers)
-
         try:
-            state_list = factory.create_state_collection(browser_config, evaluation_range)
-
-            search_strategy = self.parse_search_strategy(sequence_config, state_list)
-
-            outcome_checker = OutcomeChecker(sequence_config)
-
-            # The state_lineage is put into self.evaluation as a means to check on the process through front-end
-            # self.evaluations.append(state_list)
-
-            try:
-                current_state = search_strategy.next()
-                while (self.stop_gracefully or self.stop_forcefully) is False:
-                    worker_params = eval_params.create_worker_params_for(current_state, self.db_connection_params)
-
-                    # Callback function for sequence strategy
-                    update_outcome = self.get_update_outcome_cb(search_strategy, worker_params, sequence_config, outcome_checker)
-
-                    # Check whether state is already evaluated
-                    if self.evaluation_framework.has_all_results(worker_params):
-                        logger.info(f"'{current_state}' already evaluated.")
-                        update_outcome()
-                        current_state = search_strategy.next()
-                        continue
-
-                    # Start worker to perform evaluation
-                    self.worker_manager.start_test(worker_params, update_outcome)
-
-                    current_state = search_strategy.next()
-            except SequenceFinished:
-                logger.debug("Last experiment has started")
-                self.state['reason'] = 'finished'
+            self.__init_eval_queue(eval_params_list)
+            for eval_params in eval_params_list:
+                if self.stop_gracefully or self.stop_forcefully:
+                    break
+                self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'active')
+                self.__update_state(is_running=True,reason='user', status='running', queue=self.eval_queue)
+                self.run_single_evaluation(eval_params, worker_manager)
 
         except Exception as e:
-            logger.critical("A critical error occurred", exc_info=True)
+            logger.critical('A critical error occurred', exc_info=True)
             raise e
         finally:
             # Gracefully exit
             if self.stop_gracefully:
-                logger.info("Gracefully stopping experiment queue due to user end signal...")
+                logger.info('Gracefully stopping experiment queue due to user end signal...')
                 self.state['reason'] = 'user'
             if self.stop_forcefully:
-                logger.info("Forcefully stopping experiment queue due to user end signal...")
+                logger.info('Forcefully stopping experiment queue due to user end signal...')
                 self.state['reason'] = 'user'
-                self.worker_manager.forcefully_stop_all_running_containers()
+                worker_manager.forcefully_stop_all_running_containers()
             else:
-                logger.info("Gracefully stopping experiment queue since last experiment started.")
+                logger.info('Gracefully stopping experiment queue since last experiment started.')
             # MongoDB.disconnect()
-            logger.info("Waiting for remaining experiments to stop...")
-            self.worker_manager.wait_until_all_evaluations_are_done()
-            logger.info("BugHog has finished the evaluation!")
-            self.state['is_running'] = False
-            self.state['status'] = 'idle'
-            Clients.push_info_to_all('is_running', 'state')
+            logger.info('Waiting for remaining experiments to stop...')
+            worker_manager.wait_until_all_evaluations_are_done()
+            logger.info('BugHog has finished the evaluation!')
+            self.__update_state(is_running=False, status='idle', queue=self.eval_queue)
+
+    def run_single_evaluation(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
+        browser_name = eval_params.browser_configuration.browser_name
+        experiment_name = eval_params.evaluation_range.mech_group
+
+        logger.info(f"Starting evaluation for experiment '{experiment_name}' with browser '{browser_name}'")
+
+        search_strategy = self.create_sequence_strategy(eval_params)
+
+        try:
+            while (self.stop_gracefully or self.stop_forcefully) is False:
+                # Update search strategy with new potentially new results
+                current_state = search_strategy.next()
+
+                # Prepare worker parameters
+                worker_params = eval_params.create_worker_params_for(current_state, self.db_connection_params)
+
+                # Start worker to perform evaluation
+                worker_manager.start_test(worker_params)
+
+        except SequenceFinished:
+            logger.debug('Last experiment has started')
+            self.state['reason'] = 'finished'
+            self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'done')
 
     @staticmethod
-    def get_update_outcome_cb(search_strategy: SequenceStrategy, worker_params: WorkerParameters, sequence_config: SequenceConfiguration, checker: OutcomeChecker) -> None:
-        def cb():
-            if sequence_config.target_mech_id is not None and len(worker_params.mech_groups) == 1:
-                result = MongoDB.get_instance().get_result(worker_params.create_test_params_for(worker_params.mech_groups[0]))
-                outcome = checker.get_outcome(result)
-                search_strategy.update_outcome(worker_params.state, outcome)
-            # Just push results update to all clients. Could be more efficient, but would complicate things...
-            Clients.push_results_to_all()
-        return cb
-
-    def inititialize_available_evaluation_frameworks(self):
-        self.available_evaluation_frameworks["samesite"] = SameSiteEvaluationFramework()
-        self.available_evaluation_frameworks["custom"] = CustomEvaluationFramework()
-        self.available_evaluation_frameworks["xsleaks"] = XSLeaksEvaluation()
-
-    @staticmethod
-    def parse_search_strategy(sequence_config: SequenceConfiguration, state_list: list[State]):
+    def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
+        sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
-        if search_strategy == "bin_seq":
-            return NArySequence(state_list, 2, limit=sequence_limit)
-        if search_strategy == "bin_search":
-            return NArySearch(state_list, 2)
-        if search_strategy == "comp_search":
-            return CompositeSearch(state_list, 2, sequence_limit, NArySequence, NArySearch)
-        raise AttributeError("Unknown search strategy option '%s'" % search_strategy)
+        outcome_checker = OutcomeChecker(sequence_config)
+        state_factory = StateFactory(eval_params, outcome_checker)
 
-    def get_specific_evaluation_framework(self, evaluation_name: str) -> EvaluationFramework:
-        # TODO: we always use 'custom', in which evaluation_name is a project
-        evaluation_name = 'custom'
-        if evaluation_name not in self.available_evaluation_frameworks.keys():
-            raise AttributeError("Could not find a framework for '%s'" % evaluation_name)
-        return self.available_evaluation_frameworks[evaluation_name]
+        if search_strategy == 'bgb_sequence':
+            strategy = BiggestGapBisectionSequence(state_factory, sequence_limit)
+        elif search_strategy == 'bgb_search':
+            strategy = BiggestGapBisectionSearch(state_factory)
+        elif search_strategy == 'comp_search':
+            strategy = CompositeSearch(state_factory, sequence_limit)
+        else:
+            raise AttributeError("Unknown search strategy option '%s'" % search_strategy)
+        return strategy
 
     def activate_stop_gracefully(self):
         if self.evaluation_framework:
             self.stop_gracefully = True
-            self.state = {
-                'is_running': True,
-                'reason': 'user',
-                'status': 'waiting_to_stop'
-            }
-            Clients.push_info_to_all('state')
+            self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
             self.evaluation_framework.stop_gracefully()
-            logger.info("Received user signal to gracefully stop.")
+            logger.info('Received user signal to gracefully stop.')
         else:
-            logger.info("Received user signal to gracefully stop, but no evaluation is running.")
+            logger.info('Received user signal to gracefully stop, but no evaluation is running.')
 
-    def activate_stop_forcefully(self):
+    def activate_stop_forcefully(self) -> None:
         if self.evaluation_framework:
             self.stop_forcefully = True
-            self.state = {
-                'is_running': True,
-                'reason': 'user',
-                'status': 'waiting_to_stop'
-            }
-            Clients.push_info_to_all('state')
+            self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
             self.evaluation_framework.stop_gracefully()
-            if self.worker_manager:
-                self.worker_manager.forcefully_stop_all_running_containers()
-            logger.info("Received user signal to forcefully stop.")
+            WorkerManager.forcefully_stop_all_running_containers()
+            logger.info('Received user signal to forcefully stop.')
         else:
-            logger.info("Received user signal to forcefully stop, but no evaluation is running.")
+            logger.info('Received user signal to forcefully stop, but no evaluation is running.')
 
-    def stop_bughog(self):
-        logger.info("Stopping all running BugHog containers...")
+    def stop_bughog(self) -> None:
+        logger.info('Stopping all running BugHog containers...')
         self.activate_stop_forcefully()
         mongodb_container.stop()
-        logger.info("Stopping BugHog core...")
+        logger.info('Stopping BugHog core...')
         exit(0)
+
+    def __update_state(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            self.state[key] = value
+        Clients.push_info_to_all('state')
+
+    def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
+        self.eval_queue = []
+        for eval_params in eval_params_list:
+            self.eval_queue.append({
+                'experiment': eval_params.evaluation_range.mech_group,
+                'state': 'pending'
+            })
+
+    def __update_eval_queue(self, experiment: str, state: str) -> None:
+        for eval in self.eval_queue:
+            if eval['experiment'] == experiment:
+                eval['state'] = state
+                return

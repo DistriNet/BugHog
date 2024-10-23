@@ -11,7 +11,7 @@ from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.browser.binary.binary import Binary
 from bci.version_control.states.state import State
 
-logger = logging.getLogger('bci')
+logger = logging.getLogger(__name__)
 
 EXECUTABLE_NAME = 'chrome'
 BIN_FOLDER_PATH = '/app/browser/binaries/chromium'
@@ -74,26 +74,15 @@ class ChromiumBinary(Binary):
         shutil.rmtree(os.path.dirname(zip_file_path))
 
     def _get_version(self) -> str:
-        bin_path = self.get_bin_path()
         command = "./chrome --version"
-        output = cli.execute_and_return_output(command, cwd=os.path.dirname(bin_path))
+        if bin_path := self.get_bin_path():
+            output = cli.execute_and_return_output(command, cwd=os.path.dirname(bin_path))
+        else:
+            raise AttributeError(f'Could not get binary path for {self.state}')
         match = re.match(r'Chromium (?P<version>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', output)
         if match:
             return match.group("version")
         raise AttributeError("Could not determine version of binary at '%s'. Version output: %s" % (bin_path, output))
-
-    def get_driver_path(self, full_browser_version):
-        driver_version = self.get_driver_version(full_browser_version)
-        driver_path = os.path.join(DRIVER_FOLDER_PATH, driver_version)
-        if os.path.exists(driver_path):
-            return driver_path
-        raise AttributeError("Could not find appropriate driver for Chromium %s" % full_browser_version)
-
-    def get_driver_version(self, browser_version):
-        short_browser_version = browser_version.split('.')[0]
-        if short_browser_version not in self.browser_version_to_driver_version.keys():
-            raise AttributeError("Could not determine driver version associated with Chromium version %s" % browser_version)
-        return self.browser_version_to_driver_version[short_browser_version]
 
     @staticmethod
     def list_downloaded_binaries() -> list[dict[str, str]]:

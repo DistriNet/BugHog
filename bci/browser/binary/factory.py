@@ -1,3 +1,5 @@
+from typing import Type
+
 from bci.browser.binary.binary import Binary
 from bci.browser.binary.vendors.chromium import ChromiumBinary
 from bci.browser.binary.vendors.firefox import FirefoxBinary
@@ -36,7 +38,7 @@ def get_binary(state: State) -> Binary:
     return __get_object(state)
 
 
-def __get_class(browser_name: str) -> Binary.__class__:
+def __get_class(browser_name: str) -> Type[Binary]:
     match browser_name:
         case 'chromium':
             return ChromiumBinary

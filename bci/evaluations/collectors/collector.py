@@ -1,11 +1,11 @@
+import logging
 from abc import abstractmethod
 from enum import Enum
-import logging
 
 from bci.evaluations.collectors.base import BaseCollector
 
-from .collectors.requests import RequestCollector
-from .collectors.logs import LogCollector
+from .logs import LogCollector
+from .requests import RequestCollector
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,6 @@ class Type(Enum):
 
 
 class Collector:
-
     def __init__(self, types: list[Type]) -> None:
         self.collectors: list[BaseCollector] = []
         if Type.REQUESTS in types:

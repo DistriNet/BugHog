@@ -1,72 +1,71 @@
 import unittest
-from unittest.mock import patch
+
 from bci.search_strategy.composite_search import CompositeSearch
-from bci.search_strategy.n_ary_sequence import NArySequence
-from bci.search_strategy.n_ary_search import NArySearch
 from bci.search_strategy.sequence_strategy import SequenceFinished
+from test.sequence.test_sequence_strategy import TestSequenceStrategy as helper
 
 
 class TestCompositeSearch(unittest.TestCase):
 
-    @staticmethod
-    def always_true(_):
-        return True
+    def test_binary_sequence_always_available_composite(self):
+        state_factory = helper.create_state_factory(
+            helper.always_has_binary,
+            outcome_func=lambda x: True if x < 50 else False)
+        sequence = CompositeSearch(state_factory, 10)
 
-    @staticmethod
-    def only_even(x):
-        return x % 2 == 0
+        # Sequence
+        index_sequence = [sequence.next().index for _ in range(10)]
+        assert index_sequence == [0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
 
-    def test_find_all_shift_index_pairs(self):
-        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
-            def outcome(x) -> bool:
-                return x < 22 or x > 60
-            values = list(range(100))
-            seq = CompositeSearch(values, 2, 10, NArySequence, NArySearch)
-            seq.is_available = self.always_true
-            expected_elem_sequence = [0, 99, 50, 26, 75, 14, 39, 63, 88, 8]
-            elem_sequence = []
-            for _ in range(10):
-                elem = seq.next()
-                seq.update_outcome(elem, outcome(elem))
-                elem_sequence.append(elem)
-            assert expected_elem_sequence == elem_sequence
-            shift_index_pairs = seq.find_all_shift_index_pairs()
-            assert shift_index_pairs == [(14, 26), (50, 63)]
+        # Simulate that the previous part of the evaluation has been completed
+        state_factory = helper.create_state_factory(
+            helper.always_has_binary,
+            outcome_func=lambda x: True if x < 50 else False,
+            evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
+        )
+        sequence.search_strategy._state_factory = state_factory
 
-            expected_elem_search = [21, 24, 23, 22, 57, 61, 60]
-            elem_search = []
-            for _ in range(len(expected_elem_search)):
-                elem = seq.next()
-                seq.update_outcome(elem, outcome(elem))
-                elem_search.append(elem)
-                assert seq.sequence_strategy_finished
-            assert expected_elem_search == elem_search
-            self.assertRaises(SequenceFinished, seq.next)
+        # Sequence
+        index_sequence = [sequence.next().index for _ in range(3)]
+        assert index_sequence == [55, 52, 50]
 
-    def test_composite_search(self):
-        with patch('bci.search_strategy.sequence_elem.SequenceElem.is_available', self.always_true):
-            def outcome(x) -> bool:
-                return x < 22 or x > 60
+        self.assertRaises(SequenceFinished, sequence.next)
 
-            values = list(range(100))
-            seq = CompositeSearch(values, 2, 10, NArySequence, NArySearch)
-            seq.is_available = self.always_true
-            expected_sequence_part = [0, 99, 50, 26, 75, 14, 39, 63, 88, 8]
-            expected_search_part = [21, 24, 23, 22, 57, 61, 60]
+    def test_binary_sequence_always_available_composite_two_shifts(self):
+        state_factory = helper.create_state_factory(
+            helper.always_has_binary,
+            outcome_func=lambda x: True if x < 33 or 81 < x else False)
+        sequence = CompositeSearch(state_factory, 10)
 
-            actual_sequence_part = []
-            for _ in range(10):
-                elem = seq.next()
-                seq.update_outcome(elem, outcome(elem))
-                actual_sequence_part.append(elem)
-            assert expected_sequence_part == actual_sequence_part
+        # Sequence
+        index_sequence = [sequence.next().index for _ in range(10)]
+        assert index_sequence == [0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
 
-            actual_search_part = []
-            while True:
-                try:
-                    elem = seq.next()
-                    seq.update_outcome(elem, outcome(elem))
-                    actual_search_part.append(elem)
-                except SequenceFinished:
-                    break
-            assert expected_search_part == actual_search_part
+        # Simulate that the previous part of the evaluation has been completed
+        state_factory = helper.create_state_factory(
+            helper.always_has_binary,
+            outcome_func=lambda x: True if x < 33 or 81 < x else False,
+            evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
+        )
+        sequence.search_strategy._state_factory = state_factory
+
+        while True:
+            try:
+                print(sequence.next())
+            except SequenceFinished:
+                break
+
+        evaluated_indexes = [state.index for state in sequence.search_strategy._completed_states]
+
+        assert sequence.sequence_strategy_finished
+        assert 32 in evaluated_indexes
+        assert 33 in evaluated_indexes
+        assert 81 in evaluated_indexes
+        assert 82 in evaluated_indexes
+
+        assert 1 not in evaluated_indexes
+        assert 13 not in evaluated_indexes
+        assert 37 not in evaluated_indexes
+        assert 50 not in evaluated_indexes
+        assert 62 not in evaluated_indexes
+        assert 87 not in evaluated_indexes

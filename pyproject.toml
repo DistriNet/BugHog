@@ -34,7 +34,7 @@ exclude = [
 ]
 
 # Same as Black.
-line-length = 88
+line-length = 120
 indent-width = 4
 
 # Assume Python 3.8
@@ -58,8 +58,7 @@ unfixable = ["B"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
-# Like Black, use double quotes for strings.
-# quote-style = "single"
+quote-style = "single"
 
 # Like Black, indent with spaces, rather than tabs.
 indent-style = "space"

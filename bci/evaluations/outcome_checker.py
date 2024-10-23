@@ -1,7 +1,7 @@
 import re
-from abc import abstractmethod
 
-from bci.evaluations.logic import SequenceConfiguration, TestResult
+from bci.evaluations.logic import SequenceConfiguration
+from bci.version_control.states.state import StateResult
 
 
 class OutcomeChecker:
@@ -9,8 +9,7 @@ class OutcomeChecker:
     def __init__(self, sequence_config: SequenceConfiguration):
         self.sequence_config = sequence_config
 
-    @abstractmethod
-    def get_outcome(self, result: TestResult) -> bool:
+    def get_outcome(self, result: StateResult) -> bool | None:
         '''
         Returns the outcome of the test result.
 
@@ -24,12 +23,12 @@ class OutcomeChecker:
             return True
         # Backwards compatibility
         if self.sequence_config.target_mech_id:
-            return self.get_outcome_for_proxy(result)
+            return self.__get_outcome_for_proxy(result)
 
-    def get_outcome_for_proxy(self, result: TestResult) -> bool | None:
+    def __get_outcome_for_proxy(self, result: StateResult) -> bool | None:
         target_mech_id = self.sequence_config.target_mech_id
         target_cookie = self.sequence_config.target_cookie_name
-        requests = result.data.get('requests')
+        requests = result.requests
         if requests is None:
             return None
         # DISCLAIMER:

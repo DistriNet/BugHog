@@ -3,11 +3,11 @@
     data() {
       return {
         tooltips: {
-          "bin_seq": {
+          "bgb_sequence": {
             "tooltip": "Binaries are selected uniformly over the specified evaluation range. Experiment outcomes do not influence the next binary to be evaluated."
           },
-          "bin_search": {
-            "tooltip": "Perform a search to identify either an introducing or fixing revision. This should only be performed within a range where one shift in reproducibility has been observed."
+          "bgb_search": {
+            "tooltip": "Perform a search to identify introducing and fixing revision."
           },
           "comp_search": {
             "tooltip": "Combines the two strategies above. First, binaries are selected uniformly over the evaluation range, until the sequence limit is reached. Then, for each shift in reproducibility that can be observed, a search is conducted to identify the introducing or fixing binary."

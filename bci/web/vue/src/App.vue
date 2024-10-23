@@ -7,6 +7,7 @@ import PocEditor from "./components/poc-editor.vue"
 import SectionHeader from "./components/section-header.vue";
 import Slider from '@vueform/slider'
 import Tooltip from "./components/tooltip.vue";
+import EvaluationStatus from './components/evaluation_status.vue';
 export default {
   components: {
     Gantt,
@@ -14,6 +15,7 @@ export default {
     SectionHeader,
     Slider,
     Tooltip,
+    EvaluationStatus,
   },
   data() {
     return {
@@ -498,12 +500,12 @@ export default {
 
     <!-- Start button and results section -->
     <div class="row-start-2 col-start-2 flex flex-col h-full">
-      <div v-if="this.server_info.state.is_running == false">
-        <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
-      </div>
-      <div v-else>
+      <div v-if="this.server_info.state.is_running == true">
         <button @click="stop(false)" class="w-1/2 bg-yellow-300 dark:bg-yellow-500">Stop gracefully</button>
         <button @click="stop(true)" class="w-1/2 bg-red-400 dark:bg-red-800">Stop forcefully</button>
+      </div>
+      <div v-else>
+        <button @click="submit_form" class="w-full bg-green-300 dark:bg-green-900">Start evaluation</button>
       </div>
       <div class="results-section mt-2 h-full flex flex-col">
         <section-header section="results" left></section-header>
@@ -513,20 +515,8 @@ export default {
             <option v-for="test in eval_params.tests">{{ test }}</option>
           </select>
           <div class="flex flex-wrap">
-            <ul class="my-3">
-              <li v-if="this.server_info.state.status === 'running'"> <b>Status:</b> Running &#x2705;</li>
-              <li v-else-if="this.server_info.state.status === 'waiting_to_stop'" class="flex">
-                <b class="pr-1">Status:</b>
-                <div class="pr-1">Stopping... &#x231B;</div>
-              </li>
-              <li v-else class="flex">
-                <b class="pr-1">Status:</b>
-                <div class="pr-1">Idle</div>
-                <div v-if="this.server_info.state.reason === 'finished'" class="pr-1">(all binaries evaluated)</div>
-                <div v-if="this.server_info.state.reason === 'user'" class="pr-1">(stopped by user)</div>
-                <div>&#x1F6D1;</div>
-              </li>
-            </ul>
+            <evaluation-status :server_info="this.server_info">
+            </evaluation-status>
           </div>
           <div class="flex flex-wrap">
             <ul class="my-3 w-64">
@@ -615,16 +605,16 @@ export default {
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
-                  value="bin_seq" :disabled="this.eval_params.only_release_revisions">
-                <label for="bin_seq">Binary sequence</label>
-                <tooltip tooltip="bin_seq"></tooltip>
+                  value="bgb_sequence" :disabled="this.eval_params.only_release_revisions">
+                <label for="bgb_sequence">BGB sequence</label>
+                <tooltip tooltip="bgb_sequence"></tooltip>
               </div>
 
               <div class="radio-item">
-                <input v-model="eval_params.search_strategy" type="radio" id="bin_search" name="search_strategy_option"
-                  value="bin_search" :disabled="this.eval_params.only_release_revisions">
-                <label for="bin_search">Binary search</label>
-                <tooltip tooltip="bin_search"></tooltip>
+                <input v-model="eval_params.search_strategy" type="radio" id="bgb_search" name="search_strategy_option"
+                  value="bgb_search" :disabled="this.eval_params.only_release_revisions">
+                <label for="bgb_search">BGB search</label>
+                <tooltip tooltip="bgb_search"></tooltip>
               </div>
 
               <div class="radio-item">
