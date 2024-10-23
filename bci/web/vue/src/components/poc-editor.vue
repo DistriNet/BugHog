@@ -2,6 +2,7 @@
   import ace from "ace-builds";
   import { Mode as HtmlMode } from 'ace-builds/src-noconflict/mode-html';
   import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
+  import { Mode as JsonMode } from 'ace-builds/src-noconflict/mode-json';
   import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
   import 'ace-builds/src-min-noconflict/ext-modelist';
   import 'ace-builds/src-min-noconflict/theme-twilight';
@@ -135,6 +136,9 @@
             break;
           case "js":
             this.editor.session.setMode(new JsMode());
+            break;
+          case "json":
+            this.editor.session.setMode(new JsonMode());
             break;
           case "py":
             this.editor.session.setMode(new PyMode());
