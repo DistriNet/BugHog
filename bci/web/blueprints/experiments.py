@@ -39,17 +39,10 @@ def index():
 
 @exp.route("/report/", methods=["GET", "POST"])
 def report():
-    leak = request.args.get("leak")
-    if leak is not None:
-        resp = make_response(
-            render_template("cookies.html", title="Report", to_report=leak)
-        )
-    else:
-        resp = make_response(
-            render_template(
-                "cookies.html", title="Report", to_report="Nothing to report"
-            )
-        )
+    get_params = [item for item in get_all_GET_parameters(request).items()]
+    resp = make_response(
+        render_template("cookies.html", title="Report", get_params=get_params)
+    )
 
     cookie_exp_date = datetime.datetime.now() + datetime.timedelta(weeks=4)
     resp.set_cookie("generic", "1", expires=cookie_exp_date)
@@ -86,7 +79,7 @@ def report_leak_if_using_http(target_scheme):
     Triggers request to /report/ if a request was received over the specified `scheme`.
     """
     used_scheme = request.headers.get("X-Forwarded-Proto")
-    params = get_all_bughog_GET_parameters(request)
+    params = get_all_GET_parameters(request)
     if used_scheme == target_scheme:
         return "Redirect", 307, {"Location": url_for("experiments.report", **params)}
     else:
@@ -101,7 +94,7 @@ def report_leak_if_present(expected_header_name: str):
     if expected_header_name not in request.headers:
         return f"Header {expected_header_name} not found", 200, {"Allow-CSP-From": "*"}
 
-    params = get_all_bughog_GET_parameters(request)
+    params = get_all_GET_parameters(request)
     return (
         "Redirect",
         307,
@@ -126,7 +119,7 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
             {"Allow-CSP-From": "*"},
         )
 
-    params = get_all_bughog_GET_parameters(request)
+    params = get_all_GET_parameters(request)
     return (
         "Redirect",
         307,
@@ -137,5 +130,5 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
     )
 
 
-def get_all_bughog_GET_parameters(request):
-    return {k: v for k, v in request.args.items() if k.startswith("bughog_")}
+def get_all_GET_parameters(request):
+    return {k: v for k, v in request.args.items()}

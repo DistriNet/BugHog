@@ -2,10 +2,15 @@
 
 {% block content %}
 
-{% if to_report %}
+{% if get_params %}
 <h2>Reported: </h2>
-
-<p>{{ to_report }}</p>
+<ul>
+{% for get_param in get_params %}
+    <li>{{ get_param[0] }}: {{ get_param[1] }}</li>
+{% endfor %}
+</ul>
+{% else %}
+No GET parameters.
 {% endif %}
 
 <h2>Cookies</h2>
