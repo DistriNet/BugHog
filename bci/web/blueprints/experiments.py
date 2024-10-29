@@ -1,6 +1,8 @@
 import datetime
 import logging
 import threading
+import importlib.util
+import sys
 
 import requests
 from flask import Blueprint, make_response, render_template, request, url_for
@@ -130,5 +132,25 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
     )
 
 
+@exp.route("/<string:project>/<string:experiment>/<string:directory>/")
+def python_evaluation(project: str, experiment: str, directory: str):
+    """
+    Evaluates the python script and returns its result.
+    """
+    host = request.host.lower()
+
+    module_name = f"{host}/{project}/{experiment}/{directory}"
+    path = f"experiments/pages/{project}/{experiment}/{host}/{directory}/index.py"
+
+    # Dynamically import the file
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+
+    return module.main(request)
+
+  
 def get_all_GET_parameters(request):
     return {k: v for k, v in request.args.items()}

