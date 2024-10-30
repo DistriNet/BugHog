@@ -20,12 +20,13 @@ class TerminalAutomation:
         logger.debug('Starting browser process...')
         logger.debug(f'Command string: \'{" ".join(args)}\'')
         with open('/tmp/browser.log', 'a+') as file:
+            initial_position = file.tell()
             proc = subprocess.Popen(args, stdout=file, stderr=file)
             time.sleep(0.5)
-            position = file.tell()
-            file.seek(0)
+            last_position = file.tell()
+            file.seek(initial_position)
             output = file.read()
-            file.seek(position)
+            file.seek(last_position)
             return proc, output
 
     @staticmethod
