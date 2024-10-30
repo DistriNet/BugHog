@@ -5,13 +5,12 @@ from inspect import signature
 from bci.browser.configuration.browser import Browser as BrowserConfig
 from bci.browser.interaction.browsers.browser import Browser
 from bci.browser.interaction.browsers.chromium import Chromium
+from bci.browser.interaction.browsers.firefox import Firefox
 
 logger = logging.getLogger(__name__)
 
 
 class Interaction:
-    port = 9222
-
     browser: BrowserConfig
     script: list[str]
 
@@ -32,10 +31,23 @@ class Interaction:
         self.browser.terminate()
 
     def _initiate_browser(self, init_output: str) -> Browser:
-        cdp = re.search(r'DevTools listening on ws:\/\/127\.0\.0\.1:9222\/devtools\/browser\/(.+)\n', init_output)
+        print(init_output)
+
+        cdp = re.search(
+            r'DevTools listening on ws:\/\/(.+):(.+)\/devtools\/browser\/(.+)\n',
+            init_output,
+        )
 
         if cdp:
-            return Chromium(browser_id=cdp.group(1), port=Interaction.port)
+            return Chromium(browser_id=cdp.group(3), port=int(cdp.group(2)), host=cdp.group(1))
+
+        bidi = re.search(
+            r'WebDriver BiDi listening on ws:\/\/(.+):(.+)',
+            init_output,
+        )
+
+        if bidi:
+            return Firefox(port=int(bidi.group(2)), host=bidi.group(1))
 
         raise Exception('Unrecognized browser')
 

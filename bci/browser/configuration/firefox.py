@@ -2,9 +2,8 @@ import os
 
 from bci import cli
 from bci.browser.configuration.browser import Browser
-from bci.browser.configuration.options import Default, BlockThirdPartyCookies, PrivateBrowsing, TrackingProtection
+from bci.browser.configuration.options import BlockThirdPartyCookies, Default, PrivateBrowsing, TrackingProtection
 from bci.browser.configuration.profile import prepare_firefox_profile
-
 
 SUPPORTED_OPTIONS = [
     Default(),
@@ -26,6 +25,7 @@ class Firefox(Browser):
 
         args = [self._get_executable_file_path()]
         args.extend(['-profile', self._profile_path])
+        args.append('--remote-debugging-port=0')
         user_prefs = []
 
         def add_user_pref(key: str, value: str | int | bool):

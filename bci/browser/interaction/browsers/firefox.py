@@ -46,11 +46,12 @@ class Firefox(Browser):
         # Wait for the DOM to load
         self.listen(
             'browsingContext.domContentLoaded',
-            {
-                'url': url,
-                'context': self.browsing_context,
-                'navigation': navigation,
-            },
+            {}
+            #{
+            #    'url': url,
+            #    'context': self.browsing_context,
+            #    'navigation': navigation,
+            #},
         )
 
     def click(self, x, y):
