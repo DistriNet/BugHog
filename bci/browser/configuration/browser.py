@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from abc import abstractmethod
 
 import bci.browser.binary.factory as binary_factory
@@ -15,8 +16,11 @@ EXECUTION_PARENT_FOLDER = '/tmp'
 
 
 class Browser:
+    process: subprocess.Popen
 
-    def __init__(self, browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, binary: Binary) -> None:
+    def __init__(
+        self, browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, binary: Binary
+    ) -> None:
         self.browser_config = browser_config
         self.eval_config = eval_config
         self.binary = binary
@@ -34,9 +38,16 @@ class Browser:
         match self.eval_config.automation:
             case 'terminal':
                 args = self._get_terminal_args()
-                TerminalAutomation.run(url, args, self.eval_config.seconds_per_visit)
+                TerminalAutomation.visit_url(url, args, self.eval_config.seconds_per_visit)
             case _:
                 raise AttributeError('Not implemented')
+
+    def open(self) -> str:
+        self.process, output = TerminalAutomation.open_browser(self._get_terminal_args())
+        return output
+
+    def terminate(self):
+        TerminalAutomation.terminate_browser(self.process, self._get_terminal_args())
 
     def pre_evaluation_setup(self):
         self.__fetch_binary()
@@ -80,11 +91,13 @@ class Browser:
         return os.path.join(self.__get_execution_folder_path(), self.binary.executable_name)
 
     @abstractmethod
-    def _get_terminal_args(self):
+    def _get_terminal_args(self) -> list[str]:
         pass
 
     @staticmethod
-    def get_browser(browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, state: State) -> Browser:
+    def get_browser(
+        browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, state: State
+    ) -> Browser:
         from bci.browser.configuration.chromium import Chromium
         from bci.browser.configuration.firefox import Firefox
 

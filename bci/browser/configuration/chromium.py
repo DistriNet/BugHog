@@ -1,6 +1,7 @@
 from bci.browser.configuration.browser import Browser
 from bci.browser.configuration.options import Default, BlockThirdPartyCookies, PrivateBrowsing
 from bci.browser.configuration.profile import prepare_chromium_profile
+from bci.browser.interaction.interaction import Interaction
 
 SUPPORTED_OPTIONS = [
     Default(),
@@ -41,6 +42,7 @@ class Chromium(Browser):
         args.append('--enable-logging')
         args.append('--v=1')
         args.append('--log-level=0')
+        args.append(f'--remote-debugging-port={Interaction.port}')
         # Headless changed from version +/- 110 onwards: https://developer.chrome.com/docs/chromium/new-headless
         # Using the `--headless` flag will crash the browser for these later versions.
         # Also see: https://github.com/DistriNet/BugHog/issues/12

@@ -107,14 +107,18 @@ class CustomEvaluationFramework(EvaluationFramework):
         try:
             experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
 
+            max_tries = 3
             if 'interaction_script' in experiment:
                 interaction = Interaction(browser, experiment['interaction_script'])
-                interaction.execute()
+                tries = 0
+                while tries < max_tries:
+                    tries += 1
+                    interaction.execute()
             else:
                 url_queue = experiment['url_queue']
                 for url in url_queue:
                     tries = 0
-                    while tries < 3:
+                    while tries < max_tries:
                         tries += 1
                         browser.visit(url)
         except Exception as e:

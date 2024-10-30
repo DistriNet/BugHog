@@ -1,13 +1,24 @@
+from bci.browser.automation.terminal import TerminalAutomation
 from bci.browser.configuration.browser import Browser as BrowserConfig
 
 
 class Interaction:
-    browser_config: BrowserConfig
+    port = 9222
+
+    browser: BrowserConfig
     script: list[str]
 
     def __init__(self, browser: BrowserConfig, script: list[str]) -> None:
-        self.browser_config = browser
+        self.browser = browser
         self.script = script
 
     def execute(self) -> None:
-        print(f'TODO - execute {self.browser_config._get_terminal_args()} with script {", ".join(self.script)}')
+        output = self.browser.open()
+
+        # TODO - identify browser from the output
+        # TODO - initialize the browser
+        # TODO - parse the script and run the commands
+        # TODO - visit the sanity check URL
+        # TODO - destroy the browser
+
+        self.browser.terminate()
