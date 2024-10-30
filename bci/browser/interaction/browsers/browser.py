@@ -28,6 +28,8 @@ class Browser(ABC):
     ws_timeout: float
     ws: ClientConnection
 
+    public_methods: list[str] = ['navigate', 'click']
+
     def __init__(self, browser_id: str = '', port: int = 9222, host: str = '127.0.0.1', autoclose_timeout: float = 0.5):
         self.ws_timeout = autoclose_timeout
         self.ws = connect(self.get_ws_endpoint(host, port, browser_id), close_timeout=autoclose_timeout)

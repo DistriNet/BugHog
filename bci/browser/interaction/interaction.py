@@ -1,8 +1,12 @@
+import logging
 import re
+from inspect import signature
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
 from bci.browser.interaction.browsers.browser import Browser
 from bci.browser.interaction.browsers.chromium import Chromium
+
+logger = logging.getLogger(__name__)
 
 
 class Interaction:
@@ -20,8 +24,7 @@ class Interaction:
 
         interaction_browser = self._initiate_browser(output)
 
-        # TODO - parse the script and run the commands instead
-        interaction_browser.navigate('https://a.test/Support/UserInteraction/main')
+        self._interpret(interaction_browser)
 
         interaction_browser.navigate('https://a.test/report/?bughog_sanity_check=OK')
         interaction_browser.close_connection()
@@ -35,3 +38,24 @@ class Interaction:
             return Chromium(browser_id=cdp.group(1), port=Interaction.port)
 
         raise Exception('Unrecognized browser')
+
+    def _interpret(self, browser: Browser) -> None:
+        for statement in self.script:
+            cmd, *args = statement.split()
+            method_name = cmd.lower()
+
+            if method_name not in Browser.public_methods:
+                raise Exception(
+                    f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), Browser.public_methods))}.'
+                )
+
+            method = getattr(browser, method_name)
+            method_params_len = len(signature(method).parameters)
+
+            if method_params_len != len(args):
+                raise Exception(
+                    f'Invalid number of arguments for command `{cmd}`. Expected {method_params_len}, got {len(args)}.'
+                )
+
+            logger.debug(f'Executing interaction method `{method_name}` with the arguments {args}')
+            method(*args)
