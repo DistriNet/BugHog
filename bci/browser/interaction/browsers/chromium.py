@@ -31,7 +31,7 @@ class Chromium(Browser):
 
     def navigate(self, url):
         self.send({'sessionId': self.session_id, 'method': 'Page.navigate', 'params': {'url': url}})
-        sleep(0.01)
+        sleep(0.5)
 
     def click(self, x, y):
         self.send(
