@@ -31,8 +31,6 @@ class Interaction:
         self.browser.terminate()
 
     def _initiate_browser(self, init_output: str) -> Browser:
-        print(init_output)
-
         cdp = re.search(
             r'DevTools listening on ws:\/\/(.+):(.+)\/devtools\/browser\/(.+)\n',
             init_output,
