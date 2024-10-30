@@ -5,3 +5,4 @@ flatten-dict
 gunicorn
 pymongo
 requests
+websockets

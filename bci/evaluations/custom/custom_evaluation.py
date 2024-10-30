@@ -3,6 +3,7 @@ import os
 import textwrap
 
 from bci.browser.configuration.browser import Browser
+from bci.browser.interaction.interaction import Interaction
 from bci.configuration import Global
 from bci.evaluations.collectors.collector import Collector, Type
 from bci.evaluations.evaluation_framework import EvaluationFramework
@@ -16,7 +17,7 @@ class CustomEvaluationFramework(EvaluationFramework):
     def __init__(self):
         super().__init__()
         self.dir_tree = self.initialize_dir_tree()
-        self.tests_per_project = self.initialize_tests_and_url_queues(self.dir_tree)
+        self.tests_per_project = self.initialize_tests_and_interactions(self.dir_tree)
 
     @staticmethod
     def initialize_dir_tree() -> dict:
@@ -35,7 +36,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         return path_to_dict(path)
 
     @staticmethod
-    def initialize_tests_and_url_queues(dir_tree: dict) -> dict:
+    def initialize_tests_and_interactions(dir_tree: dict) -> dict:
         experiments_per_project = {}
         page_folder_path = Global.custom_page_folder
         for project, experiments in dir_tree.items():
@@ -43,12 +44,28 @@ class CustomEvaluationFramework(EvaluationFramework):
             project_path = os.path.join(page_folder_path, project)
             experiments_per_project[project] = {}
             for experiment in experiments:
-                url_queue = CustomEvaluationFramework.__get_url_queue(project, project_path, experiment)
-                experiments_per_project[project][experiment] = {
-                    'url_queue': url_queue,
-                    'runnable': CustomEvaluationFramework.is_runnable_experiment(project, experiment, dir_tree),
-                }
+                interaction_script = CustomEvaluationFramework.__get_interaction_script(project_path, experiment)
+                data = {}
+
+                if interaction_script is not None:
+                    data['interaction_script'] = interaction_script
+                else:
+                    url_queue = CustomEvaluationFramework.__get_url_queue(project, project_path, experiment)
+                    data['url_queue'] = url_queue
+
+                data['runnable'] = CustomEvaluationFramework.is_runnable_experiment(project, experiment, dir_tree)
+
+                experiments_per_project[project][experiment] = data
         return experiments_per_project
+
+    @staticmethod
+    def __get_interaction_script(project_path: str, experiment: str) -> list[str] | None:
+        interaction_file_path = os.path.join(project_path, experiment, 'interaction_script.cmd')
+        if os.path.isfile(interaction_file_path):
+            # If an interaction script is specified, it is parsed and used
+            with open(interaction_file_path) as file:
+                return file.readlines()
+        return None
 
     @staticmethod
     def __get_url_queue(project: str, project_path: str, experiment: str) -> list[str]:
@@ -88,12 +105,18 @@ class CustomEvaluationFramework(EvaluationFramework):
 
         is_dirty = False
         try:
-            url_queue = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]['url_queue']
-            for url in url_queue:
-                tries = 0
-                while tries < 3:
-                    tries += 1
-                    browser.visit(url)
+            experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
+
+            if 'interaction_script' in experiment:
+                interaction = Interaction(browser, experiment['interaction_script'])
+                interaction.execute()
+            else:
+                url_queue = experiment['url_queue']
+                for url in url_queue:
+                    tries = 0
+                    while tries < 3:
+                        tries += 1
+                        browser.visit(url)
         except Exception as e:
             logger.error(f'Error during test: {e}', exc_info=True)
             is_dirty = True
@@ -205,5 +228,5 @@ class CustomEvaluationFramework(EvaluationFramework):
 
     def sync_with_folders(self):
         self.dir_tree = self.initialize_dir_tree()
-        self.tests_per_project = self.initialize_tests_and_url_queues(self.dir_tree)
+        self.tests_per_project = self.initialize_tests_and_interactions(self.dir_tree)
         logger.info('Framework is synced with folders')
