@@ -16,15 +16,16 @@ api = Blueprint('api', __name__, url_prefix='/api')
 THREAD = None
 
 
-def start_thread(func, args=None) -> bool:
+def __start_thread(func, args=None) -> bool:
     global THREAD
+    if args is None:
+        args = []
     if THREAD and THREAD.is_alive():
         return False
     else:
         THREAD = threading.Thread(target=func, args=args)
         THREAD.start()
         return True
-
 
 
 @api.before_request
@@ -55,9 +56,15 @@ Starting and stopping processses
 
 @api.route('/evaluation/start/', methods=['POST'])
 def start_evaluation():
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No evaluation parameters found"
+        }
+
     data = request.json.copy()
     params = evaluation_factory(data)
-    if start_thread(bci_api.run, args=[params]):
+    if __start_thread(bci_api.run, args=[params]):
         return {
             'status': 'OK'
         }
@@ -69,6 +76,12 @@ def start_evaluation():
 
 @api.route('/evaluation/stop/', methods=['POST'])
 def stop_evaluation():
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No stop parameters found"
+        }
+
     data = request.json.copy()
     forcefully = data.get('forcefully', False)
     if forcefully:
@@ -140,6 +153,12 @@ def log():
 
 @api.route('/data/', methods=['PUT'])
 def data_source():
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No data parameters found"
+        }
+
     params = request.json.copy()
     revision_data, version_data = bci_api.get_data_sources(params)
     if revision_data or version_data:
@@ -172,30 +191,41 @@ def poc(project: str, poc: str):
     }
 
 
-@api.route('/poc/<string:project>/<string:poc>/<string:domain>/<string:path>/<string:file>/', methods=['GET'])
-def poc_file(project: str, poc: str, domain: str, path: str, file: str):
-    return {
-        'status': 'OK',
-        'content': bci_api.get_poc_file(project, poc, domain, path, file)
-    }
-
-
-@api.route('/poc/<string:project>/<string:poc>/<string:domain>/<string:path>/<string:file>/', methods=['POST'])
-def update_poc_file(project: str, poc: str, domain: str, path: str, file: str):
-    data = request.json.copy()
-    success = bci_api.update_poc_file(project, poc, domain, path, file, data['content'])
-    if success:
+@api.route('/poc/<string:project>/<string:poc>/<string:file>/', methods=['GET', 'POST'])
+def get_poc_file_content(project: str, poc: str, file: str):
+    domain = request.args.get('domain', '')
+    path = request.args.get('path', '')
+    if request.method == 'GET':
         return {
-            'status': 'OK'
+            'status': 'OK',
+            'content': bci_api.get_poc_file(project, poc, domain, path, file)
         }
-    else :
-        return {
-            'status': 'NOK'
-        }
+    else:
+        if not request.json:
+            return {
+                'status': 'NOK',
+                'msg': 'No content to update file with'
+            }
+        data = request.json.copy()
+        success = bci_api.update_poc_file(project, poc, domain, path, file, data['content'])
+        if success:
+            return {
+                'status': 'OK'
+            }
+        else :
+            return {
+                'status': 'NOK'
+            }
 
 
 @api.route('/poc/<string:project>/<string:poc>/', methods=['POST'])
 def add_page(project: str, poc: str):
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No page parameters found"
+        }
+
     data = request.json.copy()
     success = bci_api.add_page(project, poc, data['domain'], data['page'], data['file_type'])
     if success:
@@ -218,6 +248,12 @@ def get_available_domains():
 
 @api.route('/poc/<string:project>/', methods=['POST'])
 def create_experiment(project: str):
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No experiment parameters found"
+        }
+
     data = request.json.copy()
     if 'poc_name' not in data.keys():
         return {

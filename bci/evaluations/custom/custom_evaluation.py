@@ -20,19 +20,29 @@ class CustomEvaluationFramework(EvaluationFramework):
 
     @staticmethod
     def initialize_dir_tree() -> dict:
+        """
+        Initializes directory tree of experiments.
+        """
         path = Global.custom_page_folder
+        dir_tree = {}
 
-        def path_to_dict(path):
-            if os.path.isdir(path):
-                return {
-                    sub_folder: path_to_dict(os.path.join(path, sub_folder))
-                    for sub_folder in os.listdir(path)
-                    if sub_folder != 'url_queue.txt'
-                }
+        def set_nested_value(d: dict, keys: list[str], value: dict):
+            nested_dict = d
+            for key in keys[:-1]:
+                nested_dict = nested_dict[key]
+            nested_dict[keys[-1]] = value
+
+        for root, dirs, files in os.walk(path):
+            # Remove base path from root
+            root = root[len(path):]
+            keys = root.split('/')[1:]
+            subdir_tree = {dir: {} for dir in dirs} | {file: None for file in files}
+            if root:
+                set_nested_value(dir_tree, keys, subdir_tree)
             else:
-                return os.path.basename(path)
+                dir_tree = subdir_tree
 
-        return path_to_dict(path)
+        return dir_tree
 
     @staticmethod
     def initialize_tests_and_url_queues(dir_tree: dict) -> dict:
@@ -70,11 +80,14 @@ class CustomEvaluationFramework(EvaluationFramework):
         raise AttributeError(f"Could not infer url queue for experiment '{experiment}' in project '{project}'")
 
     @staticmethod
-    def is_runnable_experiment(project: str, poc: str, dir_tree: dict) -> bool:
+    def is_runnable_experiment(project: str, poc: str, dir_tree: dict[str,dict]) -> bool:
         domains = dir_tree[project][poc]
-        if not (poc_main_path := [paths for domain, paths in domains.items() if 'main' in paths]):
+        # Should have exactly one main folder
+        main_paths = [paths for paths in domains.values() if paths is not None and 'main' in paths.keys()]
+        if len(main_paths) != 1:
             return False
-        if 'index.html' not in poc_main_path[0]['main'].keys():
+        # Main should have index.html
+        if 'index.html' not in main_paths[0]['main'].keys():
             return False
         return True
 
@@ -194,7 +207,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         if file_type != 'py':
             return ''
 
-        with open('experiments/pages/Support/PythonServer/a.test/py-server/index.py', 'r') as file:
+        with open('experiments/pages/Support/PythonServer/a.test/server.py', 'r') as file:
             template_content = file.read()
 
         return template_content

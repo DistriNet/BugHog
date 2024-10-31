@@ -5,7 +5,7 @@ import importlib.util
 import sys
 
 import requests
-from flask import Blueprint, make_response, render_template, request, url_for
+from flask import Blueprint, Request, make_response, render_template, request, url_for
 
 from bci.web.page_parser import load_experiment_pages
 
@@ -26,6 +26,7 @@ exp = Blueprint("experiments", __name__, template_folder="/app/bci/web/templates
 
 @exp.before_request
 def before_request():
+    __report(request)
     host = request.host.lower()
     if host not in ALLOWED_DOMAINS:
         logger.error(
@@ -34,29 +35,13 @@ def before_request():
         return f"Host '{host}' is not supported by this framework."
 
 
-@exp.route("/")
-def index():
-    return f"This page is visited over <b>{request.scheme}</b>."
-
-
-@exp.route("/report/", methods=["GET", "POST"])
-def report():
-    get_params = [item for item in get_all_GET_parameters(request).items()]
-    resp = make_response(
-        render_template("cookies.html", title="Report", get_params=get_params)
-    )
-
-    cookie_exp_date = datetime.datetime.now() + datetime.timedelta(weeks=4)
-    resp.set_cookie("generic", "1", expires=cookie_exp_date)
-    resp.set_cookie("secure", "1", expires=cookie_exp_date, secure=True)
-    resp.set_cookie("httpOnly", "1", expires=cookie_exp_date, httponly=True)
-    resp.set_cookie("lax", "1", expires=cookie_exp_date, samesite="lax")
-    resp.set_cookie("strict", "1", expires=cookie_exp_date, samesite="strict")
-
+def __report(request: Request) -> None:
+    """
+    Submit report to BugHog
+    """
     # Respond to collector on same IP
     # remote_ip = request.remote_addr
     remote_ip = request.headers.get("X-Real-IP")
-
     response_data = {
         "url": request.url,
         "method": request.method,
@@ -72,6 +57,29 @@ def report():
 
     threading.Thread(target=send_report_to_collector).start()
 
+
+def __get_all_GET_parameters(request) -> dict[str,str]:
+    return {k: v for k, v in request.args.items()}
+
+
+@exp.route("/")
+def index():
+    return f"This page is visited over <b>{request.scheme}</b>."
+
+
+@exp.route("/report/", methods=["GET", "POST"])
+def report_endpoint():
+    get_params = [item for item in __get_all_GET_parameters(request).items()]
+    resp = make_response(
+        render_template("cookies.html", title="Report", get_params=get_params)
+    )
+
+    cookie_exp_date = datetime.datetime.now() + datetime.timedelta(weeks=4)
+    resp.set_cookie("generic", "1", expires=cookie_exp_date)
+    resp.set_cookie("secure", "1", expires=cookie_exp_date, secure=True)
+    resp.set_cookie("httpOnly", "1", expires=cookie_exp_date, httponly=True)
+    resp.set_cookie("lax", "1", expires=cookie_exp_date, samesite="lax")
+    resp.set_cookie("strict", "1", expires=cookie_exp_date, samesite="strict")
     return resp
 
 
@@ -81,7 +89,7 @@ def report_leak_if_using_http(target_scheme):
     Triggers request to /report/ if a request was received over the specified `scheme`.
     """
     used_scheme = request.headers.get("X-Forwarded-Proto")
-    params = get_all_GET_parameters(request)
+    params = __get_all_GET_parameters(request)
     if used_scheme == target_scheme:
         return "Redirect", 307, {"Location": url_for("experiments.report", **params)}
     else:
@@ -96,7 +104,7 @@ def report_leak_if_present(expected_header_name: str):
     if expected_header_name not in request.headers:
         return f"Header {expected_header_name} not found", 200, {"Allow-CSP-From": "*"}
 
-    params = get_all_GET_parameters(request)
+    params = __get_all_GET_parameters(request)
     return (
         "Redirect",
         307,
@@ -121,7 +129,7 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
             {"Allow-CSP-From": "*"},
         )
 
-    params = get_all_GET_parameters(request)
+    params = __get_all_GET_parameters(request)
     return (
         "Redirect",
         307,
@@ -132,15 +140,15 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
     )
 
 
-@exp.route("/<string:project>/<string:experiment>/<string:directory>/")
-def python_evaluation(project: str, experiment: str, directory: str):
+@exp.route("/<string:project>/<string:experiment>/<string:file_name>.py")
+def python_evaluation(project: str, experiment: str, file_name: str):
     """
     Evaluates the python script and returns its result.
     """
     host = request.host.lower()
 
-    module_name = f"{host}/{project}/{experiment}/{directory}"
-    path = f"experiments/pages/{project}/{experiment}/{host}/{directory}/index.py"
+    module_name = f"{host}/{project}/{experiment}"
+    path = f"experiments/pages/{project}/{experiment}/{host}/{file_name}.py"
 
     # Dynamically import the file
     sys.dont_write_bytecode = True
@@ -150,7 +158,3 @@ def python_evaluation(project: str, experiment: str, directory: str):
     spec.loader.exec_module(module)
 
     return module.main(request)
-
-  
-def get_all_GET_parameters(request):
-    return {k: v for k, v in request.args.items()}
