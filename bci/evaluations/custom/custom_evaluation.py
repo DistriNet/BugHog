@@ -25,11 +25,7 @@ class CustomEvaluationFramework(EvaluationFramework):
 
         def path_to_dict(path):
             if os.path.isdir(path):
-                return {
-                    sub_folder: path_to_dict(os.path.join(path, sub_folder))
-                    for sub_folder in os.listdir(path)
-                    if sub_folder != 'url_queue.txt'
-                }
+                return {sub_folder: path_to_dict(os.path.join(path, sub_folder)) for sub_folder in os.listdir(path)}
             else:
                 return os.path.basename(path)
 
@@ -154,15 +150,22 @@ class CustomEvaluationFramework(EvaluationFramework):
     def get_poc_structure(self, project: str, poc: str) -> dict:
         return self.dir_tree[project][poc]
 
+    def _get_poc_file_path(self, project: str, poc: str, domain: str, path: str, file_name: str) -> str:
+        # Top-level config file
+        if domain == 'Config' and path == '_':
+            return os.path.join(Global.custom_page_folder, project, poc, file_name)
+
+        return os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
+
     def get_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str) -> str:
-        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
+        file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
         if os.path.isfile(file_path):
             with open(file_path) as file:
                 return file.read()
         raise AttributeError(f"Could not find PoC file at expected path '{file_path}'")
 
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
-        file_path = os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
+        file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
         if os.path.isfile(file_path):
             if content == '':
                 logger.warning('Attempt to save empty file ignored')

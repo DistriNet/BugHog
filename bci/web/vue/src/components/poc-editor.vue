@@ -37,6 +37,7 @@
             //     "path1": ["file1", "file2"],
             //     "path2": ["file1"],
             //   },
+            //  'interaction_script.cmd': 'interaction_script.cmd',
             // },
         },
         available_file_types: [
@@ -44,6 +45,10 @@
           'js',
           'py',
         ],
+        poc_tree_config: {
+          domain: 'Config',
+          page: '_',
+        },
         dialog: {
           domain: {
             name: null,
@@ -57,6 +62,33 @@
         },
         editor: null,
         timeout: null,
+      }
+    },
+    computed: {
+      active_poc_tree() {
+        return Object.entries(this.active_poc.tree).reduce((acc, [domain, pages]) => {
+          if (domain !== pages) {
+            return [
+              ...acc,
+              [domain, pages]
+            ]
+          }
+
+          const configDomain = this.poc_tree_config.domain;
+          const configPage = this.poc_tree_config.page;
+
+          // A single top-level file -> create a virtual config folder
+          const config_folder = acc.find(([domain]) => domain === configDomain) ?? [configDomain, {[configPage]: {}}];
+          return [
+            ...acc.filter(([domain]) => domain !== configDomain),
+            [configDomain, {
+              [configPage]: {
+                ...config_folder[1].subfolder,
+                [domain]: pages,
+              }
+            }],
+          ]
+        }, []);
       }
     },
     methods: {
@@ -199,16 +231,21 @@
     <div v-else class="basis-4/12 w-1/12 h-full grow overflow-y-auto">
       <ul class="relative flex flex-col text-gray-700 bg-white shadow-md w-96 rounded-md bg-clip-border dark:bg-dark-3 dark:text-white">
         <nav class="flex min-w-[240px] h-full flex-col gap-1 p-2 font-sans text-base font-normal text-blue-gray-700">
-          <li v-for="([domain, pages, index]) in Object.entries(active_poc.tree)">
+          <li v-for="([domain, pages, index]) in active_poc_tree">
             <ul>
               <li v-for="([path, files, index]) in Object.entries(pages)">
                 <div class="flex border-b-2 p-2 font-bold mb-2" >
-                  <div class="w-full">
-                    {{ domain }}/{{ path }}
-                  </div>
-                  <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
-                    <v-icon name="fa-link" class=""/>
-                  </a>
+                  <template v-if="domain !== poc_tree_config.domain">
+                    <div class="w-full">
+                      {{ domain }}/{{ path }}
+                    </div>
+                    <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
+                      <v-icon name="fa-link" class=""/>
+                    </a>
+                  </template>
+                  <template v-else>
+                    {{ domain}}
+                  </template>
                 </div>
                 <ul>
                   <li v-for="file in files"
