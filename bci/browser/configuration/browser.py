@@ -43,11 +43,10 @@ class Browser:
             case _:
                 raise AttributeError('Not implemented')
 
-    def open(self, url: str) -> str:
+    def open(self, url: str) -> None:
         args = self._get_terminal_args()
         args.append(url)
-        self.process, output = TerminalAutomation.open_browser(args)
-        return output
+        self.process = TerminalAutomation.open_browser(args)
 
     def terminate(self):
         if self.process is None:

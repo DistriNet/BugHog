@@ -10,24 +10,18 @@ class TerminalAutomation:
     @staticmethod
     def visit_url(url: str, args: list[str], seconds_per_visit: int):
         args.append(url)
-        proc, _ = TerminalAutomation.open_browser(args)
+        proc = TerminalAutomation.open_browser(args)
         logger.debug(f'Visiting the page for {seconds_per_visit}s')
         time.sleep(seconds_per_visit)
         TerminalAutomation.terminate_browser(proc, args)
 
     @staticmethod
-    def open_browser(args: list[str]) -> tuple[subprocess.Popen, str]:
+    def open_browser(args: list[str]) -> subprocess.Popen:
         logger.debug('Starting browser process...')
         logger.debug(f'Command string: \'{" ".join(args)}\'')
         with open('/tmp/browser.log', 'a+') as file:
-            initial_position = file.tell()
             proc = subprocess.Popen(args, stdout=file, stderr=file)
-            time.sleep(0.5)
-            last_position = file.tell()
-            file.seek(initial_position)
-            output = file.read()
-            file.seek(last_position)
-            return proc, output
+            return proc
 
     @staticmethod
     def terminate_browser(proc: subprocess.Popen, args: list[str]) -> None:
