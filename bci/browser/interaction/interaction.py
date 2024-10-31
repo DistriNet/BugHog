@@ -19,18 +19,16 @@ class Interaction:
         self.script = script
 
     def execute(self) -> None:
-        output = self.browser.open()
-
-        interaction_browser = self._initiate_browser(output)
+        interaction_browser = self._initiate_browser()
 
         self._interpret(interaction_browser)
 
         interaction_browser.navigate('https://a.test/report/?bughog_sanity_check=OK')
-        interaction_browser.close_connection()
 
-        self.browser.terminate()
-
-    def _initiate_browser(self, init_output: str) -> Browser:
+    def _initiate_browser(self) -> Browser:
+        # TODO - possibly return different browser instances
+        return Browser(self.browser)
+        """
         cdp = re.search(
             r'DevTools listening on ws:\/\/(.+):(.+)\/devtools\/browser\/(.+)\n',
             init_output,
@@ -48,6 +46,7 @@ class Interaction:
             return Firefox(port=int(bidi.group(2)), host=bidi.group(1))
 
         raise Exception('Unrecognized browser')
+        """
 
     def _interpret(self, browser: Browser) -> None:
         for statement in self.script:

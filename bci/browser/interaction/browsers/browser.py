@@ -1,84 +1,46 @@
-import json
-from abc import ABC, abstractmethod
+import base64
+import os
+from io import BytesIO
+from time import sleep
 
-from websockets.sync.client import ClientConnection, connect
+import pyautogui as gui
+import Xlib.display
+from pyvirtualdisplay.display import Display
 
-
-# Returns true if:
-# - required == True -> all fields from `pattern` are present in `data` with the same value
-# - required == False -> all fields from `pattern` which are present in `data` have the same value
-def dictionaries_match(pattern: dict, data: dict, required: bool) -> bool:
-    for key in pattern:
-        if required and key not in data:
-            return False
-
-        if key in data:
-            # Equal values, up to slashes
-            if (
-                not dictionaries_match(pattern[key], data[key], required)
-                if isinstance(pattern[key], dict)
-                else str(data[key]).replace('/', '') != str(pattern[key]).replace('/', '')
-            ):
-                return False
-    return True
+from bci.browser.configuration.browser import Browser as BrowserConfig
 
 
-class Browser(ABC):
-    request_id: int = 0
-    ws_timeout: float
-    ws: ClientConnection
-
+class Browser:
+    browser_config: BrowserConfig
     public_methods: list[str] = ['navigate', 'click']
 
-    def __init__(self, browser_id: str = '', port: int = 9222, host: str = '127.0.0.1', autoclose_timeout: float = 2):
-        self.ws_timeout = autoclose_timeout
-        self.ws = connect(self.get_ws_endpoint(host, port, browser_id), close_timeout=autoclose_timeout)
-        self.initialize_connection(browser_id, port, host)
+    def __init__(self, browser_config: BrowserConfig):
+        self.browser_config = browser_config
+        disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
+        disp.start()
+        gui._pyautogui_x11._display = Xlib.display.Display(os.environ['DISPLAY'])
 
-    def req_id(self) -> int:
-        self.request_id += 1
-        return self.request_id
+    def __del__(self):
+        self.browser_config.terminate()
 
-    def send(self, data: dict) -> dict:
-        data['id'] = self.req_id()
+    # --- PUBLIC METHODS ---
+    def navigate(self, url: str):
+        self.browser_config.terminate()
+        self.browser_config.open(url)
 
-        self.ws.send(json.dumps(data))
+        # TODO - convert this into an argument or a separate command
+        sleep(0.5)
 
-        return self.receive({'method': data['method'], 'id': data['id']}, False)
+    def click(self, x: str, y: str):
+        # print(gui.size())
+        # print(gui.position())
+        # gui.moveTo(int(x), int(y))
+        gui.moveTo(100, 540)
+        gui.click()
 
-    def listen(self, event: str, params: dict) -> dict:
-        return self.receive({'type': 'event', 'method': event, 'params': params}, True)
+        # buffered = BytesIO()
+        # print(gui.screenshot().save(buffered, format='JPEG'))
+        # img_str = base64.b64encode(buffered.getvalue())
+        # print(img_str.decode('utf-8'))
 
-    def receive(self, data: dict, required: bool) -> dict:
-        result = None
-
-        while result == None or (not dictionaries_match(data, result, required)):
-            result = json.loads(self.ws.recv(self.ws_timeout))
-
-            if 'type' in result and result['type'] == 'error':
-                raise Exception(f'Received browser error: {result}')
-
-        return result
-
-    # --- BROWSER-SPECIFIC METHODS ---
-    @abstractmethod
-    def get_ws_endpoint(self, host: str, port: int, browser_id: str) -> str:
-        pass
-
-    @abstractmethod
-    def initialize_connection(self, _browserId, _port, _host):
-        pass
-
-    @abstractmethod
-    def close_connection(
-        self,
-    ):
-        pass
-
-    @abstractmethod
-    def navigate(self, _url):
-        pass
-
-    @abstractmethod
-    def click(self, _x, _y):
-        pass
+        sleep(0.5)

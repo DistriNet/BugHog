@@ -16,12 +16,13 @@ EXECUTION_PARENT_FOLDER = '/tmp'
 
 
 class Browser:
-    process: subprocess.Popen
+    process: subprocess.Popen | None
 
     def __init__(
         self, browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, binary: Binary
     ) -> None:
         self.browser_config = browser_config
+        self.process = None
         self.eval_config = eval_config
         self.binary = binary
         self.state = binary.state
@@ -42,12 +43,18 @@ class Browser:
             case _:
                 raise AttributeError('Not implemented')
 
-    def open(self) -> str:
-        self.process, output = TerminalAutomation.open_browser(self._get_terminal_args())
+    def open(self, url: str) -> str:
+        args = self._get_terminal_args()
+        args.append(url)
+        self.process, output = TerminalAutomation.open_browser(args)
         return output
 
     def terminate(self):
+        if self.process is None:
+            return
+
         TerminalAutomation.terminate_browser(self.process, self._get_terminal_args())
+        self.process = None
 
     def pre_evaluation_setup(self):
         self.__fetch_binary()
