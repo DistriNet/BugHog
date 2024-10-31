@@ -25,7 +25,6 @@ class Firefox(Browser):
 
         args = [self._get_executable_file_path()]
         args.extend(['-profile', self._profile_path])
-        args.append('--remote-debugging-port=0')
         user_prefs = []
 
         def add_user_pref(key: str, value: str | int | bool):

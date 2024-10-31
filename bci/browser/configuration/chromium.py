@@ -41,7 +41,6 @@ class Chromium(Browser):
         args.append('--enable-logging')
         args.append('--v=1')
         args.append('--log-level=0')
-        args.append('--remote-debugging-port=0')
         # Headless changed from version +/- 110 onwards: https://developer.chrome.com/docs/chromium/new-headless
         # Using the `--headless` flag will crash the browser for these later versions.
         # Also see: https://github.com/DistriNet/BugHog/issues/12
