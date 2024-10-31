@@ -105,7 +105,7 @@ class CustomEvaluationFramework(EvaluationFramework):
 
             max_tries = 3
             if 'interaction_script' in experiment:
-                interaction = Interaction(browser, experiment['interaction_script'])
+                interaction = Interaction(browser, experiment['interaction_script'], params)
                 tries = 0
                 while tries < max_tries:
                     tries += 1

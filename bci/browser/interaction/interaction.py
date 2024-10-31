@@ -3,6 +3,7 @@ from inspect import signature
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
 from bci.browser.interaction.simulation import Simulation
+from bci.evaluations.logic import TestParameters
 
 logger = logging.getLogger(__name__)
 
@@ -10,22 +11,20 @@ logger = logging.getLogger(__name__)
 class Interaction:
     browser: BrowserConfig
     script: list[str]
+    params: TestParameters
 
-    def __init__(self, browser: BrowserConfig, script: list[str]) -> None:
+    def __init__(self, browser: BrowserConfig, script: list[str], params: TestParameters) -> None:
         self.browser = browser
         self.script = script
+        self.params = params
 
     def execute(self) -> None:
-        simulation = self._initiate_simulation()
+        simulation = Simulation(self.browser, self.params)
 
         self._interpret(simulation)
 
         simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
         simulation.sleep('0.5')
-
-    def _initiate_simulation(self) -> Simulation:
-        # TODO - possibly return different browser instances
-        return Simulation(self.browser)
 
     def _interpret(self, simulation: Simulation) -> None:
         for statement in self.script:

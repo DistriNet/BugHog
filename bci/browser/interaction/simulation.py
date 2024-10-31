@@ -1,6 +1,4 @@
-import base64
 import os
-from io import BytesIO
 from time import sleep
 
 import pyautogui as gui
@@ -8,14 +6,18 @@ import Xlib.display
 from pyvirtualdisplay.display import Display
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
+from bci.evaluations.logic import TestParameters
 
 
 class Simulation:
     browser_config: BrowserConfig
+    params: TestParameters
+
     public_methods: list[str] = ['navigate', 'click', 'click_el', 'sleep', 'screenshot']
 
-    def __init__(self, browser_config: BrowserConfig):
+    def __init__(self, browser_config: BrowserConfig, params: TestParameters):
         self.browser_config = browser_config
+        self.params = params
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
         disp.start()
         gui._pyautogui_x11._display = Xlib.display.Display(os.environ['DISPLAY'])
@@ -50,9 +52,7 @@ class Simulation:
     def sleep(self, duration: str):
         sleep(float(duration))
 
-    def screenshot(self):
-        # TODO save to the filesystem
-        buffered = BytesIO()
-        print(gui.screenshot().save(buffered, format='JPEG'))
-        img_str = base64.b64encode(buffered.getvalue())
-        print(img_str.decode('utf-8'))
+    def screenshot(self, filename: str):
+        filename = f'{self.params.evaluation_configuration.project}-{self.params.mech_group}-{filename}-{type(self.browser_config).__name__}-{self.browser_config.version}.jpg'
+        filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../logs/screenshots', filename)
+        gui.screenshot(filepath)
