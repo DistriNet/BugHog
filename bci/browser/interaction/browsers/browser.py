@@ -29,12 +29,13 @@ class Browser:
         self.browser_config.open(url)
 
         # TODO - convert this into an argument or a separate command
-        sleep(0.5)
+        sleep(2)
 
     def click(self, x: str, y: str):
         # print(gui.size())
         # print(gui.position())
         # gui.moveTo(int(x), int(y))
+
         gui.moveTo(100, 540)
         gui.click()
 

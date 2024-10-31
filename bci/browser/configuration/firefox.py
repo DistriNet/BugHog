@@ -25,6 +25,7 @@ class Firefox(Browser):
 
         args = [self._get_executable_file_path()]
         args.extend(['-profile', self._profile_path])
+        args.append('-setDefaultBrowser')
         user_prefs = []
 
         def add_user_pref(key: str, value: str | int | bool):
@@ -44,6 +45,7 @@ class Firefox(Browser):
         # add_user_pref('network.proxy.type', 1)
 
         add_user_pref('app.update.enabled', False)
+        add_user_pref('browser.shell.checkDefaultBrowser', False)
         if 'default' in self.browser_config.browser_setting:
             pass
         elif 'btpc' in self.browser_config.browser_setting:
