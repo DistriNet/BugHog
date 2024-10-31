@@ -4,6 +4,7 @@
   import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
   import { Mode as JsonMode } from 'ace-builds/src-noconflict/mode-json';
   import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
+  import { getMode as getInteractionScriptMode } from '../interaction_script_mode';
   import 'ace-builds/src-min-noconflict/ext-modelist';
   import 'ace-builds/src-min-noconflict/theme-twilight';
   import 'ace-builds/src-min-noconflict/theme-xcode';
@@ -174,6 +175,9 @@
             break;
           case "py":
             this.editor.session.setMode(new PyMode());
+            break;
+          case "cmd":
+            getInteractionScriptMode().then(({ Mode }) => { this.editor.session.setMode(new Mode()) })
             break;
         }
       },
