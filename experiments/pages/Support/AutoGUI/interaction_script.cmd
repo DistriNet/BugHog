@@ -3,6 +3,6 @@ SLEEP 1
 
 SCREENSHOT
 
-# Comment
-CLICK_EL three
+# test
+CLICK 200 50%
 SLEEP 1
