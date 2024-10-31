@@ -2,7 +2,7 @@ import logging
 from inspect import signature
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
-from bci.browser.interaction.browsers.browser import Browser
+from bci.browser.interaction.simulation import Simulation
 
 logger = logging.getLogger(__name__)
 
@@ -16,36 +16,18 @@ class Interaction:
         self.script = script
 
     def execute(self) -> None:
-        interaction_browser = self._initiate_browser()
+        simulation = self._initiate_simulation()
 
-        self._interpret(interaction_browser)
+        self._interpret(simulation)
 
-        interaction_browser.navigate('https://a.test/report/?bughog_sanity_check=OK')
+        simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
+        simulation.sleep('0.5')
 
-    def _initiate_browser(self) -> Browser:
+    def _initiate_simulation(self) -> Simulation:
         # TODO - possibly return different browser instances
-        return Browser(self.browser)
-        """
-        cdp = re.search(
-            r'DevTools listening on ws:\/\/(.+):(.+)\/devtools\/browser\/(.+)\n',
-            init_output,
-        )
+        return Simulation(self.browser)
 
-        if cdp:
-            return Chromium(browser_id=cdp.group(3), port=int(cdp.group(2)), host=cdp.group(1))
-
-        bidi = re.search(
-            r'WebDriver BiDi listening on ws:\/\/(.+):(.+)',
-            init_output,
-        )
-
-        if bidi:
-            return Firefox(port=int(bidi.group(2)), host=bidi.group(1))
-
-        raise Exception('Unrecognized browser')
-        """
-
-    def _interpret(self, browser: Browser) -> None:
+    def _interpret(self, simulation: Simulation) -> None:
         for statement in self.script:
             if statement.strip() == '':
                 continue
@@ -56,12 +38,12 @@ class Interaction:
             if cmd == '#':
                 continue
 
-            if method_name not in Browser.public_methods:
+            if method_name not in Simulation.public_methods:
                 raise Exception(
-                    f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), Browser.public_methods))}.'
+                    f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), Simulation.public_methods))}.'
                 )
 
-            method = getattr(browser, method_name)
+            method = getattr(simulation, method_name)
             method_params_len = len(signature(method).parameters)
 
             if method_params_len != len(args):
