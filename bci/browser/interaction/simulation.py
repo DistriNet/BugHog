@@ -23,13 +23,23 @@ class Simulation:
     def __del__(self):
         self.browser_config.terminate()
 
+    def parse_position(self, position: str, max_value: int) -> int:
+        # Screen percentage
+        if position[-1] == '%':
+            return round(max_value * (int(position[:-1]) / 100))
+
+        # Absolute value in pixels
+        return int(position)
+
     # --- PUBLIC METHODS ---
     def navigate(self, url: str):
         self.browser_config.terminate()
         self.browser_config.open(url)
 
     def click(self, x: str, y: str):
-        gui.moveTo(int(x), int(y))
+        max_x, max_y = gui.size()
+
+        gui.moveTo(self.parse_position(x, max_x), self.parse_position(y, max_y))
         gui.click()
 
     def click_el(self, el_id: str):
