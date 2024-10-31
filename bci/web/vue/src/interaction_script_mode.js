@@ -1,4 +1,4 @@
-const KEYWORDS = "NAVIGATE|CLICK|SLEEP";
+const KEYWORDS = "NAVIGATE|CLICK|CLICK_EL|SLEEP|SCREENSHOT";
 
 ace.define("ace/mode/interaction_script_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module){"use strict";
     const oop = require("../lib/oop");

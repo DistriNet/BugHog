@@ -1,6 +1,8 @@
 NAVIGATE https://a.test/Support/AutoGUI/main
-SLEEP 0.5
+SLEEP 1
 
-# test
-CLICK 100 540
+SCREENSHOT
+
+# Comment
+CLICK_EL three
 SLEEP 1

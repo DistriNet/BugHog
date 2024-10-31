@@ -1,5 +1,3 @@
-<link rel="stylesheet" href="https://a.test/res/bughog.css">
-<style>
 .fullscreen {
     position: fixed;
     top: 0;
@@ -58,5 +56,3 @@
     top: 80px;
     left: 45px;
 }
-</style>
-<a href="https://a.test/report/?leak=AutoGUI" id="three">CLICK</a>
