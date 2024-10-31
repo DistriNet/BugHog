@@ -1,11 +1,8 @@
 import logging
-import re
 from inspect import signature
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
 from bci.browser.interaction.browsers.browser import Browser
-from bci.browser.interaction.browsers.chromium import Chromium
-from bci.browser.interaction.browsers.firefox import Firefox
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +47,14 @@ class Interaction:
 
     def _interpret(self, browser: Browser) -> None:
         for statement in self.script:
+            if statement.strip() == '':
+                continue
+
             cmd, *args = statement.split()
             method_name = cmd.lower()
+
+            if cmd == '#':
+                continue
 
             if method_name not in Browser.public_methods:
                 raise Exception(
