@@ -202,18 +202,7 @@ class CustomEvaluationFramework(EvaluationFramework):
             headers_file_path = os.path.join(page_path, 'headers.json')
             if not os.path.exists(headers_file_path):
                 with open(headers_file_path, 'w') as file:
-                    file.write(
-                        textwrap.dedent(
-                            """\
-                            [
-                                {
-                                    "key": "Header-Name",
-                                    "value": "Header-Value"
-                                }
-                            ]
-                        """
-                        )
-                    )
+                    file.write(self.get_default_file_content('headers.json'))
         self.sync_with_folders()
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
@@ -221,13 +210,13 @@ class CustomEvaluationFramework(EvaluationFramework):
 
     @staticmethod
     def get_default_file_content(file_type: str) -> str:
-        if file_type != 'py':
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'default_files/{file_type}')
+
+        if not os.path.exists(path):
             return ''
 
-        with open('experiments/pages/Support/PythonServer/a.test/py-server/index.py', 'r') as file:
-            template_content = file.read()
-
-        return template_content
+        with open(path, 'r') as file:
+            return file.read()
 
     @staticmethod
     def include_file_headers(file_type: str) -> bool:
