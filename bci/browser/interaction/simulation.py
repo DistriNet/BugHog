@@ -13,7 +13,18 @@ class Simulation:
     browser_config: BrowserConfig
     params: TestParameters
 
-    public_methods: list[str] = ['navigate', 'click', 'click_el', 'sleep', 'screenshot']
+    public_methods: list[str] = [
+        'navigate',
+        'click_position',
+        'click',
+        'write',
+        'press',
+        'hold',
+        'release',
+        'hotkey',
+        'sleep',
+        'screenshot',
+    ]
 
     def __init__(self, browser_config: BrowserConfig, params: TestParameters):
         self.browser_config = browser_config
@@ -37,17 +48,33 @@ class Simulation:
     def navigate(self, url: str):
         self.browser_config.terminate()
         self.browser_config.open(url)
+        self.sleep('0.5')
 
-    def click(self, x: str, y: str):
+    def click_position(self, x: str, y: str):
         max_x, max_y = gui.size()
 
         gui.moveTo(self.parse_position(x, max_x), self.parse_position(y, max_y))
         gui.click()
 
-    def click_el(self, el_id: str):
+    def click(self, el_id: str):
         el_image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'elements/{el_id}.png')
         x, y = gui.locateCenterOnScreen(el_image_path)
-        self.click(str(x), str(y))
+        self.click_position(str(x), str(y))
+
+    def write(self, text: str):
+        gui.write(text, interval=0.1)
+
+    def press(self, key: str):
+        gui.press(key)
+
+    def hold(self, key: str):
+        gui.keyDown(key)
+
+    def release(self, key: str):
+        gui.keyUp(key)
+
+    def hotkey(self, *keys: str):
+        gui.hotkey(*keys)
 
     def sleep(self, duration: str):
         sleep(float(duration))

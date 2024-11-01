@@ -22,20 +22,17 @@ class Interaction:
         simulation = Simulation(self.browser, self.params)
 
         self._interpret(simulation)
+        simulation.sleep('0.5')
 
         simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
-        simulation.sleep('0.5')
 
     def _interpret(self, simulation: Simulation) -> None:
         for statement in self.script:
-            if statement.strip() == '':
+            if statement.strip() == '' or statement[0] == '#':
                 continue
 
             cmd, *args = statement.split()
             method_name = cmd.lower()
-
-            if cmd == '#':
-                continue
 
             if method_name not in Simulation.public_methods:
                 raise Exception(
@@ -43,11 +40,12 @@ class Interaction:
                 )
 
             method = getattr(simulation, method_name)
-            method_params_len = len(signature(method).parameters)
+            method_params = list(signature(method).parameters.values())
 
-            if method_params_len != len(args):
+            # Allow different number of arguments only for variable argument number (*)
+            if len(method_params) != len(args) and (len(method_params) < 1 or str(method_params[0])[0] != '*'):
                 raise Exception(
-                    f'Invalid number of arguments for command `{cmd}`. Expected {method_params_len}, got {len(args)}.'
+                    f'Invalid number of arguments for command `{cmd}`. Expected {len(method_params)}, got {len(args)}.'
                 )
 
             logger.debug(f'Executing interaction method `{method_name}` with the arguments {args}')

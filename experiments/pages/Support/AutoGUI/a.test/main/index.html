@@ -5,6 +5,10 @@
     <script src="/res/bughog.js"></script>
 </head>
 <body>
-    <a href="/report/?leak=AutoGUI" id="three">CLICK</a>
+    <form action="/report" method="GET">
+        <input id="one">
+        <input name="leak" id="two">
+        <input type="submit">
+    </form>
 </body>
 </html>

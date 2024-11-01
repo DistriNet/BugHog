@@ -1,5 +1,18 @@
 NAVIGATE https://a.test/Support/AutoGUI/main
 SLEEP 1
-SCREENSHOT testtest
-CLICK_EL three
-SLEEP 1
+SCREENSHOT test
+
+CLICK one
+WRITE AutoGUI
+HOTKEY ctrl a
+HOTKEY ctrl c
+
+CLICK two
+
+# Equivalent to HOTKEY ctrl v
+HOLD ctrl
+HOLD v
+RELEASE v
+RELEASE ctrl
+
+PRESS Enter
