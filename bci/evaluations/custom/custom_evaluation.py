@@ -207,6 +207,22 @@ class CustomEvaluationFramework(EvaluationFramework):
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
         return True
+    
+    def add_config(self, project: str, poc: str, type: str) -> bool:
+        content = self.get_default_file_content(type)
+
+        if (content == ''):
+            return False
+
+        file_path = os.path.join(Global.custom_page_folder, project, poc, type)
+        with open(file_path, 'w') as file:
+            file.write(content)
+        
+        self.sync_with_folders()
+        # Notify clients of change (an experiment might now be runnable)
+        Clients.push_experiments_to_all()
+
+        return True
 
     @staticmethod
     def get_default_file_content(file_type: str) -> str:

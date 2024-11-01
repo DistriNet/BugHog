@@ -47,8 +47,8 @@
           'py',
         ],
         available_config_types: {
-          'interaction_script': 'Interaction script',
-          'url_queue': 'URL queue'
+          'interaction_script.cmd': 'Interaction script',
+          'url_queue.txt': 'URL queue'
         },
         poc_tree_config: {
           domain: 'Config',

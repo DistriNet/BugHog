@@ -155,6 +155,10 @@ class Main:
     @staticmethod
     def add_page(project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
         return Main.master.evaluation_framework.add_page(project, poc, domain, path, file_type)
+    
+    @staticmethod
+    def add_config(project: str, poc: str, type: str) -> bool:
+        return Main.master.evaluation_framework.add_config(project, poc, type)
 
     @staticmethod
     def sigint_handler(signum, frame):

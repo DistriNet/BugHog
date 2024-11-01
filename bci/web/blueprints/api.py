@@ -208,6 +208,20 @@ def add_page(project: str, poc: str):
         }
 
 
+@api.route('/poc/<string:project>/<string:poc>/config', methods=['POST'])
+def add_config(project: str, poc: str):
+    data = request.json.copy()
+    success = bci_api.add_config(project, poc, data['type'])
+    if success:
+        return {
+            'status': 'OK'
+        }
+    else:
+        return {
+            'status': 'NOK'
+        }
+
+
 @api.route('/poc/domain/', methods=['GET'])
 def get_available_domains():
     return {
