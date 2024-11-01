@@ -46,6 +46,10 @@
           'js',
           'py',
         ],
+        available_config_types: {
+          'interaction_script': 'Interaction script',
+          'url_queue': 'URL queue'
+        },
         poc_tree_config: {
           domain: 'Config',
           page: '_',
@@ -61,12 +65,16 @@
             type: null,
           }
         },
+        config_type: null,
         editor: null,
         timeout: null,
       }
     },
     computed: {
       active_poc_tree() {
+        const configDomain = this.poc_tree_config.domain;
+        const configPage = this.poc_tree_config.page;
+
         return Object.entries(this.active_poc.tree).reduce((acc, [domain, pages]) => {
           if (domain !== pages) {
             return [
@@ -75,11 +83,8 @@
             ]
           }
 
-          const configDomain = this.poc_tree_config.domain;
-          const configPage = this.poc_tree_config.page;
-
           // A single top-level file -> create a virtual config folder
-          const config_folder = acc.find(([domain]) => domain === configDomain) ?? [configDomain, {[configPage]: {}}];
+          const config_folder = acc.find(([domain]) => domain === configDomain);
           return [
             ...acc.filter(([domain]) => domain !== configDomain),
             [configDomain, {
@@ -89,7 +94,7 @@
               }
             }],
           ]
-        }, []);
+        }, [[configDomain, {[configPage]: {}}]]);
       }
     },
     methods: {
@@ -199,6 +204,19 @@
         .catch(() => {
 
         });
+      },
+      add_config() {
+        const url = `/api/poc/${this.project}/${this.poc}/config`;
+        axios.post(url, {
+          "type": this.config_type,
+        })
+        .then(() => {
+          this.update_poc_tree();
+          this.config_type = null;
+        })
+        .catch(() => {
+
+        });
       }
     },
     mounted() {
@@ -248,7 +266,12 @@
                     </a>
                   </template>
                   <template v-else>
-                    {{ domain}}
+                    <div class="w-full">
+                      {{ domain}}
+                    </div>
+                    <button v-if="files && Object.keys(files).length === 0" class="no-style" onclick="create_config_dialog.showModal()">
+                      <v-icon name="fa-plus" class="text-indigo-500"/>
+                    </button>
                   </template>
                 </div>
                 <ul>
@@ -301,6 +324,26 @@
       <div class="flex pt-3">
         <input class="button m-2 w-full" type="submit" value="Add domain">
         <input class="button m-2" type="button" value="Cancel" onclick="create_domain_dialog.close()">
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Create config dialog -->
+  <dialog id="create_config_dialog" class="dialog">
+    <form method="dialog" @submit="add_config">
+      <p>
+        <label>
+          <div class="py-2">Choose config type:</div>
+          <select name="config_type" id="config_type" v-model="config_type" required>
+            <option v-for="(label, value) of available_config_types" :value="value">
+              {{ label }}
+            </option>
+          </select>
+        </label>
+      </p>
+      <div class="flex pt-3">
+        <input class="button m-2 w-full" type="submit" value="Create config">
+        <input class="button m-2" type="button" value="Cancel" onclick="create_config_dialog.close()">
       </div>
     </form>
   </dialog>

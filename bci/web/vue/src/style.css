@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .button {
-  @apply text-white bg-blue-700 hover:bg-blue-800 active:ring-4 focus:outline-none font-medium rounded-lg text-sm px-4 py-2.5 text-center items-center dark:hover:bg-blue-700 dark:focus:ring-blue-800
+  @apply text-white bg-blue-700 hover:bg-blue-800 active:ring-4 focus:outline-none cursor-pointer font-medium rounded-lg text-sm px-4 py-2.5 text-center items-center dark:hover:bg-blue-700 dark:focus:ring-blue-800
 }
 
 .dropdown-head {
@@ -192,7 +192,7 @@ h1 {
   line-height: 1.1;
 }
 
-button {
+button:not(.no-style) {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -203,8 +203,8 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:focus,
-button:focus-visible {
+button:not(.no-style):focus,
+button:not(.no-style):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
