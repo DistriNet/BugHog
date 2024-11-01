@@ -48,7 +48,7 @@ class Simulation:
     def navigate(self, url: str):
         self.browser_config.terminate()
         self.browser_config.open(url)
-        self.sleep('0.5')
+        self.sleep(str(self.browser_config.get_navigation_sleep_duration()))
 
     def click_position(self, x: str, y: str):
         max_x, max_y = gui.size()

@@ -30,14 +30,14 @@
 #two {
     background-color: #dcbeff;
     color: #dcbeff;
-    top: 45px;
+    top: 70px;
     left: 10px;
 }
 
 #three {
     background-color: #ffe119;
     color: #ffe119;
-    top: 80px;
+    top: 130px;
     left: 10px;
 }
 
@@ -45,19 +45,19 @@
     background-color: #4363d8;
     color: #4363d8;
     top: 10px;
-    left: 45px;
+    left: 85px;
 }
 
 #five {
     background-color: #f58231;
     color: #f58231;
-    top: 45px;
-    left: 45px;
+    top: 70px;
+    left: 85px;
 }
 
 #six {
     background-color: #000075;
     color: #000075;
-    top: 80px;
-    left: 45px;
+    top: 130px;
+    left: 85px;
 }

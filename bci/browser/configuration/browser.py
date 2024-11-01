@@ -100,6 +100,10 @@ class Browser:
     def _get_terminal_args(self) -> list[str]:
         pass
 
+    @abstractmethod
+    def get_navigation_sleep_duration(self) -> int:
+        pass
+
     @staticmethod
     def get_browser(
         browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, state: State

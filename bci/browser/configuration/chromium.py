@@ -32,6 +32,9 @@ SELENIUM_USED_FLAGS = [
 
 class Chromium(Browser):
 
+    def get_navigation_sleep_duration(self) -> int:
+        return 1
+
     def _get_terminal_args(self) -> list[str]:
         assert self._profile_path is not None
 

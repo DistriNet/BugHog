@@ -20,6 +20,9 @@ SELENIUM_USED_FLAGS = [
 
 class Firefox(Browser):
 
+    def get_navigation_sleep_duration(self) -> int:
+        return 2
+
     def _get_terminal_args(self) -> list[str]:
         assert self._profile_path is not None
 

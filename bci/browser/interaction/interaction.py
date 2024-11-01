@@ -21,12 +21,11 @@ class Interaction:
     def execute(self) -> None:
         simulation = Simulation(self.browser, self.params)
 
-        self._interpret(simulation)
-        simulation.sleep('0.5')
+        if self._interpret(simulation):
+            simulation.sleep(str(self.browser.get_navigation_sleep_duration()))
+            simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
 
-        simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
-
-    def _interpret(self, simulation: Simulation) -> None:
+    def _interpret(self, simulation: Simulation) -> bool:
         for statement in self.script:
             if statement.strip() == '' or statement[0] == '#':
                 continue
@@ -49,4 +48,10 @@ class Interaction:
                 )
 
             logger.debug(f'Executing interaction method `{method_name}` with the arguments {args}')
-            method(*args)
+
+            try:
+                method(*args)
+            except:
+                return False
+
+        return True
