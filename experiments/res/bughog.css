@@ -1,18 +1,23 @@
-.fullscreen {
+#fullscreen, #one, #two, #three, #four, #five, #six {
     position: fixed;
+    z-index: 10;
+    font-size: 0;
+    border: none;
+    outline: none;
+    resize: none;
+}
+
+#fullscreen {
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: red;
-    z-index: 10;
 }
 
 #one, #two, #three, #four, #five, #six {
-    position: fixed;
     width: 25px;
     height: 20px;
-    font-size: 0;
 }
 
 #one {
