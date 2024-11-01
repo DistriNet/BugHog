@@ -192,7 +192,7 @@ h1 {
   line-height: 1.1;
 }
 
-button:not(.no-style) {
+button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -203,9 +203,15 @@ button:not(.no-style) {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:not(.no-style):focus,
-button:not(.no-style):focus-visible {
+button:focus,
+button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+button.no-style {
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .card {
