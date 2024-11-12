@@ -104,8 +104,15 @@
         this.active_file.name = file_name;
         const project = this.project;
         const poc = this.active_poc.name;
-        const path = `/api/poc/${project}/${poc}/${domain}/${file_path}/${file_name}/`;
-        axios.get(path)
+        const params = {};
+        if (domain !== null) {
+          params["domain"] = domain;
+        }
+        if (file_path !== null) {
+          params["path"] = file_path;
+        }
+        const path = `/api/poc/${project}/${poc}/${file_name}/`;
+        axios.get(path, {params: params})
         .then((res) => {
           if (res.data.status === "OK") {
             this.active_file.should_update_server = false;
@@ -139,8 +146,17 @@
           const domain = this.active_poc.active_domain;
           const file_path = this.active_poc.active_path;
           const file_name = this.active_file.name;
-          const path = `/api/poc/${project}/${poc}/${domain}/${file_path}/${file_name}/`;
-          axios.post(path, {"content": this.editor.session.getValue()})
+          const params = {
+            "content": this.editor.session.getValue()
+          };
+          if (domain !== null) {
+            params["domain"] = domain;
+          }
+          if (file_path !== null) {
+            params["path"] = file_path;
+          }
+          const path = `/api/poc/${project}/${poc}/${file_name}/`;
+          axios.post(path, {"content": this.editor.session.getValue()}, {params: params})
           .then((res) => {
             if (res.data.status == "NOK") {
               console.error("Could not update file on server");
@@ -153,7 +169,6 @@
       },
       update_poc_tree(poc_name) {
         const active_poc_name = poc_name === undefined ? this.active_poc.name : poc_name;
-        console.log(active_poc_name);
         const path = `/api/poc/${this.project}/${active_poc_name}/`;
         axios.get(path)
         .then((res) => {
@@ -253,39 +268,63 @@
     <div v-else class="basis-4/12 w-1/12 h-full grow overflow-y-auto">
       <ul class="relative flex flex-col text-gray-700 bg-white shadow-md w-96 rounded-md bg-clip-border dark:bg-dark-3 dark:text-white">
         <nav class="flex min-w-[240px] h-full flex-col gap-1 p-2 font-sans text-base font-normal text-blue-gray-700">
-          <li v-for="([domain, pages, index]) in active_poc_tree">
-            <ul>
-              <li v-for="([path, files, index]) in Object.entries(pages)">
-                <div class="flex border-b-2 p-2 font-bold mb-2" >
-                  <template v-if="domain !== poc_tree_config.domain">
+          <li v-for="([domain, pages]) in Object.entries(active_poc.tree).sort()">
+            <div v-if="domain === 'url_queue.txt' || domain === 'interaction_script.cmd'">
+              <div class="flex border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900" >
+                <div
+                    role="button"
+                    class="rounded-lg"
+                    @click="set_active_file(null, null, domain)"
+                  >
+                  <div class="w-full">
+                    {{ domain }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul v-else>
+              <li v-for="([path, files]) in Object.entries(pages).sort()">
+                <div v-if="files">
+                  <div class="flex border-b-2 p-2 font-bold mb-2" >
                     <div class="w-full">
                       {{ domain }}/{{ path }}
                     </div>
                     <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
                       <v-icon name="fa-link" class=""/>
                     </a>
-                  </template>
-                  <template v-else>
-                    <div class="w-full">
-                      {{ domain}}
-                    </div>
                     <button v-if="files && Object.keys(files).length === 0" class="no-style" onclick="create_config_dialog.showModal()">
                       <v-icon name="fa-plus" class="text-indigo-500"/>
                     </button>
-                  </template>
+                  </div>
+                  <ul>
+                    <li v-for="([file, _]) in Object.entries(files)"
+                    :class="(domain + '/' + path === this.active_poc.active_domain + '/' + this.active_poc.active_path) && (file === this.active_file.name) ? 'bg-blue-100 dark:bg-blue-900 rounded-lg' : 'rounded-lg'">
+                      <div
+                        role="button"
+                        class="flex items-center indent-4 w-full p-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900 rounded-lg"
+                        @click="set_active_file(domain, path, file)"
+                      >
+                        {{ file }}
+                      </div>
+                    </li>
+                  </ul>
                 </div>
-                <ul>
-                  <li v-for="file in files"
-                  :class="(domain + '/' + path === this.active_poc.active_domain + '/' + this.active_poc.active_path) && (file === this.active_file.name) ? 'bg-blue-100 dark:bg-blue-900 rounded-lg' : 'rounded-lg'">
-                    <div
+                <div v-else class="flex justify-between border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900">
+                  <div
                       role="button"
-                      class="flex items-center indent-4 w-full p-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900 rounded-lg"
-                      @click="set_active_file(domain, path, file)"
+                      class="rounded-lg"
+                      @click="set_active_file(domain, null, path)"
                     >
-                      {{ file }}
+                    <div class="w-full">
+                      {{ domain }}/{{ path }}
                     </div>
-                  </li>
-                </ul>
+                  </div>
+                  <div>
+                    <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
+                      <v-icon name="fa-link" class=""/>
+                    </a>
+                  </div>
+                </div>
               </li>
             </ul>
           </li>

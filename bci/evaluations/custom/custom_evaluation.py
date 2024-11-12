@@ -1,6 +1,6 @@
 import logging
 import os
-import textwrap
+from typing import Optional
 
 from bci.browser.configuration.browser import Browser
 from bci.browser.interaction.interaction import Interaction
@@ -21,15 +21,29 @@ class CustomEvaluationFramework(EvaluationFramework):
 
     @staticmethod
     def initialize_dir_tree() -> dict:
+        """
+        Initializes directory tree of experiments.
+        """
         path = Global.custom_page_folder
+        dir_tree = {}
 
-        def path_to_dict(path):
-            if os.path.isdir(path):
-                return {sub_folder: path_to_dict(os.path.join(path, sub_folder)) for sub_folder in os.listdir(path)}
+        def set_nested_value(d: dict, keys: list[str], value: dict):
+            nested_dict = d
+            for key in keys[:-1]:
+                nested_dict = nested_dict[key]
+            nested_dict[keys[-1]] = value
+
+        for root, dirs, files in os.walk(path):
+            # Remove base path from root
+            root = root[len(path):]
+            keys = root.split('/')[1:]
+            subdir_tree = {dir: {} for dir in dirs} | {file: None for file in files}
+            if root:
+                set_nested_value(dir_tree, keys, subdir_tree)
             else:
-                return os.path.basename(path)
+                dir_tree = subdir_tree
 
-        return path_to_dict(path)
+        return dir_tree
 
     @staticmethod
     def initialize_tests_and_interactions(dir_tree: dict) -> dict:
@@ -40,16 +54,14 @@ class CustomEvaluationFramework(EvaluationFramework):
             project_path = os.path.join(page_folder_path, project)
             experiments_per_project[project] = {}
             for experiment in experiments:
-                interaction_script = CustomEvaluationFramework.__get_interaction_script(project_path, experiment)
                 data = {}
 
-                if interaction_script is not None:
+                if interaction_script := CustomEvaluationFramework.__get_interaction_script(project_path, experiment):
                     data['interaction_script'] = interaction_script
-                else:
-                    url_queue = CustomEvaluationFramework.__get_url_queue(project, project_path, experiment)
+                elif url_queue := CustomEvaluationFramework.__get_url_queue(project, project_path, experiment):
                     data['url_queue'] = url_queue
 
-                data['runnable'] = CustomEvaluationFramework.is_runnable_experiment(project, experiment, dir_tree)
+                data['runnable'] = CustomEvaluationFramework.is_runnable_experiment(project, experiment, dir_tree, data)
 
                 experiments_per_project[project][experiment] = data
         return experiments_per_project
@@ -64,7 +76,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         return None
 
     @staticmethod
-    def __get_url_queue(project: str, project_path: str, experiment: str) -> list[str]:
+    def __get_url_queue(project: str, project_path: str, experiment: str) -> Optional[list[str]]:
         url_queue_file_path = os.path.join(project_path, experiment, 'url_queue.txt')
         if os.path.isfile(url_queue_file_path):
             # If an URL queue is specified, it is parsed and used
@@ -80,14 +92,21 @@ class CustomEvaluationFramework(EvaluationFramework):
                         f'https://{domain}/{project}/{experiment}/main',
                         'https://a.test/report/?bughog_sanity_check=OK',
                     ]
-        raise AttributeError(f"Could not infer url queue for experiment '{experiment}' in project '{project}'")
+        return None
 
     @staticmethod
-    def is_runnable_experiment(project: str, poc: str, dir_tree: dict) -> bool:
+    def is_runnable_experiment(project: str, poc: str, dir_tree: dict[str,dict], data: dict[str,str]) -> bool:
+        # Always runnable if there is either an interaction script or url_queue present
+        if 'interaction_script' in data or 'url_queue' in data:
+            return True
+
+        # Should have exactly one main folder otherwise
         domains = dir_tree[project][poc]
-        if not (poc_main_path := [paths for domain, paths in domains.items() if 'main' in paths]):
+        main_paths = [paths for paths in domains.values() if paths is not None and 'main' in paths.keys()]
+        if len(main_paths) != 1:
             return False
-        if 'index.html' not in poc_main_path[0]['main'].keys():
+        # Main should have index.html
+        if 'index.html' not in main_paths[0]['main'].keys():
             return False
         return True
 
@@ -207,7 +226,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
         return True
-    
+
     def add_config(self, project: str, poc: str, type: str) -> bool:
         content = self.get_default_file_content(type)
 
@@ -217,7 +236,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         file_path = os.path.join(Global.custom_page_folder, project, poc, type)
         with open(file_path, 'w') as file:
             file.write(content)
-        
+
         self.sync_with_folders()
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
