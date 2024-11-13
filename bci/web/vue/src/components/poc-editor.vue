@@ -232,6 +232,14 @@
         .catch(() => {
 
         });
+      },
+      has_config() {
+        if (this.active_poc.tree === undefined) {
+          console.error("Could not check config in undefined poc tree");
+          return false;
+        }
+        const arr = Object.keys(this.active_poc.tree).filter((domain) => ['url_queue.txt', 'interaction_script.cmd'].includes(domain));
+        return arr.length > 0;
       }
     },
     mounted() {
@@ -292,9 +300,6 @@
                     <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
                       <v-icon name="fa-link" class=""/>
                     </a>
-                    <button v-if="files && Object.keys(files).length === 0" class="no-style" onclick="create_config_dialog.showModal()">
-                      <v-icon name="fa-plus" class="text-indigo-500"/>
-                    </button>
                   </div>
                   <ul>
                     <li v-for="([file, _]) in Object.entries(files)"
@@ -328,9 +333,14 @@
               </li>
             </ul>
           </li>
-          <li role="button" class="button text-center" onclick="create_domain_dialog.showModal()">
-            Add page
-          </li>
+          <div class="flex flex-row justify-between">
+            <li role="button" class="button text-center w-full mr-1" onclick="create_domain_dialog.showModal()">
+              Add page
+            </li>
+            <li v-if="!this.has_config()" role="button" class="button text-center w-full mr-1" onclick="create_config_dialog.showModal()">
+              Add script
+            </li>
+          </div>
         </nav>
       </ul>
     </div>
