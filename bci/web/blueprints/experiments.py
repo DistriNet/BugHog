@@ -91,7 +91,7 @@ def report_leak_if_using_http(target_scheme):
     used_scheme = request.headers.get("X-Forwarded-Proto")
     params = __get_all_GET_parameters(request)
     if used_scheme == target_scheme:
-        return "Redirect", 307, {"Location": url_for("experiments.report", **params)}
+        return "Redirect", 307, {"Location": url_for("experiments.report_endpoint", **params)}
     else:
         return f"Request was received over {used_scheme}, instead of {target_scheme}", 200, {}
 
@@ -109,7 +109,7 @@ def report_leak_if_present(expected_header_name: str):
         "Redirect",
         307,
         {
-            "Location": url_for("experiments.report", **params),
+            "Location": url_for("experiments.report_endpoint", **params),
             "Allow-CSP-From": "*",
         },
     )
@@ -134,7 +134,7 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
         "Redirect",
         307,
         {
-            "Location": url_for("experiments.report", **params),
+            "Location": url_for("experiments.report_endpoint", **params),
             "Allow-CSP-From": "*",
         },
     )

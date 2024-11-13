@@ -73,7 +73,9 @@ class RequestCollector(BaseCollector):
 
     def stop(self):
         data = []
-        regex = r'bughog_(.+)=(.+)'
+        # Important: we only consider requests to the /report/ endpoint where the bughog parameter immediately follows.
+        # Otherwise conditional endpoints (e.g., /report/if/Referer/) cause false positives.
+        regex = r'/report/\?bughog_(.+)=(.+)'
         if self.__httpd:
             self.__httpd.shutdown()
             if self.__thread:
