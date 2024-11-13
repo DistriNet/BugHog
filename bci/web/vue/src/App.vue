@@ -78,7 +78,8 @@ export default {
         project: null,
       },
       dialog: {
-        new_experiment_name: null
+        new_experiment_name: null,
+        new_project_name: null
       },
       darkmode: null,
       darkmode_toggle: null,
@@ -131,9 +132,6 @@ export default {
     },
   },
   watch: {
-    "selected.project": function (val) {
-      this.set_curr_project(val);
-    },
     "selected.experiment": function (val) {
       if (val !== null) {
         this.hide_poc_editor = false;
@@ -235,7 +233,10 @@ export default {
           "get": ["all"],
         });
         // This might be a re-open after connection loss, which means we might have to propagate our params again
-        this.propagate_new_params()
+        if (this.selected.project !== null) {
+          this.set_curr_project(this.selected.project);
+        }
+        this.propagate_new_params();
       });
       websocket.addEventListener("message", () => {
         const data = JSON.parse(event.data);
@@ -288,12 +289,15 @@ export default {
         localStorage.setItem('theme', 'light');
       }
     },
-    get_projects() {
+    get_projects(cb) {
       const path = `/api/projects/`;
       axios.get(path)
         .then((res) => {
           if (res.data.status == "OK") {
             this.projects = res.data.projects;
+            if (cb !== undefined) {
+              cb();
+            }
           }
         })
         .catch((error) => {
@@ -336,11 +340,20 @@ export default {
         console.log("Missing plot parameters: ", this.missing_plot_params);
       }
     },
+    project_dropdown_change(event) {
+      const option = event.target.value;
+      if (option == "Create new project...") {
+        create_project_dialog.showModal();
+      } else {
+        this.set_curr_project(option)
+      }
+    },
     set_curr_project(project) {
       this.eval_params.project = project;
       this.send_with_socket({
         "select_project": project
       })
+      this.selected.project = project;
       this.eval_params.tests = [];
     },
     set_curr_browser(browser) {
@@ -389,7 +402,21 @@ export default {
         this.dialog.new_experiment_name = null;
       })
       .catch((error) => {
-        console.log('Could not create new experiment');
+        console.error('Could not create new experiment');
+      });
+    },
+    create_new_project() {
+      const url = `/api/projects/`;
+      const new_project_name = this.dialog.new_project_name;
+      axios.post(url, {'project_name': new_project_name})
+      .then((res) => {
+        this.dialog.new_project_name = null;
+        this.get_projects(() => {
+          this.set_curr_project(new_project_name);
+        });
+      })
+      .catch((error) => {
+        console.error('Could not create new project', error);
       });
     },
   },
@@ -465,9 +492,10 @@ export default {
       <div class="form-section flex flex-col grow h-0">
         <section-header section="experiments" class="w-1/2"></section-header>
 
-        <select class="mb-2" v-model="selected.project">
+        <select id="project_dropdown" class="mb-2" @change="project_dropdown_change" v-model="selected.project">
           <option disabled value="">Select a project</option>
           <option v-for="project in projects">{{ project }}</option>
+          <option>Create new project...</option>
         </select>
 
         <div class="h-0 grow overflow-y-auto overflow-x-hidden">
@@ -680,6 +708,24 @@ export default {
       <div class="flex pt-3">
         <input type="submit" value="Create file" class="button m-2 w-full">
         <input type="button" value="Cancel" class="button m-2" onclick="create_experiment_dialog.close()">
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Create project dialog -->
+  <dialog id="create_project_dialog" class="dialog">
+    <form method="dialog" @submit="create_new_project">
+      <p>
+        <label>
+          <div class="pb-5">
+            Enter new project name:
+          </div>
+          <input type="text" v-model="dialog.new_project_name" class="input-box" required autocomplete="off" />
+        </label>
+      </p>
+      <div class="flex pt-3">
+        <input type="submit" value="Create project" class="button m-2 w-full">
+        <input type="button" value="Cancel" class="button m-2" onclick="create_project_dialog.close()">
       </div>
     </form>
   </dialog>

@@ -166,6 +166,20 @@ class CustomEvaluationFramework(EvaluationFramework):
     def get_projects(self) -> list[str]:
         return sorted(list(self.tests_per_project.keys()))
 
+    def create_empty_project(self, project_name: str) -> bool:
+        if project_name is None or project_name == '':
+            logger.error('Given project name is invalid')
+            return False
+
+        if project_name in self.dir_tree:
+            logger.error(f"Given project name '{project_name}' already exists")
+            return False
+
+        new_project_path = os.path.join(Global.custom_page_folder, project_name)
+        os.mkdir(new_project_path)
+        self.sync_with_folders()
+        return True
+
     def get_poc_structure(self, project: str, poc: str) -> dict:
         return self.dir_tree[project][poc]
 

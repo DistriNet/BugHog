@@ -30,7 +30,7 @@
           },
           "experiments": {
             "title": "Experiments",
-            "tooltip": "Pick a project from the dropdown menu to access all available experiments. Then, mark the experiments you wish to conduct. Keep in mind that if multiple experiments are chosen, only a binary sequence will be performed. For a binary search or composite search, select only one experiment."
+            "tooltip": "Pick a project from the dropdown menu to access all available experiments. Then, mark the experiments you wish to conduct. A selection of multiple experiments will be conducted one by one."
           },
           "parallel_containers": {
             "title": "Number of parallel containers",

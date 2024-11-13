@@ -92,6 +92,10 @@ class Main:
         return Main.master.evaluation_framework.get_projects()
 
     @staticmethod
+    def create_empty_project(project_name: str) -> bool:
+        return Main.master.evaluation_framework.create_empty_project(project_name)
+
+    @staticmethod
     def convert_to_plotparams(data: dict) -> PlotParameters:
         if data.get("lower_version", None) and data.get("upper_version", None):
             major_version_range = (data["lower_version"], data["upper_version"])
@@ -155,7 +159,7 @@ class Main:
     @staticmethod
     def add_page(project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
         return Main.master.evaluation_framework.add_page(project, poc, domain, path, file_type)
-    
+
     @staticmethod
     def add_config(project: str, poc: str, type: str) -> bool:
         return Main.master.evaluation_framework.add_config(project, poc, type)

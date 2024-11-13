@@ -1,5 +1,6 @@
 import json
 import threading
+from venv import logger
 
 from simple_websocket import Server
 
@@ -86,7 +87,12 @@ class Clients:
     def push_experiments(ws_client: Server):
         from bci.main import Main as bci_api
 
-        project = Clients.__clients[ws_client].get('project', None)
+        client_info = Clients.__clients[ws_client]
+        if client_info is None:
+            logger.error('Could not find any associated info for this client')
+            return
+
+        project = client_info.get('project', None)
         if project:
             experiments = bci_api.get_mech_groups_of_evaluation_framework('custom', project)
             ws_client.send(json.dumps({'update': {'experiments': experiments}}))

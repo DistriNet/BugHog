@@ -135,6 +135,20 @@ def get_projects():
     }
 
 
+@api.route('/projects/', methods=['POST'])
+def create_project():
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No parameters found"
+        }
+    project_name = request.json.get('project_name')
+    return {
+        'status': 'OK',
+        'projects': bci_api.create_empty_project(project_name)
+    }
+
+
 @api.route('/system/', methods=['GET'])
 def get_system_info():
     return {
@@ -240,6 +254,11 @@ def add_page(project: str, poc: str):
 
 @api.route('/poc/<string:project>/<string:poc>/config', methods=['POST'])
 def add_config(project: str, poc: str):
+    if request.json is None:
+        return {
+            'status': 'NOK',
+            'msg': "No parameters found"
+        }
     data = request.json.copy()
     success = bci_api.add_config(project, poc, data['type'])
     if success:
