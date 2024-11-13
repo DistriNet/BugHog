@@ -31,14 +31,24 @@
             // Example tree:
             // {
             //   'test.com': {
-            //     "path1": ["file1", "file2"],
-            //     "path2": ["file1"],
+            //     "path1": {
+            //        "file1": null,
+            //        "file2": null
+            //     },
+            //     "path2": {
+            //        "file1": null
+            //     },
             //   },
             //   'not.test': {
-            //     "path1": ["file1", "file2"],
-            //     "path2": ["file1"],
+            //     "path1": {
+            //        "file1": null,
+            //        "file2": null
+            //     },
+            //     "path2": {
+            //        "file1": null
+            //     },
             //   },
-            //  'interaction_script.cmd': 'interaction_script.cmd',
+            //  'script.cmd': null,
             // },
         },
         available_file_types: [
@@ -47,7 +57,7 @@
           'py',
         ],
         available_config_types: {
-          'interaction_script.cmd': 'Interaction script',
+          'script.cmd': 'Interaction script',
           'url_queue.txt': 'URL queue'
         },
         poc_tree_config: {
@@ -238,7 +248,7 @@
           console.error("Could not check config in undefined poc tree");
           return false;
         }
-        const arr = Object.keys(this.active_poc.tree).filter((domain) => ['url_queue.txt', 'interaction_script.cmd'].includes(domain));
+        const arr = Object.keys(this.active_poc.tree).filter((domain) => ['url_queue.txt', 'script.cmd'].includes(domain));
         return arr.length > 0;
       }
     },
@@ -277,17 +287,12 @@
       <ul class="relative flex flex-col text-gray-700 bg-white shadow-md w-96 rounded-md bg-clip-border dark:bg-dark-3 dark:text-white">
         <nav class="flex min-w-[240px] h-full flex-col gap-1 p-2 font-sans text-base font-normal text-blue-gray-700">
           <li v-for="([domain, pages]) in Object.entries(active_poc.tree).sort()">
-            <div v-if="domain === 'url_queue.txt' || domain === 'interaction_script.cmd'">
-              <div class="flex border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900" >
-                <div
-                    role="button"
-                    class="rounded-lg"
-                    @click="set_active_file(null, null, domain)"
-                  >
-                  <div class="w-full">
-                    {{ domain }}
-                  </div>
-                </div>
+            <div v-if="domain === 'url_queue.txt' || domain === 'script.cmd'">
+              <div
+                class="flex border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
+                role="button"
+                @click="set_active_file(null, null, domain)" >
+                {{ domain }}
               </div>
             </div>
             <ul v-else>

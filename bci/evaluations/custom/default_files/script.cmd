@@ -1,4 +1,4 @@
-# TODO - add your interaction script using the commands 
+# TODO - add your interaction script using the commands
 
 # NAVIGATE url
 # CLICK_POSITION x y    where x and y are absolute numbers or screen percentages

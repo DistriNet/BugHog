@@ -57,7 +57,7 @@ class CustomEvaluationFramework(EvaluationFramework):
                 data = {}
 
                 if interaction_script := CustomEvaluationFramework.__get_interaction_script(project_path, experiment):
-                    data['interaction_script'] = interaction_script
+                    data['script'] = interaction_script
                 elif url_queue := CustomEvaluationFramework.__get_url_queue(project, project_path, experiment):
                     data['url_queue'] = url_queue
 
@@ -68,7 +68,7 @@ class CustomEvaluationFramework(EvaluationFramework):
 
     @staticmethod
     def __get_interaction_script(project_path: str, experiment: str) -> list[str] | None:
-        interaction_file_path = os.path.join(project_path, experiment, 'interaction_script.cmd')
+        interaction_file_path = os.path.join(project_path, experiment, 'script.cmd')
         if os.path.isfile(interaction_file_path):
             # If an interaction script is specified, it is parsed and used
             with open(interaction_file_path) as file:
@@ -97,7 +97,7 @@ class CustomEvaluationFramework(EvaluationFramework):
     @staticmethod
     def is_runnable_experiment(project: str, poc: str, dir_tree: dict[str,dict], data: dict[str,str]) -> bool:
         # Always runnable if there is either an interaction script or url_queue present
-        if 'interaction_script' in data or 'url_queue' in data:
+        if 'script' in data or 'url_queue' in data:
             return True
 
         # Should have exactly one main folder otherwise
@@ -123,8 +123,8 @@ class CustomEvaluationFramework(EvaluationFramework):
             experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
 
             max_tries = 3
-            if 'interaction_script' in experiment:
-                interaction = Interaction(browser, experiment['interaction_script'], params)
+            if 'script' in experiment:
+                interaction = Interaction(browser, experiment['script'], params)
                 tries = 0
                 while tries < max_tries:
                     tries += 1
