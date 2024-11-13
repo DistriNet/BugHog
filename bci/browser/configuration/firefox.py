@@ -2,9 +2,8 @@ import os
 
 from bci import cli
 from bci.browser.configuration.browser import Browser
-from bci.browser.configuration.options import Default, BlockThirdPartyCookies, PrivateBrowsing, TrackingProtection
+from bci.browser.configuration.options import BlockThirdPartyCookies, Default, PrivateBrowsing, TrackingProtection
 from bci.browser.configuration.profile import prepare_firefox_profile
-
 
 SUPPORTED_OPTIONS = [
     Default(),
@@ -21,11 +20,15 @@ SELENIUM_USED_FLAGS = [
 
 class Firefox(Browser):
 
+    def get_navigation_sleep_duration(self) -> int:
+        return 2
+
     def _get_terminal_args(self) -> list[str]:
         assert self._profile_path is not None
 
         args = [self._get_executable_file_path()]
         args.extend(['-profile', self._profile_path])
+        args.append('-setDefaultBrowser')
         user_prefs = []
 
         def add_user_pref(key: str, value: str | int | bool):
@@ -45,6 +48,7 @@ class Firefox(Browser):
         # add_user_pref('network.proxy.type', 1)
 
         add_user_pref('app.update.enabled', False)
+        add_user_pref('browser.shell.checkDefaultBrowser', False)
         if 'default' in self.browser_config.browser_setting:
             pass
         elif 'btpc' in self.browser_config.browser_setting:

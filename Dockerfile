@@ -54,7 +54,11 @@ RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 # Install python packages
 COPY requirements.txt /app/requirements.txt
 RUN pip install --user -r /app/requirements.txt
+RUN apt-get install python3-tk python3-xlib gnome-screenshot -y
 
+# Initiate PyAutoGUI
+RUN touch /root/.Xauthority && \
+    xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
 
 FROM base AS core
 # Copy rest of source code

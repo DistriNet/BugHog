@@ -6,6 +6,17 @@ nginx/ssl/keys/*
 !**/.gitkeep
 **/node_modules
 **/junit.xml
+
+# Screenshots
+logs/screenshots/*
+!logs/screenshots/.gitkeep
+
+# Fish shell
+$HOME
+
+# JetBrains IDEs
+.idea
+
 # Created by https://www.toptal.com/developers/gitignore/api/intellij,python,flask,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij,python,flask,macos
 

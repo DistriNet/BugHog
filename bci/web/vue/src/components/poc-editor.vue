@@ -4,6 +4,7 @@
   import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
   import { Mode as JsonMode } from 'ace-builds/src-noconflict/mode-json';
   import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
+  import { getMode as getInteractionScriptMode } from '../interaction_script_mode';
   import 'ace-builds/src-min-noconflict/ext-modelist';
   import 'ace-builds/src-min-noconflict/theme-twilight';
   import 'ace-builds/src-min-noconflict/theme-xcode';
@@ -30,13 +31,24 @@
             // Example tree:
             // {
             //   'test.com': {
-            //     "path1": ["file1", "file2"],
-            //     "path2": ["file1"],
+            //     "path1": {
+            //        "file1": null,
+            //        "file2": null
+            //     },
+            //     "path2": {
+            //        "file1": null
+            //     },
             //   },
             //   'not.test': {
-            //     "path1": ["file1", "file2"],
-            //     "path2": ["file1"],
+            //     "path1": {
+            //        "file1": null,
+            //        "file2": null
+            //     },
+            //     "path2": {
+            //        "file1": null
+            //     },
             //   },
+            //  'script.cmd': null,
             // },
         },
         available_file_types: [
@@ -44,6 +56,14 @@
           'js',
           'py',
         ],
+        available_config_types: {
+          'script.cmd': 'Interaction script',
+          'url_queue.txt': 'URL queue'
+        },
+        poc_tree_config: {
+          domain: 'Config',
+          page: '_',
+        },
         dialog: {
           domain: {
             name: null,
@@ -55,8 +75,36 @@
             type: null,
           }
         },
+        config_type: null,
         editor: null,
         timeout: null,
+      }
+    },
+    computed: {
+      active_poc_tree() {
+        const configDomain = this.poc_tree_config.domain;
+        const configPage = this.poc_tree_config.page;
+
+        return Object.entries(this.active_poc.tree).reduce((acc, [domain, pages]) => {
+          if (domain !== pages) {
+            return [
+              ...acc,
+              [domain, pages]
+            ]
+          }
+
+          // A single top-level file -> create a virtual config folder
+          const config_folder = acc.find(([domain]) => domain === configDomain);
+          return [
+            ...acc.filter(([domain]) => domain !== configDomain),
+            [configDomain, {
+              [configPage]: {
+                ...config_folder[1].subfolder,
+                [domain]: pages,
+              }
+            }],
+          ]
+        }, [[configDomain, {[configPage]: {}}]]);
       }
     },
     methods: {
@@ -158,6 +206,9 @@
           case "py":
             this.editor.session.setMode(new PyMode());
             break;
+          case "cmd":
+            getInteractionScriptMode().then(({ Mode }) => { this.editor.session.setMode(new Mode()) })
+            break;
         }
       },
       add_page() {
@@ -178,6 +229,27 @@
         .catch(() => {
 
         });
+      },
+      add_config() {
+        const url = `/api/poc/${this.project}/${this.poc}/config`;
+        axios.post(url, {
+          "type": this.config_type,
+        })
+        .then(() => {
+          this.update_poc_tree();
+          this.config_type = null;
+        })
+        .catch(() => {
+
+        });
+      },
+      has_config() {
+        if (this.active_poc.tree === undefined) {
+          console.error("Could not check config in undefined poc tree");
+          return false;
+        }
+        const arr = Object.keys(this.active_poc.tree).filter((domain) => ['url_queue.txt', 'script.cmd'].includes(domain));
+        return arr.length > 0;
       }
     },
     mounted() {
@@ -215,17 +287,12 @@
       <ul class="relative flex flex-col text-gray-700 bg-white shadow-md w-96 rounded-md bg-clip-border dark:bg-dark-3 dark:text-white">
         <nav class="flex min-w-[240px] h-full flex-col gap-1 p-2 font-sans text-base font-normal text-blue-gray-700">
           <li v-for="([domain, pages]) in Object.entries(active_poc.tree).sort()">
-            <div v-if="domain === 'url_queue.txt'">
-              <div class="flex border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900" >
-                <div
-                    role="button"
-                    class="rounded-lg"
-                    @click="set_active_file(null, null, domain)"
-                  >
-                  <div class="w-full">
-                    {{ domain }}
-                  </div>
-                </div>
+            <div v-if="domain === 'url_queue.txt' || domain === 'script.cmd'">
+              <div
+                class="flex border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
+                role="button"
+                @click="set_active_file(null, null, domain)" >
+                {{ domain }}
               </div>
             </div>
             <ul v-else>
@@ -252,7 +319,7 @@
                     </li>
                   </ul>
                 </div>
-                <div class="flex justify-between border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900" v-else>
+                <div v-else class="flex justify-between border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900">
                   <div
                       role="button"
                       class="rounded-lg"
@@ -271,9 +338,14 @@
               </li>
             </ul>
           </li>
-          <li role="button" class="button text-center" onclick="create_domain_dialog.showModal()">
-            Add page
-          </li>
+          <div class="flex flex-row justify-between">
+            <li role="button" class="button text-center w-full mr-1" onclick="create_domain_dialog.showModal()">
+              Add page
+            </li>
+            <li v-if="!this.has_config()" role="button" class="button text-center w-full mr-1" onclick="create_config_dialog.showModal()">
+              Add script
+            </li>
+          </div>
         </nav>
       </ul>
     </div>
@@ -306,6 +378,26 @@
       <div class="flex pt-3">
         <input class="button m-2 w-full" type="submit" value="Add domain">
         <input class="button m-2" type="button" value="Cancel" onclick="create_domain_dialog.close()">
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Create config dialog -->
+  <dialog id="create_config_dialog" class="dialog">
+    <form method="dialog" @submit="add_config">
+      <p>
+        <label>
+          <div class="py-2">Choose config type:</div>
+          <select name="config_type" id="config_type" v-model="config_type" required>
+            <option v-for="(label, value) of available_config_types" :value="value">
+              {{ label }}
+            </option>
+          </select>
+        </label>
+      </p>
+      <div class="flex pt-3">
+        <input class="button m-2 w-full" type="submit" value="Create config">
+        <input class="button m-2" type="button" value="Cancel" onclick="create_config_dialog.close()">
       </div>
     </form>
   </dialog>

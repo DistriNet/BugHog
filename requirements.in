@@ -5,3 +5,7 @@ flatten-dict
 gunicorn
 pymongo
 requests
+pyautogui
+pyvirtualdisplay
+Pillow
+Xlib
