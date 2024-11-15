@@ -268,6 +268,18 @@
       "poc": function(val) {
         this.editor.setValue();
         this.editor.clearSelection();
+        this.active_file.name = null;
+        this.active_file.content = null;
+        this.update_poc_tree(val);
+      },
+      "project": function(val) {
+        this.editor.setValue();
+        this.editor.clearSelection();
+        this.active_file.name = null;
+        this.active_file.content = null;
+        this.active_poc.name = null;
+        this.active_poc.active_domain: null;
+        this.active_poc.active_path: null;
         this.update_poc_tree(val);
       },
     },
