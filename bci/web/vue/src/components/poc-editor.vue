@@ -278,8 +278,8 @@
         this.active_file.name = null;
         this.active_file.content = null;
         this.active_poc.name = null;
-        this.active_poc.active_domain: null;
-        this.active_poc.active_path: null;
+        this.active_poc.active_domain = null;
+        this.active_poc.active_path = null;
         this.update_poc_tree(val);
       },
     },
