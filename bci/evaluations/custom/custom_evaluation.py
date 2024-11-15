@@ -221,11 +221,17 @@ class CustomEvaluationFramework(EvaluationFramework):
         domain_path = os.path.join(Global.custom_page_folder, project, poc, domain)
         if not os.path.exists(domain_path):
             os.makedirs(domain_path)
-        page_path = os.path.join(domain_path, path)
-        if not os.path.exists(page_path):
-            os.makedirs(page_path)
-        new_file_name = f'index.{file_type}'
-        file_path = os.path.join(page_path, new_file_name)
+
+        if file_type == 'py':
+            file_name = path if path.endswith('.py') else path + '.py'
+            file_path = os.path.join(domain_path, file_name)
+        else:
+            page_path = os.path.join(domain_path, path)
+            if not os.path.exists(page_path):
+                os.makedirs(page_path)
+            new_file_name = f'index.{file_type}'
+            file_path = os.path.join(page_path, new_file_name)
+
         if os.path.exists(file_path):
             return False
         with open(file_path, 'w') as file:
