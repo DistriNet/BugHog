@@ -633,21 +633,21 @@ export default {
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
-                  value="bgb_sequence" :disabled="this.eval_params.only_release_revisions">
+                  value="bgb_sequence">
                 <label for="bgb_sequence">BGB sequence</label>
                 <tooltip tooltip="bgb_sequence"></tooltip>
               </div>
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="bgb_search" name="search_strategy_option"
-                  value="bgb_search" :disabled="this.eval_params.only_release_revisions">
+                  value="bgb_search">
                 <label for="bgb_search">BGB search</label>
                 <tooltip tooltip="bgb_search"></tooltip>
               </div>
 
               <div class="radio-item">
                 <input v-model="eval_params.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
-                  value="comp_search" :disabled="this.eval_params.only_release_revisions">
+                  value="comp_search">
                 <label for="comp_search">Composite search</label>
                 <tooltip tooltip="comp_search"></tooltip>
               </div>
@@ -657,7 +657,7 @@ export default {
                 <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
                 <tooltip tooltip="sequence_limit"></tooltip>
               </div>
-              <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000" :disabled="this.eval_params.only_release_revisions">
+              <input v-model.number="eval_params.sequence_limit" class="input-box" type="number" min="1" max="10000">
             </div>
 
             <div class="form-subsection">

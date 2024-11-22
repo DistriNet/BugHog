@@ -265,6 +265,12 @@
           this.editor.setTheme("ace/theme/xcode");
         }
       },
+      "active_file.name": function (val) {
+        // Make editor readOnly when no file is selected
+        this.editor.setOptions({
+          "readOnly": val === null
+        });
+      },
       "poc": function(val) {
         this.editor.setValue();
         this.editor.clearSelection();
