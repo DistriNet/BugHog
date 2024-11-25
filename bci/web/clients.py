@@ -2,7 +2,11 @@ import json
 import threading
 from venv import logger
 
+from flask import current_app
 from simple_websocket import Server
+
+from bci.analysis.plot_factory import PlotFactory
+from bci.evaluations.logic import PlotParameters
 
 
 class Clients:
@@ -40,10 +44,17 @@ class Clients:
 
     @staticmethod
     def push_results(ws_client: Server):
-        from bci.main import Main as bci_api
-
         if params := Clients.__clients.get(ws_client, None):
-            revision_data, version_data = bci_api.get_data_sources(params)
+            plot_params = PlotParameters.from_dict(params)
+
+            if PlotFactory.validate_params(plot_params):
+                revision_data = None
+                version_data = None
+            else:
+                revision_data = PlotFactory.get_plot_revision_data(plot_params)
+                version_data = PlotFactory.get_plot_version_data(plot_params)
+
+
             ws_client.send(
                 json.dumps(
                     {
@@ -64,29 +75,17 @@ class Clients:
             Clients.push_results(ws_client)
 
     @staticmethod
-    def push_info(ws_client: Server, *requested_vars: str):
-        from bci.main import Main as bci_api
-
-        update = {}
-        all = not requested_vars or 'all' in requested_vars
-        if 'db_info' in requested_vars or all:
-            update['db_info'] = bci_api.get_database_info()
-        if 'logs' in requested_vars or all:
-            update['logs'] = bci_api.get_logs()
-        if 'state' in requested_vars or all:
-            update['state'] = bci_api.get_state()
+    def push_info(ws_client: Server, update: dict):
         ws_client.send(json.dumps({'update': update}))
 
     @staticmethod
-    def push_info_to_all(*requested_vars: str):
+    def push_info_to_all(update: dict):
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
-            Clients.push_info(ws_client, *requested_vars)
+            Clients.push_info(ws_client, update)
 
     @staticmethod
     def push_experiments(ws_client: Server):
-        from bci.main import Main as bci_api
-
         client_info = Clients.__clients[ws_client]
         if client_info is None:
             logger.error('Could not find any associated info for this client')
@@ -94,7 +93,9 @@ class Clients:
 
         project = client_info.get('project', None)
         if project:
-            experiments = bci_api.get_mech_groups_of_evaluation_framework('custom', project)
+            from bci.main import Main
+            main: Main = current_app.config['main']
+            experiments = main.evaluation_framework.get_mech_groups(project)
             ws_client.send(json.dumps({'update': {'experiments': experiments}}))
 
     @staticmethod

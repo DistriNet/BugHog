@@ -5,14 +5,14 @@ from bci.evaluations.logic import PlotParameters
 class PlotFactory:
 
     @staticmethod
-    def get_plot_revision_data(params: PlotParameters, db: MongoDB) -> dict:
-        revision_docs = db.get_documents_for_plotting(params)
+    def get_plot_revision_data(params: PlotParameters) -> dict:
+        revision_docs = MongoDB().get_documents_for_plotting(params)
         revision_results = PlotFactory.__add_outcome_info(params, revision_docs)
         return revision_results
 
     @staticmethod
-    def get_plot_version_data(params: PlotParameters, db: MongoDB) -> dict:
-        version_docs = db.get_documents_for_plotting(params, releases=True)
+    def get_plot_version_data(params: PlotParameters) -> dict:
+        version_docs = MongoDB().get_documents_for_plotting(params, releases=True)
         version_results = PlotFactory.__add_outcome_info(params, version_docs)
         return version_results
 

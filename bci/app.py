@@ -3,12 +3,20 @@ import signal
 from flask import Flask
 from flask_sock import Sock
 
-from bci.main import Main as bci_api
+from bci.configuration import Global, Loggers
+from bci.main import Main
 
 sock = Sock()
 
+
 def create_app():
-    bci_api.initialize()
+    Loggers.configure_loggers()
+
+    if not Global.check_required_env_parameters():
+        raise Exception('Not all required environment variables are available')
+
+    # Instantiate main object and add to global flask context
+    main = Main()
 
     # Blueprint modules are only imported after loggers are configured
     from bci.web.blueprints.api import api
@@ -16,6 +24,7 @@ def create_app():
 
     app = Flask(__name__)
     # We don't store anything sensitive in the session, so we can use a simple secret key
+    app.config['main'] = main
     app.secret_key = 'secret_key'
 
     app.register_blueprint(api)
@@ -23,8 +32,8 @@ def create_app():
     sock.init_app(app)
 
     # Configure signal handlers
-    signal.signal(signal.SIGTERM, bci_api.sigint_handler)
-    signal.signal(signal.SIGINT, bci_api.sigint_handler)
+    signal.signal(signal.SIGTERM, main.sigint_handler)
+    signal.signal(signal.SIGINT, main.sigint_handler)
 
     return app
 

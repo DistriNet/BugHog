@@ -228,6 +228,35 @@ class PlotParameters:
     dirty_allowed: bool = True
     target_cookie_name: Optional[str] = None
 
+    @staticmethod
+    def from_dict(data: dict) -> PlotParameters:
+        if data.get("lower_version", None) and data.get("upper_version", None):
+            major_version_range = (data["lower_version"], data["upper_version"])
+        else:
+            major_version_range = None
+        if data.get("lower_revision_nb", None) and data.get("upper_revision_nb", None):
+            revision_number_range = (
+                data["lower_revision_nb"],
+                data["upper_revision_nb"],
+            )
+        else:
+            revision_number_range = None
+        return PlotParameters(
+            data.get("plot_mech_group"),
+            data.get("target_mech_id"),
+            data.get("browser_name"),
+            data.get("db_collection"),
+            major_version_range=major_version_range,
+            revision_number_range=revision_number_range,
+            browser_config=data.get("browser_setting", "default"),
+            extensions=data.get("extensions", []),
+            cli_options=data.get("cli_options", []),
+            dirty_allowed=data.get("dirty_allowed", True),
+            target_cookie_name=None
+            if data.get("check_for") == "request"
+            else data.get("target_cookie_name", "generic"),
+        )
+
 
 @staticmethod
 def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]:

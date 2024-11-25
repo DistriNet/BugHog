@@ -183,7 +183,8 @@ export default {
   created: function () {
     this.websocket = this.create_socket();
     this.get_projects();
-    this.get_browser_support();const path = `/api/poc/domain/`;
+    this.get_browser_support();
+    const path = `/api/poc/domain/`;
     axios.get(path)
     .then((res) => {
       if (res.data.status === "OK") {

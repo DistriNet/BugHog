@@ -18,7 +18,6 @@ from bci.evaluations.logic import (
     StateResult,
     TestParameters,
     TestResult,
-    WorkerParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.version_control.states.state import State, StateCondition

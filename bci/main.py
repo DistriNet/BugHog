@@ -1,169 +1,188 @@
 import logging
 
-import bci.browser.binary.factory as binary_factory
-from bci.analysis.plot_factory import PlotFactory
-from bci.browser.support import get_chromium_support, get_firefox_support
+import bci.database.mongo.container as mongodb_container
 from bci.configuration import Global, Loggers
-from bci.database.mongo.mongodb import MongoDB
-from bci.evaluations.logic import EvaluationParameters, PlotParameters
-from bci.master import Master
+from bci.database.mongo.mongodb import MongoDB, ServerException
+from bci.database.mongo.revision_cache import RevisionCache
+from bci.distribution.worker_manager import WorkerManager
+from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
+from bci.evaluations.logic import (
+    DatabaseParameters,
+    EvaluationParameters,
+)
+from bci.evaluations.outcome_checker import OutcomeChecker
+from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
+from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
+from bci.search_strategy.composite_search import CompositeSearch
+from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
+from bci.version_control.factory import StateFactory
+from bci.version_control.states.revisions.firefox import BINARY_AVAILABILITY_MAPPING
+from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
 
 class Main:
-    loggers = None
-    master = None
+    def __init__(self) -> None:
+        self.state = {'is_running': False, 'reason': 'init', 'status': 'idle'}
+
+        self.stop_gracefully = False
+        self.stop_forcefully = False
+
+        self.firefox_build = None
+        self.chromium_build = None
+
+        self.eval_queue = []
+
+        Global.initialize_folders()
+        self.db_connection_params = Global.get_database_params()
+        self.connect_to_database(self.db_connection_params)
+        RevisionCache.store_firefox_binary_availability(BINARY_AVAILABILITY_MAPPING)  # TODO: find better place
+        self.evaluation_framework = CustomEvaluationFramework()
+        logger.info('BugHog is ready!')
+
+    def connect_to_database(self, db_connection_params: DatabaseParameters) -> None:
+        try:
+            MongoDB().connect(db_connection_params)
+        except ServerException:
+            logger.error('Could not connect to database.', exc_info=True)
+
+    def run(self, eval_params_list: list[EvaluationParameters]) -> None:
+        # Sequence_configuration settings are the same over evaluation parameters (quick fix)
+        worker_manager = WorkerManager(eval_params_list[0].sequence_configuration.nb_of_containers)
+        self.stop_gracefully = False
+        self.stop_forcefully = False
+        try:
+            self.__init_eval_queue(eval_params_list)
+            for eval_params in eval_params_list:
+                if self.stop_gracefully or self.stop_forcefully:
+                    break
+                self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'active')
+                self.__update_state(is_running=True, reason='user', status='running', queue=self.eval_queue)
+                self.run_single_evaluation(eval_params, worker_manager)
+
+        except Exception as e:
+            logger.critical('A critical error occurred', exc_info=True)
+            raise e
+        finally:
+            # Gracefully exit
+            if self.stop_gracefully:
+                logger.info('Gracefully stopping experiment queue due to user end signal...')
+                self.state['reason'] = 'user'
+            if self.stop_forcefully:
+                logger.info('Forcefully stopping experiment queue due to user end signal...')
+                self.state['reason'] = 'user'
+                worker_manager.forcefully_stop_all_running_containers()
+            else:
+                logger.info('Gracefully stopping experiment queue since last experiment started.')
+            # MongoDB.disconnect()
+            logger.info('Waiting for remaining experiments to stop...')
+            worker_manager.wait_until_all_evaluations_are_done()
+            logger.info('BugHog has finished the evaluation!')
+            self.__update_state(is_running=False, status='idle', queue=self.eval_queue)
+
+    def run_single_evaluation(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
+        browser_name = eval_params.browser_configuration.browser_name
+        experiment_name = eval_params.evaluation_range.mech_group
+
+        logger.info(f"Starting evaluation for experiment '{experiment_name}' with browser '{browser_name}'")
+
+        search_strategy = self.create_sequence_strategy(eval_params)
+
+        try:
+            while (self.stop_gracefully or self.stop_forcefully) is False:
+                # Update search strategy with new potentially new results
+                current_state = search_strategy.next()
+
+                # Prepare worker parameters
+                worker_params = eval_params.create_worker_params_for(current_state, self.db_connection_params)
+
+                # Start worker to perform evaluation
+                worker_manager.start_test(worker_params)
+
+        except SequenceFinished:
+            logger.debug('Last experiment has started')
+            self.state['reason'] = 'finished'
+            self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'done')
 
     @staticmethod
-    def initialize():
-        Main.loggers = Loggers()
-        Main.loggers.configure_loggers()
-        if Global.check_required_env_parameters():
-            Main.master = Master()
+    def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
+        sequence_config = eval_params.sequence_configuration
+        search_strategy = sequence_config.search_strategy
+        sequence_limit = sequence_config.sequence_limit
+        outcome_checker = OutcomeChecker(sequence_config)
+        state_factory = StateFactory(eval_params, outcome_checker)
 
-    @staticmethod
-    def is_ready() -> bool:
-        return Main.master is not None
-
-    @staticmethod
-    def run(params: EvaluationParameters):
-        Main.master.run(params)
-
-    @staticmethod
-    def stop_gracefully():
-        Main.master.activate_stop_gracefully()
-
-    @staticmethod
-    def stop_forcefully():
-        Main.master.activate_stop_forcefully()
-
-    @staticmethod
-    def get_state() -> str:
-        return Main.master.state
-
-    @staticmethod
-    def connect_to_database():
-        return Main.master.connect_to_database()
-
-    @staticmethod
-    def get_logs() -> list[str]:
-        return list(
-            map(
-                lambda x: Main.format_to_user_log(x.__dict__),
-                Loggers.memory_handler.buffer,
-            )
-        )
-
-    @staticmethod
-    def format_to_user_log(log: dict) -> str:
-        return f'[{log["asctime"]}] [{log["levelname"]}] {log["name"]}: {log["msg"]}'
-
-    @staticmethod
-    def get_database_info() -> dict:
-        return MongoDB().get_info()
-
-    @staticmethod
-    def get_browser_support() -> list[dict]:
-        return [get_chromium_support(), get_firefox_support()]
-
-    @staticmethod
-    def list_downloaded_binaries(browser):
-        return binary_factory.list_downloaded_binaries(browser)
-
-    @staticmethod
-    def list_artisanal_binaries(browser):
-        return binary_factory.list_artisanal_binaries(browser)
-
-    @staticmethod
-    def update_artisanal_binaries(browser):
-        return binary_factory.update_artisanal_binaries(browser)
-
-    @staticmethod
-    def download_online_binary(browser, rev_number):
-        binary_factory.download_online_binary(browser, rev_number)
-
-    @staticmethod
-    def get_mech_groups_of_evaluation_framework(evaluation_name: str, project) -> list[tuple[str, bool]]:
-        return Main.master.evaluation_framework.get_mech_groups(project)
-
-    @staticmethod
-    def get_projects_of_custom_framework() -> list[str]:
-        return Main.master.evaluation_framework.get_projects()
-
-    @staticmethod
-    def create_empty_project(project_name: str) -> bool:
-        return Main.master.evaluation_framework.create_empty_project(project_name)
-
-    @staticmethod
-    def convert_to_plotparams(data: dict) -> PlotParameters:
-        if data.get("lower_version", None) and data.get("upper_version", None):
-            major_version_range = (data["lower_version"], data["upper_version"])
+        if search_strategy == 'bgb_sequence':
+            strategy = BiggestGapBisectionSequence(state_factory, sequence_limit)
+        elif search_strategy == 'bgb_search':
+            strategy = BiggestGapBisectionSearch(state_factory)
+        elif search_strategy == 'comp_search':
+            strategy = CompositeSearch(state_factory, sequence_limit)
         else:
-            major_version_range = None
-        if data.get("lower_revision_nb", None) and data.get("upper_revision_nb", None):
-            revision_number_range = (
-                data["lower_revision_nb"],
-                data["upper_revision_nb"],
-            )
+            raise AttributeError("Unknown search strategy option '%s'" % search_strategy)
+        return strategy
+
+    def activate_stop_gracefully(self):
+        if self.evaluation_framework:
+            self.stop_gracefully = True
+            self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
+            self.evaluation_framework.stop_gracefully()
+            logger.info('Received user signal to gracefully stop.')
         else:
-            revision_number_range = None
-        return PlotParameters(
-            data.get("plot_mech_group"),
-            data.get("target_mech_id"),
-            data.get("browser_name"),
-            data.get("db_collection"),
-            major_version_range=major_version_range,
-            revision_number_range=revision_number_range,
-            browser_config=data.get("browser_setting", "default"),
-            extensions=data.get("extensions", []),
-            cli_options=data.get("cli_options", []),
-            dirty_allowed=data.get("dirty_allowed", True),
-            target_cookie_name=None
-            if data.get("check_for") == "request"
-            else data.get("target_cookie_name", "generic"),
-        )
+            logger.info('Received user signal to gracefully stop, but no evaluation is running.')
 
-    @staticmethod
-    def get_data_sources(data: dict):
-        params = Main.convert_to_plotparams(data)
+    def activate_stop_forcefully(self) -> None:
+        if self.evaluation_framework:
+            self.stop_forcefully = True
+            self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
+            self.evaluation_framework.stop_gracefully()
+            WorkerManager.forcefully_stop_all_running_containers()
+            logger.info('Received user signal to forcefully stop.')
+        else:
+            logger.info('Received user signal to forcefully stop, but no evaluation is running.')
 
-        if PlotFactory.validate_params(params):
-            return None, None
+    def quit_bughog(self) -> None:
+        """
+        Quits the bughog application, stopping all associated containers.
+        """
+        logger.info('Stopping all running BugHog containers...')
+        self.activate_stop_forcefully()
+        mongodb_container.stop()
+        logger.info('Stopping BugHog core...')
+        exit(0)
 
-        return \
-            PlotFactory.get_plot_revision_data(params, MongoDB()), \
-            PlotFactory.get_plot_version_data(params, MongoDB())
+    def sigint_handler(self, sig_number, stack_frame) -> None:
+        logger.debug(f'Sigint received with number {sig_number} for stack frame {stack_frame}')
+        self.quit_bughog()
 
-    @staticmethod
-    def get_poc(project: str, poc: str) -> dict:
-        return Main.master.evaluation_framework.get_poc_structure(project, poc)
+    def push_info(self, ws, *args) -> None:
+        update = {}
+        all = 'all' in args
+        for arg in args:
+            if arg == 'db_info' or all:
+                update['db_info'] = MongoDB().get_info()
+            if arg == 'logs' or all:
+                update['logs'] = Loggers.get_logs()
+            if arg == 'state' or all:
+                update['state'] = self.state
+        Clients.push_info(ws, update)
 
-    @staticmethod
-    def get_poc_file(project: str, poc: str, domain: str, path: str, file: str) -> str:
-        return Main.master.evaluation_framework.get_poc_file(project, poc, domain, path, file)
+    def __update_state(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            self.state[key] = value
+        Clients.push_info_to_all({'state': self.state})
 
-    @staticmethod
-    def update_poc_file(project: str, poc: str, domain: str, path: str, file: str, content: str) -> bool:
-        logger.debug(f'Updating file {file} of project {project} and poc {poc}')
-        return Main.master.evaluation_framework.update_poc_file(project, poc, domain, path, file, content)
+    def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
+        self.eval_queue = []
+        for eval_params in eval_params_list:
+            self.eval_queue.append({
+                'experiment': eval_params.evaluation_range.mech_group,
+                'state': 'pending'
+            })
 
-    @staticmethod
-    def create_empty_poc(project: str, poc_name: str) -> bool:
-        return Main.master.evaluation_framework.create_empty_poc(project, poc_name)
-
-    @staticmethod
-    def get_available_domains() -> list[str]:
-        return Global.get_available_domains()
-
-    @staticmethod
-    def add_page(project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
-        return Main.master.evaluation_framework.add_page(project, poc, domain, path, file_type)
-
-    @staticmethod
-    def add_config(project: str, poc: str, type: str) -> bool:
-        return Main.master.evaluation_framework.add_config(project, poc, type)
-
-    @staticmethod
-    def sigint_handler(signum, frame):
-        return Main.master.stop_bughog()
+    def __update_eval_queue(self, experiment: str, state: str) -> None:
+        for eval in self.eval_queue:
+            if eval['experiment'] == experiment:
+                eval['state'] = state
+                return
