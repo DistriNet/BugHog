@@ -19,12 +19,13 @@ export default {
             revision_range: null,
             x_min: null,
             x_max: null,
+            shift_down: false,
         }
     },
     methods: {
         init_plot() {
             console.log("Initializing Gantt chart...");
-            
+
             document.addEventListener("keydown", (e) => {
                 if (e.shiftKey) {
                     this.shift_down = true;
@@ -123,7 +124,7 @@ export default {
                             return;
                         }
 
-                        if (this.shift_down) {
+                        if (this.shift_down === true) {
                             // Ask to remove datapoint
                             this.remove_datapoint(revision_number, browser_version, type);
                         } else {
