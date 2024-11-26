@@ -123,24 +123,22 @@ class CustomEvaluationFramework(EvaluationFramework):
             experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
 
             max_tries = 3
-            if 'script' in experiment:
-                interaction = Interaction(browser, experiment['script'], params)
-                tries = 0
-                while tries < max_tries:
-                    tries += 1
+            for _ in range(max_tries):
+                browser.pre_try_setup()
+                if 'script' in experiment:
+                    interaction = Interaction(browser, experiment['script'], params)
                     interaction.execute()
-            else:
-                url_queue = experiment['url_queue']
-                for url in url_queue:
-                    tries = 0
-                    while tries < max_tries:
-                        tries += 1
+                else:
+                    url_queue = experiment['url_queue']
+                    for url in url_queue:
                         browser.visit(url)
+                browser.post_try_cleanup()
         except Exception as e:
             logger.error(f'Error during test: {e}', exc_info=True)
             is_dirty = True
         finally:
             collector.stop()
+
             results = collector.collect_results()
             if not is_dirty:
                 # New way to perform sanity check

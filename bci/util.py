@@ -42,6 +42,16 @@ def copy_folder(src_path, dst_path):
     shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
 
 
+def remove_all_in_folder(folder_path: str) -> None:
+    for root, dirs, files in os.walk(folder_path):
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            os.remove(file_path)
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            shutil.rmtree(dir_path)
+
+
 def rmtree(src_path):
     """
     Removes folder at given src_path.

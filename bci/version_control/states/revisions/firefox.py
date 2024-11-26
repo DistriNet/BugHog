@@ -28,6 +28,8 @@ class FirefoxRevision(BaseRevision):
 
     def get_online_binary_url(self) -> str:
         result = RevisionCache.firefox_get_binary_info(self._revision_id)
+        if result is None:
+            raise AttributeError(f"Could not find binary url for '{self._revision_id}")
         binary_base_url = result['files_url']
         app_version = result['app_version']
         binary_url = f'{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.bz2'

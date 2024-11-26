@@ -96,7 +96,7 @@ class Firefox(Browser):
         if 'tp' in self.browser_config.browser_setting:
             self._profile_path = prepare_firefox_profile('tp-67')
         else:
-            self._profile_path = prepare_firefox_profile('default-67')
+            self._profile_path = prepare_firefox_profile()
 
         # Make Firefox trust the bughog CA
 

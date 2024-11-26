@@ -63,11 +63,16 @@ class Browser:
 
     def pre_test_setup(self):
         self.__prepare_execution_folder()
-        self._prepare_profile_folder()
 
     def post_test_cleanup(self):
         self.__remove_execution_folder()
+
+    def pre_try_setup(self):
+        self._prepare_profile_folder()
+
+    def post_try_cleanup(self):
         self.__remove_profile_folder()
+        self.__empty_downloads_folder()
 
     def __fetch_binary(self):
         self.binary.fetch_binary()
@@ -87,8 +92,14 @@ class Browser:
         util.rmtree(self.__get_execution_folder_path())
 
     def __remove_profile_folder(self):
+        if self._profile_path is None:
+            return
         remove_profile_execution_folder(self._profile_path)
         self._profile_path = None
+
+    def __empty_downloads_folder(self):
+        download_folder = '/root/Downloads'
+        util.remove_all_in_folder(download_folder)
 
     def __get_execution_folder_path(self) -> str:
         return os.path.join(EXECUTION_PARENT_FOLDER, str(self.state.name))
