@@ -339,6 +339,11 @@ class MongoDB:
         )
         return list(docs)
 
+    def remove_datapoint(self, params: TestParameters) -> None:
+        collection = self.get_collection(params.database_collection)
+        query = self.__to_query(params)
+        collection.delete_one(query)
+
     def get_info(self) -> dict:
         if self.client and self.client.address:
             return {'type': 'mongo', 'host': self.client.address[0], 'connected': True}

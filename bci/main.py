@@ -9,6 +9,7 @@ from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
 from bci.evaluations.logic import (
     DatabaseParameters,
     EvaluationParameters,
+    TestParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
@@ -167,6 +168,10 @@ class Main:
             if arg == 'state' or all:
                 update['state'] = self.state
         Clients.push_info(ws, update)
+
+    def remove_datapoint(self, params: TestParameters) -> None:
+        MongoDB().remove_datapoint(params)
+        Clients.push_results_to_all()
 
     def __update_state(self, **kwargs) -> None:
         for key, value in kwargs.items():

@@ -239,8 +239,8 @@ export default {
         }
         this.propagate_new_params();
       });
-      websocket.addEventListener("message", () => {
-        const data = JSON.parse(event.data);
+      websocket.addEventListener("message", (e) => {
+        const data = JSON.parse(e.data);
         if (data.hasOwnProperty("update")) {
           if (data.update.hasOwnProperty("plot_data")) {
             const revision_data = data.update.plot_data.revision_data;
@@ -553,7 +553,7 @@ export default {
             </ul>
           </div>
         </div>
-        <gantt ref="gantt"></gantt>
+        <gantt ref="gantt" :eval_params="this.eval_params"></gantt>
       </div>
     </div>
 

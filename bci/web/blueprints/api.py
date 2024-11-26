@@ -320,3 +320,17 @@ def create_experiment(project: str):
             'status': 'NOK',
             'msg': 'Could not create experiment'
         }
+
+
+@api.route('/data/remove/', methods=['POST'])
+def remove_datapoint():
+    if (params := application_logic.TestParameters.from_dict(request.json)) is None:
+        return {
+            'status': 'NOK',
+            'msg': "No parameters found"
+        }
+    __get_main().remove_datapoint(params)
+    return {
+        'status': 'OK'
+    }
+

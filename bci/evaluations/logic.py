@@ -190,6 +190,16 @@ class TestParameters:
     def create_test_result_with(self, browser_version: str, binary_origin: str, data: dict, dirty: bool) -> TestResult:
         return TestResult(self, browser_version, binary_origin, data, dirty)
 
+    @staticmethod
+    def from_dict(data) -> Optional[TestParameters]:
+        if data is None:
+            return None
+        browser_configuration = BrowserConfiguration.from_dict(data)
+        evaluation_configuration = EvaluationConfiguration.from_dict(data)
+        state = State.from_dict(data)
+        mech_group = data['mech_group']
+        database_collection = data['db_collection']
+        return TestParameters(browser_configuration, evaluation_configuration, state, mech_group, database_collection)
 
 @dataclass(frozen=True)
 class TestResult:
