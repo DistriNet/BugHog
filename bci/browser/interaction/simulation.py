@@ -24,6 +24,7 @@ class Simulation:
         'hotkey',
         'sleep',
         'screenshot',
+        'report_leak',
     ]
 
     def __init__(self, browser_config: BrowserConfig, params: TestParameters):
@@ -83,3 +84,6 @@ class Simulation:
         filename = f'{self.params.evaluation_configuration.project}-{self.params.mech_group}-{filename}-{type(self.browser_config).__name__}-{self.browser_config.version}.jpg'
         filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../logs/screenshots', filename)
         gui.screenshot(filepath)
+
+    def report_leak(self):
+        self.navigate(f'https://a.test/report/?leak={self.params.mech_group}')

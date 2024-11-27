@@ -10,3 +10,4 @@
 # HOTKEY key1 key2 ...
 # SLEEP seconds         where seconds is a float or an int
 # SCREENSHOT file_name
+# REPORT_LEAK
