@@ -11,3 +11,5 @@
 # SLEEP seconds         where seconds is a float or an int
 # SCREENSHOT file_name
 # REPORT_LEAK
+# ASSERT_FILE_CONTAINS file content     if the downloaded file exists and contains the given content as a substring, the evaluation continues
+#                                       otherwise the evaluation terminates and the exact reason is reported

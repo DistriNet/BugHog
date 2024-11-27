@@ -1,9 +1,11 @@
 import logging
 from inspect import signature
+from urllib.parse import quote_plus
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
 from bci.browser.interaction.simulation import Simulation
 from bci.evaluations.logic import TestParameters
+from bci.browser.interaction.simulation_exception import SimulationException
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,13 @@ class Interaction:
 
             try:
                 method(*args)
-            except:
+            except SimulationException as e:
+                # Simulation exception - sane behaviour, but do not continue interpreting
+                simulation.navigate(f'https://a.test/report/?bughog_sanity_check=OK&exception={quote_plus(str(e))}')
+                return False
+            except Exception as e:
+                # Unexpected exception type - not sane, report the exception
+                simulation.navigate(f'https://a.test/report/?uncaught-exception={quote_plus(type(e).__name__)}&message={quote_plus(str(e))}')
                 return False
 
         return True

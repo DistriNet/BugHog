@@ -6,6 +6,7 @@ import Xlib.display
 from pyvirtualdisplay.display import Display
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
+from bci.browser.interaction.simulation_exception import SimulationException
 from bci.evaluations.logic import TestParameters
 
 
@@ -25,6 +26,7 @@ class Simulation:
         'sleep',
         'screenshot',
         'report_leak',
+        'assert_file_contains',
     ]
 
     def __init__(self, browser_config: BrowserConfig, params: TestParameters):
@@ -87,3 +89,13 @@ class Simulation:
 
     def report_leak(self):
         self.navigate(f'https://a.test/report/?leak={self.params.mech_group}')
+
+    def assert_file_contains(self, filename: str, content: str):
+        filepath = os.path.join('/root/Downloads', filename)
+
+        if not os.path.isfile(filepath):
+            raise SimulationException(f'file-{filename}-does-not-exist')
+
+        with open(filepath, 'r') as f:
+            if content not in f.read():
+                raise SimulationException(f'file-{filename}-does-not-contain-{content}')
