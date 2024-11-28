@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from abc import abstractmethod
 
 import bci.browser.binary.factory as binary_factory
@@ -15,9 +16,13 @@ EXECUTION_PARENT_FOLDER = '/tmp'
 
 
 class Browser:
+    process: subprocess.Popen | None
 
-    def __init__(self, browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, binary: Binary) -> None:
+    def __init__(
+        self, browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, binary: Binary
+    ) -> None:
         self.browser_config = browser_config
+        self.process = None
         self.eval_config = eval_config
         self.binary = binary
         self.state = binary.state
@@ -34,9 +39,21 @@ class Browser:
         match self.eval_config.automation:
             case 'terminal':
                 args = self._get_terminal_args()
-                TerminalAutomation.run(url, args, self.eval_config.seconds_per_visit)
+                TerminalAutomation.visit_url(url, args, self.eval_config.seconds_per_visit)
             case _:
                 raise AttributeError('Not implemented')
+
+    def open(self, url: str) -> None:
+        args = self._get_terminal_args()
+        args.append(url)
+        self.process = TerminalAutomation.open_browser(args)
+
+    def terminate(self):
+        if self.process is None:
+            return
+
+        TerminalAutomation.terminate_browser(self.process, self._get_terminal_args())
+        self.process = None
 
     def pre_evaluation_setup(self):
         self.__fetch_binary()
@@ -46,11 +63,16 @@ class Browser:
 
     def pre_test_setup(self):
         self.__prepare_execution_folder()
-        self._prepare_profile_folder()
 
     def post_test_cleanup(self):
         self.__remove_execution_folder()
+
+    def pre_try_setup(self):
+        self._prepare_profile_folder()
+
+    def post_try_cleanup(self):
         self.__remove_profile_folder()
+        self.__empty_downloads_folder()
 
     def __fetch_binary(self):
         self.binary.fetch_binary()
@@ -70,8 +92,14 @@ class Browser:
         util.rmtree(self.__get_execution_folder_path())
 
     def __remove_profile_folder(self):
+        if self._profile_path is None:
+            return
         remove_profile_execution_folder(self._profile_path)
         self._profile_path = None
+
+    def __empty_downloads_folder(self):
+        download_folder = '/root/Downloads'
+        util.remove_all_in_folder(download_folder)
 
     def __get_execution_folder_path(self) -> str:
         return os.path.join(EXECUTION_PARENT_FOLDER, str(self.state.name))
@@ -80,11 +108,17 @@ class Browser:
         return os.path.join(self.__get_execution_folder_path(), self.binary.executable_name)
 
     @abstractmethod
-    def _get_terminal_args(self):
+    def _get_terminal_args(self) -> list[str]:
+        pass
+
+    @abstractmethod
+    def get_navigation_sleep_duration(self) -> int:
         pass
 
     @staticmethod
-    def get_browser(browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, state: State) -> Browser:
+    def get_browser(
+        browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, state: State
+    ) -> Browser:
         from bci.browser.configuration.chromium import Chromium
         from bci.browser.configuration.firefox import Firefox
 

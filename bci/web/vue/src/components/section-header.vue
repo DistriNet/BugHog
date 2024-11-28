@@ -30,7 +30,7 @@
           },
           "experiments": {
             "title": "Experiments",
-            "tooltip": "Pick a project from the dropdown menu to access all available experiments. Then, mark the experiments you wish to conduct. Keep in mind that if multiple experiments are chosen, only a binary sequence will be performed. For a binary search or composite search, select only one experiment."
+            "tooltip": "Pick a project from the dropdown menu to access all available experiments. Then, mark the experiments you wish to conduct. A selection of multiple experiments will be conducted one by one."
           },
           "parallel_containers": {
             "title": "Number of parallel containers",
@@ -42,7 +42,7 @@
           },
           "results": {
             "title": "Results",
-            "tooltip": "Choose an experiment from the dropdown menu to visualize its results in the Gantt chart below. Squares represent (approximate) release binaries, while dots represent revision binaries. Clicking on a dot will open the web page for the associated revision in the public browser repository."
+            "tooltip": "Choose an experiment from the dropdown menu to visualize its results in the Gantt chart below. Squares represent (approximate) release binaries, while dots represent revision binaries. Clicking on a dot will open the web page for the associated revision in the public browser repository. Holding shift while clicking on any dot or square will delete the particular result."
           },
           "search_strategy": {
             "title": "Search strategy",

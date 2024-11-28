@@ -44,7 +44,7 @@ class RevisionCache:
     @staticmethod
     def firefox_get_binary_info(revision_id: str) -> Optional[dict]:
         collection = MongoDB().get_collection('firefox_binary_availability')
-        return collection.find_one({'revision_id': revision_id}, {'files_url': 1, 'app_version': 1})
+        return collection.find_one({'node': revision_id}, {'files_url': 1, 'app_version': 1})
 
     @staticmethod
     def firefox_get_previous_and_next_revision_nb_with_binary(revision_nb: int) -> tuple[Optional[int], Optional[int]]:

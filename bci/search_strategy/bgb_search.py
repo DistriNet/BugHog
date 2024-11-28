@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Optional
 
@@ -16,13 +18,14 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
     It stops when there are no more states to evaluate between two states with different outcomes.
     """
 
-    def __init__(self, state_factory: StateFactory) -> None:
+    def __init__(self, state_factory: StateFactory, completed_states: Optional[list[State]]=None) -> None:
         """
         Initializes the search strategy.
 
         :param state_factory: The factory to create new states.
+        :param completed_states: States that have already been returned.
         """
-        super().__init__(state_factory, 0)
+        super().__init__(state_factory, 0, completed_states=completed_states)
 
     def next(self) -> State:
         """
@@ -86,3 +89,12 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         # splitter of the second gap with having to wait for the first gap to be fully evaluated.
         pairs.sort(key=lambda pair: pair[1].index - pair[0].index, reverse=True)
         return pairs[0]
+
+    @staticmethod
+    def create_from_bgb_sequence(bgb_sequence: BiggestGapBisectionSequence) -> BiggestGapBisectionSearch:
+        """
+        Returns a BGB search object, which continues on state of the given BGB sequence object.
+
+        :param bgb_sequence: The BGB sequence object from which the state will be used to create the BGB search object.
+        """
+        return BiggestGapBisectionSearch(bgb_sequence._state_factory, completed_states=bgb_sequence._completed_states)

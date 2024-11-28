@@ -1,8 +1,14 @@
 <script>
+import axios from 'axios'
 export default {
+    props: {
+      eval_params: Object,
+    },
     data() {
         return {
             browser_name: null,
+            poc: null,
+            project: null,
             plot: null,
             revision_source: {
                 data: [],
@@ -13,11 +19,23 @@ export default {
             revision_range: null,
             x_min: null,
             x_max: null,
+            shift_down: false,
         }
     },
     methods: {
         init_plot() {
             console.log("Initializing Gantt chart...");
+
+            document.addEventListener("keydown", (e) => {
+                if (e.shiftKey) {
+                    this.shift_down = true;
+                }
+            });
+            document.addEventListener("keyup", (e) => {
+                if (e.shiftKey) {
+                    this.shift_down = false;
+                }
+            });
 
             if (this.revision_source.length === 0 || this.version_source.length === 0) {
                 this.x_min = 1;
@@ -91,11 +109,29 @@ export default {
             if (urlTemplate) {
                 const tapTool = new Bokeh.TapTool({
                     behavior: 'select',
-                    callback: () => {
-                        if (this.revision_source.selected.indices.length > 0) {
-                            let index = this.revision_source.selected.indices[0];
-                            let revision_number = this.revision_source.data.revision_number[index];
-                            window.open(urlTemplate + revision_number);
+                    callback: (e) => {
+                        var index;
+                        if ((index = this.revision_source.selected.indices[0]) !== undefined) {
+                            var revision_number = this.revision_source.data.revision_number[index];
+                            var browser_version = this.revision_source.data.browser_version[index];
+                            var type = "revision";
+                        } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
+                            var revision_number = this.version_source.data.revision_number[index];
+                            var browser_version = this.version_source.data.browser_version[index];
+                            var type = "version";
+                        } else {
+                            console.log("Nothing interesting was selected...");
+                            return;
+                        }
+
+                        if (this.shift_down === true) {
+                            // Ask to remove datapoint
+                            this.remove_datapoint(revision_number, browser_version, type);
+                        } else {
+                            // Open revision page
+                            if (this.revision_source.selected.indices.length > 0) {
+                                window.open(urlTemplate + revision_number);
+                            }
                         }
                         this.revision_source.selected.indices = [];
                         this.version_source.selected.indices = [];
@@ -122,13 +158,15 @@ export default {
             Bokeh.Plotting.show(this.plot, document.getElementById('gantt'));
             console.log("Gantt chart initialized!");
         },
-        update_plot(browser_name, revision_data, version_data) {
+        update_plot(browser_name, revision_data, version_data, project, poc) {
             if (revision_data === null && version_data === null) {
                 return;
             }
 
             let init_required = this.revision_source === null || this.browser_name !== browser_name;
             this.browser_name = browser_name;
+            this.project = project;
+            this.poc = poc;
 
             if (init_required) {
                 this.revision_source = new Bokeh.ColumnDataSource({ data: revision_data });;
@@ -160,6 +198,22 @@ export default {
                     }
                 }
             }
+        },
+        remove_datapoint(revision_number, browser_version, type) {
+            console.log("Removing datapoint ", revision_number, type);
+            const path = "/api/data/remove/"
+            var params = this.eval_params
+            params['type'] = type
+            params["revision_number"] = revision_number
+            params["major_version"] = browser_version
+            params["mech_group"] = params["plot_mech_group"]
+            axios.post(path, params)
+            .then((res) => {
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+
         },
     },
 };

@@ -18,7 +18,6 @@ from bci.evaluations.logic import (
     StateResult,
     TestParameters,
     TestResult,
-    WorkerParameters,
 )
 from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.version_control.states.state import State, StateCondition
@@ -178,7 +177,7 @@ class MongoDB:
     def get_evaluated_states(
         self, params: EvaluationParameters, boundary_states: tuple[State, State], outcome_checker: OutcomeChecker
     ) -> list[State]:
-        collection = self.get_collection(params.database_collection)
+        collection = self.get_collection(params.database_collection, create_if_not_found=True)
         query = {
             'browser_config': params.browser_configuration.browser_setting,
             'mech_group': params.evaluation_range.mech_group,
@@ -308,7 +307,7 @@ class MongoDB:
         return result['build_id']
 
     def get_documents_for_plotting(self, params: PlotParameters, releases: bool = False):
-        collection = self.get_collection(params.database_collection)
+        collection = self.get_collection(params.database_collection, create_if_not_found=True)
         query = {
             'mech_group': params.mech_group,
             'browser_config': params.browser_config,
@@ -339,6 +338,11 @@ class MongoDB:
             ]
         )
         return list(docs)
+
+    def remove_datapoint(self, params: TestParameters) -> None:
+        collection = self.get_collection(params.database_collection)
+        query = self.__to_query(params)
+        collection.delete_one(query)
 
     def get_info(self) -> dict:
         if self.client and self.client.address:

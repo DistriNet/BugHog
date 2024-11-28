@@ -170,5 +170,14 @@ class Loggers:
         bci_logger.debug('Loggers initialized')
 
     @staticmethod
-    def get_formatted_buffer_logs() -> list[str]:
-        return [Loggers.formatter.format(record) for record in Loggers.memory_handler.buffer]
+    def get_logs() -> list[str]:
+        return list(
+            map(
+                lambda x: Loggers.format_to_user_log(x.__dict__),
+                Loggers.memory_handler.buffer,
+            )
+        )
+
+    @staticmethod
+    def format_to_user_log(log: dict) -> str:
+        return f'[{log["asctime"]}] [{log["levelname"]}] {log["name"]}: {log["msg"]}'

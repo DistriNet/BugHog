@@ -23,7 +23,6 @@ class TestCompositeSearch(unittest.TestCase):
             outcome_func=lambda x: True if x < 50 else False,
             evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
         )
-        sequence.search_strategy._state_factory = state_factory
 
         # Sequence
         index_sequence = [sequence.next().index for _ in range(3)]
@@ -47,7 +46,6 @@ class TestCompositeSearch(unittest.TestCase):
             outcome_func=lambda x: True if x < 33 or 81 < x else False,
             evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
         )
-        sequence.search_strategy._state_factory = state_factory
 
         while True:
             try:
@@ -57,7 +55,7 @@ class TestCompositeSearch(unittest.TestCase):
 
         evaluated_indexes = [state.index for state in sequence.search_strategy._completed_states]
 
-        assert sequence.sequence_strategy_finished
+        assert sequence.search_strategy is not None
         assert 32 in evaluated_indexes
         assert 33 in evaluated_indexes
         assert 81 in evaluated_indexes

@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from bci import cli
 
@@ -6,7 +7,7 @@ PROFILE_STORAGE_FOLDER = '/app/browser/profiles'
 PROFILE_EXECUTION_FOLDER = '/tmp/profiles'
 
 
-def prepare_chromium_profile(profile_name: str = None) -> str:
+def prepare_chromium_profile(profile_name: Optional[str] = None) -> str:
     # Create new execution profile folder
     profile_execution_path = os.path.join(PROFILE_EXECUTION_FOLDER, 'new_profile')
     profile_execution_path = __create_folder(profile_execution_path)
@@ -14,21 +15,26 @@ def prepare_chromium_profile(profile_name: str = None) -> str:
     # Copy profile from storage to execution folder if profile_name is given
     if profile_name:
         if not os.path.exists(os.path.join(PROFILE_STORAGE_FOLDER, 'chromium', profile_name)):
-            raise Exception(f'Profile \'{profile_name}\' does not exist')
+            raise Exception(f"Profile '{profile_name}' does not exist")
         profile_storage_path = os.path.join(PROFILE_STORAGE_FOLDER, profile_name, 'Default')
         cli.execute(f'cp -r {profile_storage_path} {profile_execution_path}')
     return profile_execution_path
 
 
-def prepare_firefox_profile(profile_name: str = None) -> str:
+def prepare_firefox_profile(profile_name: Optional[str] = None) -> str:
+    """"
+    Create a temporary profile folder, based on the provided name of the premade profile.
+
+    :param profile_name: Reference to the premade profile folder used for creating the temporary profile.
+    """
     # Create new execution profile folder
     profile_execution_path = os.path.join(PROFILE_EXECUTION_FOLDER, 'new_profile')
     profile_execution_path = __create_folder(profile_execution_path)
 
     # Copy profile from storage to execution folder if profile_name is given
-    if profile_name is None:
+    if profile_name is not None:
         if not os.path.exists(os.path.join(PROFILE_STORAGE_FOLDER, 'firefox', profile_name)):
-            raise Exception(f'Profile \'{profile_name}\' does not exist')
+            raise Exception(f"Profile '{profile_name}' does not exist")
         profile_storage_path = os.path.join(PROFILE_STORAGE_FOLDER, profile_name)
         cli.execute(f'cp -r {profile_storage_path} {profile_execution_path}')
     return profile_execution_path

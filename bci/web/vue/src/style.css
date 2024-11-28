@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .button {
-  @apply text-white bg-blue-700 hover:bg-blue-800 active:ring-4 focus:outline-none font-medium rounded-lg text-sm px-4 py-2.5 text-center items-center dark:hover:bg-blue-700 dark:focus:ring-blue-800
+  @apply text-white bg-blue-700 hover:bg-blue-800 active:ring-4 focus:outline-none cursor-pointer font-medium rounded-lg text-sm px-4 py-2.5 text-center items-center dark:hover:bg-blue-700 dark:focus:ring-blue-800
 }
 
 .dropdown-head {
@@ -206,6 +206,12 @@ button {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+button.no-style {
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .card {
