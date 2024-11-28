@@ -10,17 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class SequenceStrategy:
-    def __init__(self, state_factory: StateFactory, limit) -> None:
+    def __init__(self, state_factory: StateFactory, limit: int, completed_states: Optional[list[State]]=None) -> None:
         """
         Initializes the sequence strategy.
 
         :param state_factory: The factory to create new states.
         :param limit: The maximum number of states to evaluate. 0 means no limit.
+        :param completed_states: States that have already been returned.
         """
         self._state_factory = state_factory
         self._limit = limit
         self._lower_state, self._upper_state = self.__create_available_boundary_states()
-        self._completed_states = []
+        self._completed_states = completed_states if completed_states else []
 
     @abstractmethod
     def next(self) -> State:
