@@ -22,20 +22,21 @@ export default {
             shift_down: false,
         }
     },
+    created: function() {
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Shift") {
+                this.shift_down = true;
+            }
+        });
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "Shift") {
+                this.shift_down = false;
+            }
+        });
+    },
     methods: {
         init_plot() {
             console.log("Initializing Gantt chart...");
-
-            document.addEventListener("keydown", (e) => {
-                if (e.shiftKey) {
-                    this.shift_down = true;
-                }
-            });
-            document.addEventListener("keyup", (e) => {
-                if (e.shiftKey) {
-                    this.shift_down = false;
-                }
-            });
 
             if (this.revision_source.length === 0 || this.version_source.length === 0) {
                 this.x_min = 1;
