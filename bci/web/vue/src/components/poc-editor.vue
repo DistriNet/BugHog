@@ -221,10 +221,14 @@
           "page": page,
           "file_type": file_type,
         })
-        .then(() => {
-          this.update_poc_tree();
-          this.dialog.domain.name = null;
-          this.dialog.file.type = null;
+        .then((res) => {
+          if (res.data.status === "OK") {
+            this.update_poc_tree();
+            this.dialog.domain.name = null;
+            this.dialog.file.type = null;
+          } else {
+            alert(res.data.msg);
+          }
         })
         .catch(() => {
 

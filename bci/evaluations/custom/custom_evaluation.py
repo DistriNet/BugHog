@@ -164,19 +164,14 @@ class CustomEvaluationFramework(EvaluationFramework):
     def get_projects(self) -> list[str]:
         return sorted(list(self.tests_per_project.keys()))
 
-    def create_empty_project(self, project_name: str) -> bool:
-        if project_name is None or project_name == '':
-            logger.error('Given project name is invalid')
-            return False
-
+    def create_empty_project(self, project_name: str):
+        self.is_valid_name(project_name)
         if project_name in self.dir_tree:
-            logger.error(f"Given project name '{project_name}' already exists")
-            return False
+            raise AttributeError(f"The given project name '{project_name}' already exists.")
 
         new_project_path = os.path.join(Global.custom_page_folder, project_name)
         os.mkdir(new_project_path)
         self.sync_with_folders()
-        return True
 
     def get_poc_structure(self, project: str, poc: str) -> dict:
         return self.dir_tree[project][poc]
@@ -206,20 +201,23 @@ class CustomEvaluationFramework(EvaluationFramework):
             return True
         return False
 
-    def create_empty_poc(self, project: str, poc_name: str) -> bool:
+    def create_empty_poc(self, project: str, poc_name: str):
+        self.is_valid_name(poc_name)
         poc_path = os.path.join(Global.custom_page_folder, project, poc_name)
-        if not os.path.exists(poc_path):
-            os.makedirs(poc_path)
-            self.sync_with_folders()
-            Clients.push_experiments_to_all()
-            return True
-        return False
+        if os.path.exists(poc_path):
+            raise AttributeError(f"The given PoC name '{poc_name}' already exists.")
 
-    def add_page(self, project: str, poc: str, domain: str, path: str, file_type: str) -> bool:
+        os.makedirs(poc_path)
+        self.sync_with_folders()
+        Clients.push_experiments_to_all()
+
+
+    def add_page(self, project: str, poc: str, domain: str, path: str, file_type: str):
         domain_path = os.path.join(Global.custom_page_folder, project, poc, domain)
         if not os.path.exists(domain_path):
             os.makedirs(domain_path)
 
+        self.is_valid_name(path)
         if file_type == 'py':
             file_name = path if path.endswith('.py') else path + '.py'
             file_path = os.path.join(domain_path, file_name)
@@ -229,21 +227,19 @@ class CustomEvaluationFramework(EvaluationFramework):
                 os.makedirs(page_path)
             new_file_name = f'index.{file_type}'
             file_path = os.path.join(page_path, new_file_name)
-
-        if os.path.exists(file_path):
-            return False
-        with open(file_path, 'w') as file:
-            file.write(self.get_default_file_content(file_type))
-
-        if self.include_file_headers(file_type):
             headers_file_path = os.path.join(page_path, 'headers.json')
             if not os.path.exists(headers_file_path):
                 with open(headers_file_path, 'w') as file:
                     file.write(self.get_default_file_content('headers.json'))
+
+        if os.path.exists(file_path):
+            raise AttributeError(f"The given page '{path}' does already exist.")
+        with open(file_path, 'w') as file:
+            file.write(self.get_default_file_content(file_type))
+
         self.sync_with_folders()
         # Notify clients of change (an experiment might now be runnable)
         Clients.push_experiments_to_all()
-        return True
 
     def add_config(self, project: str, poc: str, type: str) -> bool:
         content = self.get_default_file_content(type)
@@ -270,10 +266,6 @@ class CustomEvaluationFramework(EvaluationFramework):
 
         with open(path, 'r') as file:
             return file.read()
-
-    @staticmethod
-    def include_file_headers(file_type: str) -> bool:
-        return file_type != 'py'
 
     def sync_with_folders(self):
         self.dir_tree = self.initialize_dir_tree()

@@ -400,7 +400,11 @@ export default {
       const url = `/api/poc/${this.selected.project}/`;
       axios.post(url, {'poc_name': this.dialog.new_experiment_name})
       .then((res) => {
-        this.dialog.new_experiment_name = null;
+        if (res.data.status === "OK") {
+          this.dialog.new_experiment_name = null;
+        } else {
+          alert(res.data.msg);
+        }
       })
       .catch((error) => {
         console.error('Could not create new experiment');
@@ -411,10 +415,14 @@ export default {
       const new_project_name = this.dialog.new_project_name;
       axios.post(url, {'project_name': new_project_name})
       .then((res) => {
-        this.dialog.new_project_name = null;
-        this.get_projects(() => {
-          this.set_curr_project(new_project_name);
-        });
+        if (res.data.status === "OK") {
+          this.dialog.new_project_name = null;
+          this.get_projects(() => {
+            this.set_curr_project(new_project_name);
+          });
+        } else {
+          alert(res.data.msg);
+        }
       })
       .catch((error) => {
         console.error('Could not create new project', error);
