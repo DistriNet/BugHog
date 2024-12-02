@@ -224,7 +224,7 @@ def poc(project: str, poc: str):
 
 
 @api.route('/poc/<string:project>/<string:poc>/<string:file>/', methods=['GET', 'POST'])
-def get_poc_file_content(project: str, poc: str, file: str):
+def poc_file_content(project: str, poc: str, file: str):
     domain = request.args.get('domain', '')
     path = request.args.get('path', '')
     if request.method == 'GET':
