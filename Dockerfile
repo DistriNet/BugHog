@@ -1,4 +1,4 @@
-FROM node:lts-alpine as ui-build-stage
+FROM node:22.12-alpine as ui-build-stage
 WORKDIR /app
 COPY /bci/web/vue/package*.json ./
 RUN npm install
