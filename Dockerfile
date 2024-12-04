@@ -7,9 +7,16 @@ RUN npm run build
 
 
 FROM openresty/openresty:1.27.1.1-bullseye AS nginx
+RUN apt update -y && \
+    apt install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /www/data/js && \
+    curl https://cdn.bokeh.org/bokeh/release/bokeh-3.6.1.min.js -o /www/data/js/bokeh.min.js && \
+    curl https://cdn.bokeh.org/bokeh/release/bokeh-api-3.6.1.min.js -o /www/data/js/bokeh-api.min.js
 COPY ./nginx/start.sh /usr/local/bin/
 COPY ./nginx/config /etc/nginx/config
 COPY --from=ui-build-stage /app/dist /www/data
+COPY --from=ui-build-stage /app/node_modules/ace-builds/src-min-noconflict /www/data/node_modules/ace-builds/src-min-noconflict
 CMD ["start.sh"]
 
 

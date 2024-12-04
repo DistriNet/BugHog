@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import traceback
 from abc import ABC, abstractmethod
 
@@ -70,3 +71,20 @@ class EvaluationFramework(ABC):
         Returns the available mechanism groups for this evaluation framework.
         """
         pass
+
+    @staticmethod
+    def is_valid_name(name: str) -> None:
+        """
+        Checks whether the given string is a valid experiment, page or project name, and raises an exception if not.
+        This is to prevent issues with URL encoding and decoding.
+
+        :param name: Name to be checked on validity.
+        """
+        if name is None or name == '':
+            raise AttributeError("The given name cannot be empty.")
+        if re.match(r'^[A-Za-z0-9_\-.]+$', name) is None:
+            raise AttributeError(
+                f"The given name '{name}' is invalid. Only letters, numbers, "
+                "'.', '-' and '_' can be used, and the name should not be empty."
+            )
+

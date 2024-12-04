@@ -13,14 +13,15 @@ class BiggestGapBisectionSequence(SequenceStrategy):
     This sequence strategy will split the biggest gap between two states in half and return the state in the middle.
     """
 
-    def __init__(self, state_factory: StateFactory, limit: int) -> None:
+    def __init__(self, state_factory: StateFactory, limit: int, completed_states: Optional[list[State]]=None) -> None:
         """
         Initializes the sequence strategy.
 
         :param state_factory: The factory to create new states.
         :param limit: The maximum number of states to evaluate. 0 means no limit.
+        :param completed_states: States that have already been returned.
         """
-        super().__init__(state_factory, limit)
+        super().__init__(state_factory, limit, completed_states=completed_states)
         self._unavailability_gap_pairs: set[tuple[State, State]] = set()
         """Tuples in this list are **strict** boundaries of ranges without any available binaries."""
 

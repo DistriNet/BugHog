@@ -156,17 +156,18 @@
           const domain = this.active_poc.active_domain;
           const file_path = this.active_poc.active_path;
           const file_name = this.active_file.name;
-          const params = {
+          const data = {
             "content": this.editor.session.getValue()
           };
+          const get_params = {};
           if (domain !== null) {
-            params["domain"] = domain;
+            get_params["domain"] = domain;
           }
           if (file_path !== null) {
-            params["path"] = file_path;
+            get_params["path"] = file_path;
           }
           const path = `/api/poc/${project}/${poc}/${file_name}/`;
-          axios.post(path, {"content": this.editor.session.getValue()}, {params: params})
+          axios.post(path, data, {params: get_params})
           .then((res) => {
             if (res.data.status == "NOK") {
               console.error("Could not update file on server");
@@ -221,10 +222,14 @@
           "page": page,
           "file_type": file_type,
         })
-        .then(() => {
-          this.update_poc_tree();
-          this.dialog.domain.name = null;
-          this.dialog.file.type = null;
+        .then((res) => {
+          if (res.data.status === "OK") {
+            this.update_poc_tree();
+            this.dialog.domain.name = null;
+            this.dialog.file.type = null;
+          } else {
+            alert(res.data.msg);
+          }
         })
         .catch(() => {
 

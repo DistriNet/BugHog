@@ -157,10 +157,16 @@ def create_project():
             'msg': "No parameters found"
         }
     project_name = request.json.get('project_name')
-    return {
-        'status': 'OK',
-        'projects': __get_main().evaluation_framework.create_empty_project(project_name)
-    }
+    try:
+        __get_main().evaluation_framework.create_empty_project(project_name)
+        return {
+            'status': 'OK'
+        }
+    except AttributeError as e:
+        return {
+            'status': 'NOK',
+            'msg': str(e)
+        }
 
 
 @api.route('/system/', methods=['GET'])
@@ -218,7 +224,7 @@ def poc(project: str, poc: str):
 
 
 @api.route('/poc/<string:project>/<string:poc>/<string:file>/', methods=['GET', 'POST'])
-def get_poc_file_content(project: str, poc: str, file: str):
+def poc_file_content(project: str, poc: str, file: str):
     domain = request.args.get('domain', '')
     path = request.args.get('path', '')
     if request.method == 'GET':
@@ -257,14 +263,15 @@ def add_page(project: str, poc: str):
     domain = data['domain']
     path = data['page']
     file_type = data['file_type']
-    success = __get_main().evaluation_framework.add_page(project, poc, domain, path, file_type)
-    if success:
+    try:
+        __get_main().evaluation_framework.add_page(project, poc, domain, path, file_type)
         return {
             'status': 'OK'
         }
-    else:
+    except AttributeError as e:
         return {
-            'status': 'NOK'
+            'status': 'NOK',
+            'msg': str(e)
         }
 
 
@@ -311,14 +318,15 @@ def create_experiment(project: str):
             'msg': 'Missing experiment name'
         }
     poc_name = data['poc_name']
-    if __get_main().evaluation_framework.create_empty_poc(project, poc_name):
+    try:
+        __get_main().evaluation_framework.create_empty_poc(project, poc_name)
         return {
             'status': 'OK'
         }
-    else:
+    except AttributeError as e:
         return {
             'status': 'NOK',
-            'msg': 'Could not create experiment'
+            'msg': str(e)
         }
 
 
