@@ -28,38 +28,38 @@ class Interaction:
             simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
 
     def _interpret(self, simulation: Simulation) -> bool:
-        for statement in self.script:
-            if statement.strip() == '' or statement[0] == '#':
-                continue
+        try: 
+            for statement in self.script:
+                if statement.strip() == '' or statement[0] == '#':
+                    continue
 
-            cmd, *args = statement.split()
-            method_name = cmd.lower()
+                cmd, *args = statement.split()
+                method_name = cmd.lower()
 
-            if method_name not in Simulation.public_methods:
-                raise Exception(
-                    f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), Simulation.public_methods))}.'
-                )
+                if method_name not in Simulation.public_methods:
+                    raise Exception(
+                        f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), Simulation.public_methods))}.'
+                    )
 
-            method = getattr(simulation, method_name)
-            method_params = list(signature(method).parameters.values())
+                method = getattr(simulation, method_name)
+                method_params = list(signature(method).parameters.values())
 
-            # Allow different number of arguments only for variable argument number (*)
-            if len(method_params) != len(args) and (len(method_params) < 1 or str(method_params[0])[0] != '*'):
-                raise Exception(
-                    f'Invalid number of arguments for command `{cmd}`. Expected {len(method_params)}, got {len(args)}.'
-                )
+                # Allow different number of arguments only for variable argument number (*)
+                if len(method_params) != len(args) and (len(method_params) < 1 or str(method_params[0])[0] != '*'):
+                    raise Exception(
+                        f'Invalid number of arguments for command `{cmd}`. Expected {len(method_params)}, got {len(args)}.'
+                    )
 
-            logger.debug(f'Executing interaction method `{method_name}` with the arguments {args}')
+                logger.debug(f'Executing interaction method `{method_name}` with the arguments {args}')
 
-            try:
                 method(*args)
-            except SimulationException as e:
-                # Simulation exception - sane behaviour, but do not continue interpreting
-                simulation.navigate(f'https://a.test/report/?bughog_sanity_check=OK&exception={quote_plus(str(e))}')
-                return False
-            except Exception as e:
-                # Unexpected exception type - not sane, report the exception
-                simulation.navigate(f'https://a.test/report/?uncaught-exception={quote_plus(type(e).__name__)}&message={quote_plus(str(e))}')
-                return False
 
-        return True
+            return True
+        except SimulationException as e:
+            # Simulation exception - sane behaviour, but do not continue interpreting
+            simulation.navigate(f'https://a.test/report/?exception={quote_plus(str(e))}')
+            return True
+        except Exception as e:
+            # Unexpected exception type - not sane, report the exception
+            simulation.navigate(f'https://a.test/report/?uncaught-exception={quote_plus(type(e).__name__)}&message={quote_plus(str(e))}')
+            return False
