@@ -140,7 +140,7 @@ class Loggers:
         bci_logger.addHandler(stream_handler)
 
         # Configure file handler
-        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=2)
+        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=3, maxBytes=8*1024*1024)
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(Loggers.formatter)
         bci_logger.addHandler(file_handler)
@@ -154,8 +154,7 @@ class Loggers:
 
         # Configure memory handler
         Loggers.memory_handler.setLevel(logging.INFO)
-        buffer_formatter = logging.handlers.BufferingHandler(Loggers.formatter)
-        Loggers.memory_handler.setFormatter(buffer_formatter)
+        Loggers.memory_handler.setFormatter(Loggers.formatter)
         bci_logger.addHandler(Loggers.memory_handler)
 
         # Log uncaught exceptions
