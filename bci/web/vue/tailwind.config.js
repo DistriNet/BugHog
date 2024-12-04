@@ -1,5 +1,7 @@
+import flowbite from 'flowbite/plugin';
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   mode: "jit",
   content: [
     "./index.html",
@@ -8,7 +10,7 @@ module.exports = {
   ],
   darkMode: ['selector'],
   plugins: [
-    require('flowbite/plugin'),
+    flowbite,
   ],
   theme: {
     extend: {
