@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import traceback
 from abc import ABC, abstractmethod
 
 from bci.browser.configuration.browser import Browser
@@ -17,7 +16,7 @@ class EvaluationFramework(ABC):
     def __init__(self):
         self.should_stop = False
 
-    def evaluate(self, worker_params: WorkerParameters):
+    def evaluate(self, worker_params: WorkerParameters, is_worker=False):
         test_params = worker_params.create_test_params()
 
         if MongoDB().has_result(test_params):
@@ -42,8 +41,10 @@ class EvaluationFramework(ABC):
             logger.info(f'Test finalized: {test_params}')
         except Exception as e:
             state.condition = StateCondition.FAILED
-            logger.error('An error occurred during evaluation', exc_info=True)
-            traceback.print_exc()
+            if is_worker:
+                raise e
+            else:
+                logger.error('An error occurred during evaluation', exc_info=True)
         finally:
             browser.post_test_cleanup()
 
