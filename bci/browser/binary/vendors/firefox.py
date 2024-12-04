@@ -95,11 +95,11 @@ class FirefoxBinary(Binary):
 
     @staticmethod
     def list_downloaded_binaries() -> list[dict[str, str]]:
-        return Binary.list_downloaded_binaries(BIN_FOLDER_PATH)
+        return Binary._list_downloaded_binaries(BIN_FOLDER_PATH)
 
     @staticmethod
     def get_artisanal_manager() -> ArtisanalBuildManager:
-        return Binary.get_artisanal_manager(BIN_FOLDER_PATH, EXECUTABLE_NAME)
+        return Binary._get_artisanal_manager(BIN_FOLDER_PATH, EXECUTABLE_NAME)
 
     browser_version_to_driver_version = {
         '84': "0.28.0",

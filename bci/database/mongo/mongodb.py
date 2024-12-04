@@ -62,6 +62,7 @@ class MongoDB:
             retryWrites=False,
             serverSelectionTimeoutMS=10000,
         )
+        self.binary_cache_limit = db_params.binary_cache_limit
         logger.info(f'Binary cache limit set to {db_params.binary_cache_limit}')
         # Force connection to check whether MongoDB server is reachable
         try:

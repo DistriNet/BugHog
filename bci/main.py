@@ -151,6 +151,7 @@ class Main:
         self.activate_stop_forcefully()
         mongodb_container.stop()
         logger.info('Stopping BugHog core...')
+        logging.shutdown()
         exit(0)
 
     def sigint_handler(self, sig_number, stack_frame) -> None:
