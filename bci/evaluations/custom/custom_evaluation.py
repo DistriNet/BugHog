@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class CustomEvaluationFramework(EvaluationFramework):
+    __files_and_folders_to_ignore = ['.DS_Store']
+
     def __init__(self):
         super().__init__()
         self.dir_tree = self.initialize_dir_tree()
@@ -37,7 +39,10 @@ class CustomEvaluationFramework(EvaluationFramework):
             # Remove base path from root
             root = root[len(path):]
             keys = root.split('/')[1:]
-            subdir_tree = {dir: {} for dir in dirs} | {file: None for file in files}
+            subdir_tree = (
+                {dir: {} for dir in dirs if dir not in CustomEvaluationFramework.__files_and_folders_to_ignore} |
+                {file: None for file in files if file not in CustomEvaluationFramework.__files_and_folders_to_ignore}
+            )
             if root:
                 set_nested_value(dir_tree, keys, subdir_tree)
             else:
@@ -85,6 +90,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         else:
             # Otherwise, a default URL queue is used, based on the domain that hosts the main page
             experiment_path = os.path.join(project_path, experiment)
+            assert os.path.isdir(experiment_path)
             for domain in os.listdir(experiment_path):
                 main_folder_path = os.path.join(experiment_path, domain, 'main')
                 if os.path.exists(main_folder_path):

@@ -20,7 +20,7 @@ class RevisionCache:
 
         collection.delete_many({})
         collection.insert_many(values)
-        logger.info(f'Revision Cache was updates ({len(values)} documents).')
+        logger.info(f'Revision Cache was updated ({len(values)} documents).')
 
     @staticmethod
     def firefox_get_revision_number(revision_id: str) -> int:
