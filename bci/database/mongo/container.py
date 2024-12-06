@@ -51,7 +51,7 @@ def __create_new_container(user: str, pw: str, db_name, db_host):
         raise AttributeError("Could not create container because of missing HOST_PWD environment variable")
     docker_client = docker.from_env()
     docker_client.containers.run(
-        'mongo:5.0.17',
+        'mongo:6',
         name=db_host,
         hostname=db_host,
         network=NETWORK_NAME,
