@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from abc import abstractmethod
 from typing import Optional
 
@@ -80,8 +81,10 @@ class Binary:
             return
         # Try to download binary
         elif self.is_available_online():
+            start = time.time()
             self.download_binary()
-            logger.info(f'Binary for {self.state.index} downloaded')
+            elapsed_time = time.time() - start
+            logger.info(f'Binary for {self.state.index} downloaded in {elapsed_time:.2f}s')
             BinaryCache.store_binary_files(self.get_potential_bin_path(), self.state)
         else:
             raise BuildNotAvailableError(self.browser_name, self.state)
