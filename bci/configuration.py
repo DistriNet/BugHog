@@ -70,16 +70,17 @@ class Global:
     def get_database_params() -> DatabaseParameters:
         required_database_params = ['BCI_MONGO_HOST', 'BCI_MONGO_USERNAME', 'BCI_MONGO_DATABASE', 'BCI_MONGO_PASSWORD']
         missing_database_params = [param for param in required_database_params if os.getenv(param) in ['', None]]
+        binary_cache_limit = int(os.getenv('BCI_BINARY_CACHE_LIMIT', 0))
         if missing_database_params:
             logger.info(f'Could not find database parameters {missing_database_params}, using database container...')
-            return container.run()
+            return container.run(binary_cache_limit)
         else:
             database_params = DatabaseParameters(
                 os.getenv('BCI_MONGO_HOST'),
                 os.getenv('BCI_MONGO_USERNAME'),
                 os.getenv('BCI_MONGO_PASSWORD'),
                 os.getenv('BCI_MONGO_DATABASE'),
-                int(os.getenv('BCI_BINARY_CACHE_LIMIT', 0)),
+                binary_cache_limit,
             )
             logger.info(f"Found database environment variables '{database_params}'")
             return database_params
@@ -140,7 +141,7 @@ class Loggers:
         bci_logger.addHandler(stream_handler)
 
         # Configure file handler
-        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=2)
+        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=3, maxBytes=8*1024*1024)
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(Loggers.formatter)
         bci_logger.addHandler(file_handler)
@@ -154,8 +155,7 @@ class Loggers:
 
         # Configure memory handler
         Loggers.memory_handler.setLevel(logging.INFO)
-        buffer_formatter = logging.handlers.BufferingHandler(Loggers.formatter)
-        Loggers.memory_handler.setFormatter(buffer_formatter)
+        Loggers.memory_handler.setFormatter(Loggers.formatter)
         bci_logger.addHandler(Loggers.memory_handler)
 
         # Log uncaught exceptions

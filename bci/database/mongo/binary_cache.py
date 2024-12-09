@@ -69,7 +69,7 @@ class BinaryCache:
         return True
 
     @staticmethod
-    def store_binary_files(binary_executable_path: str, state: State) -> bool:
+    def store_binary_files(binary_executable_path: str, state: State):
         """
         Stores the files in the folder of the given path in the database.
 
@@ -80,35 +80,60 @@ class BinaryCache:
         if MongoDB().binary_cache_limit <= 0:
             return False
 
-        while BinaryCache.__count_cached_binaries() >= MongoDB.binary_cache_limit:
+        while BinaryCache.__count_cached_binaries() >= MongoDB().binary_cache_limit:
             if BinaryCache.__count_cached_binaries(state_type='revision') <= 0:
                 # There are only version binaries in the cache, which will never be removed
                 return False
             BinaryCache.__remove_least_used_revision_binary_files()
 
+        logger.debug(f"Caching binary files for {state}...")
         fs = MongoDB().gridfs
+
         binary_folder_path = os.path.dirname(binary_executable_path)
+        last_access_ts = datetime.datetime.now()
+        def store_file(file_path: str) -> None:
+            # Max chunk size is 16 MB (meta-data included)
+            chunk_size = 1024 * 1024 * 15
+            with open(file_path, 'rb') as file:
+                file_id = fs.new_file(
+                    file_type='binary',
+                    browser_name=state.browser_name,
+                        state_type=state.type,
+                        state_index=state.index,
+                        relative_file_path=os.path.relpath(file_path, binary_folder_path),
+                        access_count=0,
+                        last_access_ts=last_access_ts,
+                        chunk_size=chunk_size
+                )
+                while chunk := file.read(chunk_size):
+                    file_id.write(chunk)
+            file_id.close()
+
         start_time = time.time()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = []
             for root, _, files in os.walk(binary_folder_path):
                 for file in files:
                     file_path = os.path.join(root, file)
-                    with open(file_path, 'rb') as file:
-                        executor.submit(
-                            fs.put,
-                            file.read(),
-                            file_type='binary',
-                            browser_name=state.browser_name,
-                            state_type=state.type,
-                            state_index=state.index,
-                            relative_file_path=os.path.relpath(file_path, binary_folder_path),
-                            access_count=0,
-                            last_access_ts=datetime.datetime.now(),
-                        )
+                    future = executor.submit(store_file, file_path)
+                    futures.append(future)
+            logger.debug(f"Number of files to cache: {len(futures)}")
             executor.shutdown(wait=True)
-        elapsed_time = time.time() - start_time
-        logger.debug(f'Stored binary in {elapsed_time:.2f}s')
-        return True
+
+            futures_with_exception = [future for future in futures if future.exception() is not None]
+            if futures_with_exception:
+                logger.error(
+                    (
+                        f"Something went wrong caching binary files for {state}, "
+                        "Removing possibly imcomplete binary files from cache."
+                    ),
+                    exc_info=futures_with_exception[0].exception()
+                )
+                BinaryCache.__remove_revision_binary_files(state.type, state.index)
+                logger.debug(f"Removed possibly incomplete cached binary files for {state}.")
+            else:
+                elapsed_time = time.time() - start_time
+                logger.debug(f'Stored binary in {elapsed_time:.2f}s')
 
     @staticmethod
     def __count_cached_binaries(state_type: Optional[str] = None) -> int:
@@ -130,7 +155,6 @@ class BinaryCache:
         """
         Removes the least used revision binary files from the database.
         """
-        fs = MongoDB().gridfs
         files_collection = MongoDB().get_collection('fs.files')
 
         grid_cursor = files_collection.find(
@@ -139,6 +163,16 @@ class BinaryCache:
         )
         for state_doc in grid_cursor:
             state_index = state_doc['state_index']
-            for grid_doc in files_collection.find({'state_index': state_index, 'state_type': 'revision'}):
-                fs.delete(grid_doc['_id'])
+            BinaryCache.__remove_revision_binary_files('revision', state_index)
             break
+
+    @staticmethod
+    def __remove_revision_binary_files(state_type: str, state_index: int) -> None:
+        """
+        Removes the binary files associated with the parameters.
+        """
+        fs = MongoDB().gridfs
+        files_collection = MongoDB().get_collection('fs.files')
+
+        for grid_doc in files_collection.find({'state_index': state_index, 'state_type': state_type}):
+            fs.delete(grid_doc['_id'])

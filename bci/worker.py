@@ -22,7 +22,12 @@ def run(params: WorkerParameters):
     evaluation_framework = CustomEvaluationFramework()
     # browser_build, repo_state = get_browser_build_and_repo_state(params)
 
-    evaluation_framework.evaluate(params)
+    try:
+        evaluation_framework.evaluate(params, is_worker=True)
+    except Exception:
+        logger.fatal("An exception occurred during evaluation", exc_info=True)
+        logging.shutdown()
+        os._exit(1)
 
 
 if __name__ == '__main__':
@@ -35,4 +40,5 @@ if __name__ == '__main__':
     logger.info('Worker started')
     run(params)
     logger.info('Worker finished, exiting...')
+    logging.shutdown()
     os._exit(0)

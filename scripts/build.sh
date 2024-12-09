@@ -1,3 +1,3 @@
 #!/bin/sh
 
-exec docker compose build
+exec docker compose build --pull

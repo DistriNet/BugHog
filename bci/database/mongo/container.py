@@ -20,7 +20,7 @@ DEFAULT_DB_NAME = 'bci'
 DEFAULT_HOST = 'bh_db'
 
 
-def run() -> DatabaseParameters:
+def run(binary_cache_limit: int) -> DatabaseParameters:
     docker_client = docker.from_env()
     try:
         mongo_container = docker_client.containers.get(DEFAULT_HOST)
@@ -33,7 +33,7 @@ def run() -> DatabaseParameters:
         LOGGER.debug('MongoDB container not found, creating a new one...')
         __create_new_container(DEFAULT_USER, DEFAULT_PW, DEFAULT_DB_NAME, DEFAULT_HOST)
     LOGGER.debug('MongoDB container has started!')
-    return DatabaseParameters(DEFAULT_HOST, DEFAULT_USER, DEFAULT_PW, DEFAULT_DB_NAME, 0)
+    return DatabaseParameters(DEFAULT_HOST, DEFAULT_USER, DEFAULT_PW, DEFAULT_DB_NAME, binary_cache_limit)
 
 
 def stop():
@@ -51,7 +51,7 @@ def __create_new_container(user: str, pw: str, db_name, db_host):
         raise AttributeError("Could not create container because of missing HOST_PWD environment variable")
     docker_client = docker.from_env()
     docker_client.containers.run(
-        'mongo:5.0.17',
+        'mongo:6',
         name=db_host,
         hostname=db_host,
         network=NETWORK_NAME,

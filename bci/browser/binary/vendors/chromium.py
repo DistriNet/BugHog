@@ -68,10 +68,22 @@ class ChromiumBinary(Binary):
         bin_path = self.get_potential_bin_path()
         os.makedirs(os.path.dirname(bin_path), exist_ok=True)
         unzipped_folder_path = os.path.join(os.path.dirname(zip_file_path), "chrome-linux")
+        self.__remove_unnecessary_files(unzipped_folder_path)
         util.safe_move_dir(unzipped_folder_path, os.path.dirname(bin_path))
         cli.execute_and_return_status("chmod -R a+x %s" % os.path.dirname(bin_path))
         # Remove temporary files in /tmp/COMMIT_POS
         shutil.rmtree(os.path.dirname(zip_file_path))
+
+    def __remove_unnecessary_files(self, binary_folder_path: str) -> None:
+        """
+        Remove binary files that are not necessary for default usage of the browser.
+        This is to improve performance, especially when caching binary files.
+
+        :param binary_folder_path: Path to the folder where the binary files are stored.
+        """
+        locales_folder_path = os.path.join(binary_folder_path, 'locales')
+        if os.path.isdir(locales_folder_path):
+            util.remove_all_in_folder(locales_folder_path, except_files=['en-GB.pak', 'en-US.pak'])
 
     def _get_version(self) -> str:
         command = "./chrome --version"
@@ -86,11 +98,11 @@ class ChromiumBinary(Binary):
 
     @staticmethod
     def list_downloaded_binaries() -> list[dict[str, str]]:
-        return Binary.list_downloaded_binaries(BIN_FOLDER_PATH)
+        return Binary._list_downloaded_binaries(BIN_FOLDER_PATH)
 
     @staticmethod
     def get_artisanal_manager() -> ArtisanalBuildManager:
-        return Binary.get_artisanal_manager(BIN_FOLDER_PATH, EXECUTABLE_NAME)
+        return Binary._get_artisanal_manager(BIN_FOLDER_PATH, EXECUTABLE_NAME)
 
     browser_version_to_driver_version = {
         '88': "88.0.4324.96",

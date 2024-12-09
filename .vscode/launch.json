@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "BugHog",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "/app/bci/app.py",
             "purpose": [

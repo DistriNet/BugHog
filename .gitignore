@@ -7,7 +7,8 @@ nginx/ssl/keys/*
 **/node_modules
 **/junit.xml
 
-# Screenshots
+# Screenshots and logs
+logs/*.log.*
 logs/screenshots/*
 !logs/screenshots/.gitkeep
 

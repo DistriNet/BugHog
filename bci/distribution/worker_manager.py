@@ -42,6 +42,8 @@ class WorkerManager:
         container_name = f'bh_worker_{container_id}'
 
         def start_container_thread():
+            if (host_pwd := os.getenv('HOST_PWD', None)) is None:
+                raise AttributeError('Could not find HOST_PWD environment var')
             try:
                 # Sometimes, it takes a while for Docker to remove the container
                 while True:
@@ -60,17 +62,20 @@ class WorkerManager:
                     for container in active_containers:
                         logger.info(f'Removing old container \'{container.attrs["Name"]}\' to start new one')
                         container.remove(force=True)
-                if (host_pwd := os.getenv('HOST_PWD', None)) is None:
-                    raise AttributeError('Could not find HOST_PWD environment var')
-                self.client.containers.run(
+            except docker.errors.APIError:
+                logger.error("Could not consult list of active containers", exc_info=True)
+
+            container = None
+            try:
+                container = self.client.containers.run(
                     f'bughog/worker:{Global.get_tag()}',
                     name=container_name,
                     hostname=container_name,
                     shm_size='2gb',
                     network='bh_net',
-                    mem_limit='1g',  # To prevent one container from consuming multiple gigs of memory (was the case for a Firefox evaluation)
-                    detach=False,
-                    remove=True,
+                    mem_limit='4g',  # To prevent one container from consuming multiple gigs of memory (was the case for a Firefox evaluation)
+                    mem_reservation='2g',
+                    detach=True,
                     labels=['bh_worker'],
                     command=[params.serialize()],
                     volumes=[
@@ -86,20 +91,34 @@ class WorkerManager:
                         '/dev/shm:/dev/shm',
                     ],
                 )
-                logger.debug(f"Container '{container_name}' finished experiments for '{params.state}'")
-                Clients.push_results_to_all()
+                result = container.wait()
+                if result["StatusCode"] != 0:
+                    logger.error(
+                        f"'{container_name}' exited unexpectedly with status code {result['StatusCode']}. "
+                        "Check the worker logs in ./logs/ for more information."
+                    )
+                else:
+                    logger.debug(f"Container '{container_name}' finished experiments for '{params.state}'")
+                    Clients.push_results_to_all()
+            except docker.errors.APIError:
+                logger.error("Received a docker error", exc_info=True)
             except docker.errors.ContainerError:
                 logger.error(
                     f"Could not run container '{container_name}' or container was unexpectedly removed", exc_info=True
                 )
+                if container is not None:
+                    container_info = container.attrs["State"]
+                    logger.error(f"'{container_name}' exited unexpectedly with {container_info}", exc_info=True)
             finally:
+                if container is not None:
+                    container.remove()
                 self.container_id_pool.put(container_id)
 
         thread = threading.Thread(target=start_container_thread)
         thread.start()
         logger.info(f"Container '{container_name}' started experiments for '{params.state}'")
-        # To avoid race-condition where more than max containers are started
-        time.sleep(3)
+        # Sleep to avoid all workers downloading browser binaries at once, clogging up all IO.
+        time.sleep(5)
 
     def get_nb_of_running_worker_containers(self):
         return len(self.get_runnning_containers())

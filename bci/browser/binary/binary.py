@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from abc import abstractmethod
 from typing import Optional
 
@@ -53,7 +54,7 @@ class Binary:
             raise AttributeError(f"Unknown binary origin for path '{self.get_bin_path()}'")
 
     @staticmethod
-    def list_downloaded_binaries(bin_folder_path: str) -> list[dict[str, str]]:
+    def _list_downloaded_binaries(bin_folder_path: str) -> list[dict[str, str]]:
         binaries = []
         for subfolder_path in os.listdir(os.path.join(bin_folder_path, 'downloaded')):
             bin_entry = {}
@@ -63,10 +64,10 @@ class Binary:
 
     @staticmethod
     def list_artisanal_binaries(bin_folder_path: str, executable_name: str):
-        return Binary.get_artisanal_manager(bin_folder_path, executable_name).get_artisanal_binaries_list()
+        return Binary._get_artisanal_manager(bin_folder_path, executable_name).get_artisanal_binaries_list()
 
     @staticmethod
-    def get_artisanal_manager(bin_folder_path: str, executable_name: str) -> ArtisanalBuildManager:
+    def _get_artisanal_manager(bin_folder_path: str, executable_name: str) -> ArtisanalBuildManager:
         return ArtisanalBuildManager(bin_folder_path, executable_name)
 
     def fetch_binary(self):
@@ -80,8 +81,10 @@ class Binary:
             return
         # Try to download binary
         elif self.is_available_online():
+            start = time.time()
             self.download_binary()
-            logger.info(f'Binary for {self.state.index} downloaded')
+            elapsed_time = time.time() - start
+            logger.info(f'Binary for {self.state.index} downloaded in {elapsed_time:.2f}s')
             BinaryCache.store_binary_files(self.get_potential_bin_path(), self.state)
         else:
             raise BuildNotAvailableError(self.browser_name, self.state)
