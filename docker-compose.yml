@@ -101,7 +101,7 @@ services:
       - ./experiments/pages/:/www/data/pages/:ro
       - ./experiments/res/:/www/data/res/:ro
       - ./logs/:/logs/:rw
-      - ./logs/:/logs/:rw
+      - ./logs/screenshots/:/www/data/screenshots/:ro
     ports:
       - "80:80"
       - "443:443"
