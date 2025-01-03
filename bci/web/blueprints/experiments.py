@@ -140,7 +140,7 @@ def report_leak_if_contains(expected_header_name: str, expected_header_value: st
     )
 
 
-@exp.route("/<string:project>/<string:experiment>/<string:file_name>.py")
+@exp.route("/<string:project>/<string:experiment>/<string:file_name>.py", methods=["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"])
 def python_evaluation(project: str, experiment: str, file_name: str):
     """
     Evaluates the python script and returns its result.
