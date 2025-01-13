@@ -6,6 +6,7 @@ import Xlib.display
 from pyvirtualdisplay.display import Display
 
 from bci.browser.configuration.browser import Browser as BrowserConfig
+from bci.browser.interaction.simulation_exception import SimulationException
 from bci.evaluations.logic import TestParameters
 
 
@@ -15,6 +16,7 @@ class Simulation:
 
     public_methods: list[str] = [
         'navigate',
+        'new_tab',
         'click_position',
         'click',
         'write',
@@ -24,6 +26,9 @@ class Simulation:
         'hotkey',
         'sleep',
         'screenshot',
+        'report_leak',
+        'assert_file_contains',
+        'open_file',
     ]
 
     def __init__(self, browser_config: BrowserConfig, params: TestParameters):
@@ -48,6 +53,14 @@ class Simulation:
     def navigate(self, url: str):
         self.browser_config.terminate()
         self.browser_config.open(url)
+        self.sleep(str(self.browser_config.get_navigation_sleep_duration()))
+
+    def new_tab(self, url: str):
+        self.click_position("100", "50%")   # focus the browser window
+        self.hotkey("ctrl", "t")
+        self.sleep("0.5")
+        self.write(url)
+        self.press("enter")
         self.sleep(str(self.browser_config.get_navigation_sleep_duration()))
 
     def click_position(self, x: str, y: str):
@@ -83,3 +96,19 @@ class Simulation:
         filename = f'{self.params.evaluation_configuration.project}-{self.params.mech_group}-{filename}-{type(self.browser_config).__name__}-{self.browser_config.version}.jpg'
         filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../logs/screenshots', filename)
         gui.screenshot(filepath)
+
+    def report_leak(self):
+        self.navigate(f'https://a.test/report/?leak={self.params.mech_group}')
+
+    def assert_file_contains(self, filename: str, content: str):
+        filepath = os.path.join('/root/Downloads', filename)
+
+        if not os.path.isfile(filepath):
+            raise SimulationException(f'file-{filename}-does-not-exist')
+
+        with open(filepath, 'r') as f:
+            if content not in f.read():
+                raise SimulationException(f'file-{filename}-does-not-contain-{content}')
+            
+    def open_file(self, filename: str):
+        self.navigate(f'file:///root/Downloads/{filename}')
