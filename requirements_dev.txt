@@ -4,9 +4,9 @@
 #
 #    pip-compile requirements_dev.in
 #
-anybadge==1.14.0
+anybadge==1.16.0
     # via -r requirements_dev.in
-astroid==3.3.5
+astroid==3.3.8
     # via pylint
 autopep8==2.3.1
     # via -r requirements_dev.in
@@ -14,30 +14,30 @@ blinker==1.9.0
     # via
     #   -r requirements.txt
     #   flask
-boto3==1.35.71
+boto3==1.35.97
     # via -r requirements_dev.in
-botocore==1.35.71
+botocore==1.35.97
     # via
     #   -r requirements_dev.in
     #   boto3
     #   s3transfer
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   -r requirements.txt
     #   requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via
     #   -r requirements.txt
     #   requests
-click==8.1.7
+click==8.1.8
     # via
     #   -r requirements.txt
     #   flask
-coverage[toml]==7.6.8
+coverage[toml]==7.6.10
     # via
     #   -r requirements_dev.in
     #   pytest-cov
-debugpy==1.8.9
+debugpy==1.8.11
     # via -r requirements_dev.in
 dill==0.3.9
     # via pylint
@@ -79,7 +79,7 @@ itsdangerous==2.2.0
     # via
     #   -r requirements.txt
     #   flask
-jinja2==3.1.4
+jinja2==3.1.5
     # via
     #   -r requirements.txt
     #   flask
@@ -106,7 +106,7 @@ packaging==24.2
     #   anybadge
     #   gunicorn
     #   pytest
-pillow==11.0.0
+pillow==11.1.0
     # via
     #   -r requirements.txt
     #   pyscreeze
@@ -126,7 +126,7 @@ pygetwindow==0.0.9
     # via
     #   -r requirements.txt
     #   pyautogui
-pylint==3.3.1
+pylint==3.3.3
     # via -r requirements_dev.in
 pymongo==4.10.1
     # via -r requirements.txt
@@ -146,7 +146,7 @@ pyscreeze==1.0.1
     # via
     #   -r requirements.txt
     #   pyautogui
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements_dev.in
     #   pytest-cov
@@ -178,7 +178,7 @@ simple-websocket==1.1.0
     # via
     #   -r requirements.txt
     #   flask-sock
-six==1.16.0
+six==1.17.0
     # via
     #   -r requirements.txt
     #   flatten-dict
@@ -186,7 +186,7 @@ six==1.16.0
     #   xlib
 tomlkit==0.13.2
     # via pylint
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   -r requirements.txt
     #   botocore
