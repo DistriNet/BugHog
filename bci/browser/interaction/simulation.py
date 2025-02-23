@@ -116,4 +116,4 @@ class Simulation:
 
     def open_console(self):
         self.hotkey(*self.browser_config.get_open_console_hotkey())
-        self.sleep("1")
+        self.sleep("1.5")
