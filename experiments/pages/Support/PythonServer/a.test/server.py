@@ -1,9 +1,9 @@
 from flask import Request
+from typing import Callable
 
-# Make sure that your file ends with '.py'
-
-def main(req: Request):
-    # TODO - implement your functionality and return a Flask response
+def main(req: Request, report_leak: Callable[[], None]):
+    if "leaked_secret" in req.url:
+        report_leak()
 
     return {
         "agent": req.headers.get("User-Agent"),
