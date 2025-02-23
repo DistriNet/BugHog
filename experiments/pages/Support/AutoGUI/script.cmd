@@ -1,5 +1,7 @@
 NAVIGATE https://a.test/Support/AutoGUI/main
 
+OPEN_CONSOLE
+
 SCREENSHOT click1
 CLICK one
 WRITE AutoGUI
