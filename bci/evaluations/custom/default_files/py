@@ -1,10 +1,10 @@
 from flask import Request
+from typing import Callable
 
-# Make sure that your page directory starts with 'py-'
-
-def main(req: Request):
+def main(req: Request, report_leak: Callable[[], None]):
     # TODO - implement your functionality and return a Flask response
-    
+    # If you need to report a leak, call report_leak()
+
     return {
         "agent": req.headers.get("User-Agent"),
         "cookies": req.cookies,

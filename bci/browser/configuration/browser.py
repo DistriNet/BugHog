@@ -115,6 +115,10 @@ class Browser:
     def get_navigation_sleep_duration(self) -> int:
         pass
 
+    @abstractmethod
+    def get_open_console_hotkey(self) -> list[str]:
+        pass
+
     @staticmethod
     def get_browser(
         browser_config: BrowserConfiguration, eval_config: EvaluationConfiguration, state: State

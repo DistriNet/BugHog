@@ -29,6 +29,7 @@ class Simulation:
         'report_leak',
         'assert_file_contains',
         'open_file',
+        'open_console',
     ]
 
     def __init__(self, browser_config: BrowserConfig, params: TestParameters):
@@ -54,9 +55,9 @@ class Simulation:
         self.browser_config.terminate()
         self.browser_config.open(url)
         self.sleep(str(self.browser_config.get_navigation_sleep_duration()))
+        self.click_position("100", "50%")   # focus the browser window
 
     def new_tab(self, url: str):
-        self.click_position("100", "50%")   # focus the browser window
         self.hotkey("ctrl", "t")
         self.sleep("0.5")
         self.write(url)
@@ -112,3 +113,7 @@ class Simulation:
             
     def open_file(self, filename: str):
         self.navigate(f'file:///root/Downloads/{filename}')
+
+    def open_console(self):
+        self.hotkey(*self.browser_config.get_open_console_hotkey())
+        self.sleep("1.5")

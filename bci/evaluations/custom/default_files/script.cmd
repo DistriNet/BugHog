@@ -18,3 +18,4 @@
 ### Debugging commands
 # SCREENSHOT file_name
 # OPEN_FILE file
+# OPEN_CONSOLE
