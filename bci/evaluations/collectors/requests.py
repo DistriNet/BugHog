@@ -72,15 +72,17 @@ class RequestCollector(BaseCollector):
         self.__thread.start()
 
     def stop(self):
-        data = []
-        # Important: we only consider requests to the /report/ endpoint where the bughog parameter immediately follows.
-        # Otherwise conditional endpoints (e.g., /report/if/Referer/) cause false positives.
-        regex = r'/report/\?bughog_(.+)=(.+)'
         if self.__httpd:
             self.__httpd.shutdown()
             if self.__thread:
                 self.__thread.join()
             self.__httpd.server_close()
+
+    def parse_data(self):
+        data = []
+        # Important: we only consider requests to the /report/ endpoint where the bughog parameter immediately follows.
+        # Otherwise conditional endpoints (e.g., /report/if/Referer/) cause false positives.
+        regex = r'/report/\?bughog_(.+)=(.+)'
         request_urls = [request['url'] for request in self.data['requests'] if 'url' in request]
         data = self._parse_bughog_variables(request_urls, regex)
         self.data['req_vars'] = data

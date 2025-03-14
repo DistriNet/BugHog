@@ -14,6 +14,10 @@ class BaseCollector:
     def stop(self):
         pass
 
+    @abstractmethod
+    def parse_data(self):
+        pass
+
     @staticmethod
     def _parse_bughog_variables(raw_log_lines: list[str], regex) -> list[tuple[str, str]]:
         """

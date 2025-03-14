@@ -12,6 +12,9 @@ class LogCollector(BaseCollector):
             file.write('')
 
     def stop(self):
+        pass
+
+    def parse_data(self):
         data = []
         regex = r'\+\+\+bughog_(.+)=(.+)\+\+\+'
         with open('/tmp/browser.log', 'r+') as log_file:

@@ -89,3 +89,6 @@ class EvaluationFramework(ABC):
                 "'.', '-' and '_' can be used, and the name should not be empty."
             )
 
+
+class FailedSanityCheck(Exception):
+    pass

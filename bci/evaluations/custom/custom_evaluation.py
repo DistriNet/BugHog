@@ -6,7 +6,7 @@ from bci.browser.configuration.browser import Browser
 from bci.browser.interaction.interaction import Interaction
 from bci.configuration import Global
 from bci.evaluations.collectors.collector import Collector, Type
-from bci.evaluations.evaluation_framework import EvaluationFramework
+from bci.evaluations.evaluation_framework import EvaluationFramework, FailedSanityCheck
 from bci.evaluations.logic import TestParameters, TestResult
 from bci.web.clients import Clients
 
@@ -128,8 +128,13 @@ class CustomEvaluationFramework(EvaluationFramework):
         try:
             experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
 
-            max_tries = 3
-            for _ in range(max_tries):
+            tries_left = 3
+            evaluation_should_stop = False
+            while evaluation_should_stop:
+                if tries_left == 0:
+                    raise FailedSanityCheck()
+                tries_left -= 1
+
                 browser.pre_try_setup()
                 if 'script' in experiment:
                     interaction = Interaction(browser, experiment['script'], params)
@@ -139,26 +144,16 @@ class CustomEvaluationFramework(EvaluationFramework):
                     for url in url_queue:
                         browser.visit(url)
                 browser.post_try_cleanup()
+                evaluation_should_stop = collector.sanity_check_was_successful()
+        except FailedSanityCheck:
+            logger.error('Evaluation sanity check has failed', exc_info=True)
+            is_dirty = True
         except Exception as e:
-            logger.error(f'Error during test: {e}', exc_info=True)
+            logger.error(f'An error during evaluation: {e}', exc_info=True)
             is_dirty = True
         finally:
             collector.stop()
-
             results = collector.collect_results()
-            if not is_dirty:
-                # New way to perform sanity check
-                if [
-                    var_entry
-                    for var_entry in results['req_vars']
-                    if var_entry['var'] == 'sanity_check' and var_entry['val'] == 'OK'
-                ]:
-                    pass
-                # Old way for backwards compatibility
-                elif [request for request in results['requests'] if 'report/?leak=baseline' in request['url']]:
-                    pass
-                else:
-                    is_dirty = True
         return params.create_test_result_with(browser_version, binary_origin, results, is_dirty)
 
     def get_mech_groups(self, project: str) -> list[tuple[str, bool]]:
