@@ -369,7 +369,9 @@ export default {
       const path = `/api/evaluation/start/`;
       axios.post(path, this.eval_params)
         .then((res) => {
-
+          if (res.data.status === "NOK") {
+            alert(res.data.msg);
+          }
         })
         .catch((error) => {
           console.error(error);

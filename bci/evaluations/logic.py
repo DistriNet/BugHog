@@ -270,6 +270,10 @@ class PlotParameters:
 
 @staticmethod
 def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]:
+    mech_groups = kwargs.get('tests', [])
+    if not mech_groups:
+        raise MissingParametersException()
+
     browser_configuration = BrowserConfiguration(
         kwargs.get('browser_name'), kwargs.get('browser_setting'), __get_cli_arguments(kwargs), __get_extensions(kwargs)
     )
@@ -284,7 +288,7 @@ def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]
         kwargs.get('search_strategy'),
     )
     evaluation_params_list = []
-    for mech_group in kwargs.get('tests', []):
+    for mech_group in mech_groups:
         evaluation_range = EvaluationRange(
             mech_group,
             __get_version_range(kwargs),
@@ -352,3 +356,7 @@ def __get_cli_arguments(form_data: dict[str, str]) -> list[str]:
         case _:
             raise AttributeError(f"Unknown browser '{browser}'")
     return list(filter(lambda x: x in form_data, available_cli_options))
+
+
+class MissingParametersException(Exception):
+    pass

@@ -10,7 +10,7 @@ import bci.evaluations.logic as application_logic
 from bci.analysis.plot_factory import PlotFactory
 from bci.app import sock
 from bci.configuration import Global, Loggers
-from bci.evaluations.logic import PlotParameters
+from bci.evaluations.logic import MissingParametersException, PlotParameters
 from bci.main import Main
 from bci.web.clients import Clients
 
@@ -20,16 +20,15 @@ api = Blueprint('api', __name__, url_prefix='/api')
 THREAD = None
 
 
-def __start_thread(func, args=None) -> bool:
+def __start_thread(func, args=None):
     global THREAD
     if args is None:
         args = []
     if THREAD and THREAD.is_alive():
-        return False
+        raise AttributeError()
     else:
         THREAD = threading.Thread(target=func, args=args)
         THREAD.start()
-        return True
 
 
 def __get_main() -> Main:
@@ -77,14 +76,21 @@ def start_evaluation():
         }
 
     data = request.json.copy()
-    params = application_logic.evaluation_factory(data)
-    if __start_thread(__get_main().run, args=[params]):
+    try:
+        params = application_logic.evaluation_factory(data)
+        __start_thread(__get_main().run, args=[params])
         return {
             'status': 'OK'
         }
-    else:
+    except MissingParametersException:
         return {
-            'status': 'NOK'
+            'status': 'NOK',
+            'msg': 'Could not start evaluation due to missing parameters'
+        }
+    except AttributeError:
+        return {
+            'status': 'NOK',
+            'msg': 'Evaluation thread is already running'
         }
 
 
