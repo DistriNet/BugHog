@@ -25,6 +25,7 @@ export default {
       browser_settings: [],
       db_collection_suffix: "",
       tests: [],
+      select_all_tests: false,
       curr_options: {
         min_browser_version: 0,
         max_browser_version: 100
@@ -178,6 +179,16 @@ export default {
       // db_collection gets updated too late, so updating manually.
       this.eval_params.db_collection = this.db_collection;
       this.propagate_new_params();
+    },
+    "select_all_tests": function (val) {
+      console.log("hi")
+      if (this.select_all_tests === true) {
+        this.eval_params.tests = this.tests
+          .filter(tuple => tuple[1]) // Only select enabled checkboxes
+          .map(tuple => tuple[0]);;
+      } else {
+        this.eval_params.tests = [];
+      }
     },
   },
   created: function () {
@@ -511,6 +522,18 @@ export default {
 
         <div class="h-0 grow overflow-y-auto overflow-x-hidden">
           <ul class="horizontal-select">
+            <li>
+              <div class=" bg-gray-100">
+                <input type="checkbox" class="ml-1" v-model="select_all_tests">
+                <label for="vue-checkbox-list" class="flex group w-full">
+                  <div class="pl-0 w-full">
+                    <p class="truncate w-0 grow">
+                      Select all
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </li>
             <li v-for="tuple in tests">
               <div>
                 <input v-model="eval_params.tests" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
