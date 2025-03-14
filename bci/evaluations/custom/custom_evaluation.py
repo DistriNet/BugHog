@@ -130,7 +130,7 @@ class CustomEvaluationFramework(EvaluationFramework):
 
             tries_left = 3
             evaluation_should_stop = False
-            while evaluation_should_stop:
+            while not evaluation_should_stop:
                 if tries_left == 0:
                     raise FailedSanityCheck()
                 tries_left -= 1
