@@ -523,7 +523,7 @@ export default {
         <div class="h-0 grow overflow-y-auto overflow-x-hidden">
           <ul class="horizontal-select">
             <li>
-              <div class=" bg-gray-100">
+              <div class="bg-gray-100 dark:bg-gray-800">
                 <input type="checkbox" class="ml-1" v-model="select_all_tests">
                 <label for="vue-checkbox-list" class="flex group w-full">
                   <div class="pl-0 w-full">
