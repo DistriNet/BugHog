@@ -10,9 +10,8 @@ def verify(evaluation_parameters_list: list[EvaluationParameters]) -> list:
         experiment_name = evaluation_parameters.evaluation_range.mech_group
         verification_func = verification_functions()[experiment_name]
         states = MongoDB().get_evaluated_states(evaluation_parameters, None, OutcomeChecker(evaluation_parameters.sequence_configuration))
-        results = map(verification_func, states)
-        nb_of_success_results = len(list(filter(lambda x: x, results)))
-        nb_of_fail_results = len(list(filter(lambda x: not x, results)))
+        nb_of_success_results = len(list(filter(lambda x: verification_func(x) and not x.result.is_dirty, states)))
+        nb_of_fail_results = len(list(filter(lambda x: not verification_func(x) and not x.result.is_dirty, states)))
         nb_of_error_results = len(list(filter(lambda x: x.result.is_dirty, states)))
         nb_of_results = nb_of_success_results + nb_of_fail_results + nb_of_error_results
         success_ratio = 0 if nb_of_results == 0 else round((nb_of_success_results / nb_of_results) * 100)
@@ -28,11 +27,11 @@ def verify(evaluation_parameters_list: list[EvaluationParameters]) -> list:
 
 
 def verification_functions() -> dict:
-    def all_reproduced(state: State):
-        return state.outcome
+    def all_reproduced(state: State) -> bool:
+        return state.result.reproduced
 
-    def none_reproduced(state: State):
-        return not state.outcome
+    def none_reproduced(state: State) -> bool:
+        return not state.result.reproduced
 
     return {
         'all_reproduced': all_reproduced,
