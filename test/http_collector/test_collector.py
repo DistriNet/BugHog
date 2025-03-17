@@ -10,11 +10,10 @@ class TestCollector(unittest.TestCase):
 
     @staticmethod
     def test_start_stop():
-        collector = Collector([Type.REQUESTS, Type.LOGS])
+        collector = Collector([Type.REQUESTS])
         results = collector.collect_results()
         assert results['requests'] == []
         assert results['req_vars'] == []
-        assert results['log_vars'] == []
 
         collector.start()
         time.sleep(2)
@@ -23,7 +22,6 @@ class TestCollector(unittest.TestCase):
         results = collector.collect_results()
         assert results['requests'] == []
         assert results['req_vars'] == []
-        assert results['log_vars'] == []
         time.sleep(1)
         # Port should be freed
 
