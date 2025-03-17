@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Integration tests
+{% endblock %}
+
+{% block head %}
+<style>
+    form {
+        margin: .5em;
+    }
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        padding: .5em;
+    }
+    .green {
+        background-color: lightgreen;
+    }
+    .red {
+        background-color: lightcoral;
+    }
+    .orange {
+        background-color: orange;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Integration tests</h1>
+
+<form action="/api/test/start/" method="post">
+    <input type="submit" value="Run all integration tests">
+</form>
+<form action="/api/test/continue/" method="post">
+    <input type="submit" value="Continue integration tests">
+</form>
+
+<table>
+    <tr>
+        <th>Experiment</th>
+        <th>Browser</th>
+        <th>Success</th>
+        <th>Fail</th>
+        <th>Ratio</th>
+    </tr>
+{% for result in verification_results %}
+    <tr class="{{ 'green' if result['success_ratio'] == 100 else 'red' if result['success_ratio'] < 80 else 'orange' }}">
+        <td>{{ result['experiment_name'] }}</td>
+        <td>{{ result['browser_name'] }}</td>
+        <td>{{ result['nb_of_success_results'] }}</td>
+        <td>{{ result['nb_of_fail_results'] }}</td>
+        <td>{{ result['nb_of_error_results'] }}</td>
+        <td>{{ result['success_ratio'] }} %</td>
+    </tr>
+{% endfor %}
+</table>
+
+{% endblock %}

@@ -3,14 +3,16 @@ import logging
 import os
 import threading
 
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, redirect, request
 
 import bci.browser.support as browser_support
+from bci.database.mongo.mongodb import MongoDB
 import bci.evaluations.logic as application_logic
 from bci.analysis.plot_factory import PlotFactory
 from bci.app import sock
 from bci.configuration import Global, Loggers
 from bci.evaluations.logic import MissingParametersException, PlotParameters
+from bci.integration_tests.evaluation_configurations import get_eval_parameters_list
 from bci.main import Main
 from bci.web.clients import Clients
 
@@ -348,3 +350,24 @@ def remove_datapoint():
         'status': 'OK'
     }
 
+
+@api.route('/test/start/', methods=['POST'])
+def integration_tests_start():
+    # Remove all previous data
+    MongoDB().remove_all_data_from_collection('integrationtests_chromium')
+    MongoDB().remove_all_data_from_collection('integrationtests_firefox')
+    # Start integration tests
+    all_experiments = __get_main().evaluation_framework.get_mech_groups('IntegrationTests')
+    elegible_experiments = [experiment[0] for experiment in all_experiments if experiment[1]]
+    eval_parameters_list = get_eval_parameters_list(elegible_experiments)
+    __start_thread(__get_main().run, args=[eval_parameters_list])
+    return redirect('/test/')
+
+
+@api.route('/test/continue/', methods=['POST'])
+def integration_tests_continue():
+    all_experiments = __get_main().evaluation_framework.get_mech_groups('IntegrationTests')
+    elegible_experiments = [experiment[0] for experiment in all_experiments if experiment[1]]
+    eval_parameters_list = get_eval_parameters_list(elegible_experiments)
+    __start_thread(__get_main().run, args=[eval_parameters_list])
+    return redirect('/test/')

@@ -185,11 +185,12 @@ class MongoDB:
             'state.browser_name': params.browser_configuration.browser_name,
             'results': {'$exists': True},
             'state.type': 'version' if params.evaluation_range.only_release_revisions else 'revision',
-            'state.revision_number': {
+        }
+        if boundary_states:
+            query['state.revision_number'] = {
                 '$gte': boundary_states[0].revision_nb,
                 '$lte': boundary_states[1].revision_nb,
-            },
-        }
+            }
         if params.browser_configuration.extensions:
             query['extensions'] = {
                 '$size': len(params.browser_configuration.extensions),
@@ -344,6 +345,10 @@ class MongoDB:
         collection = self.get_collection(params.database_collection)
         query = self.__to_query(params)
         collection.delete_one(query)
+
+    def remove_all_data_from_collection(self, collection_name: str) -> None:
+        collection = self.get_collection(collection_name)
+        collection.delete_many({})
 
     def get_info(self) -> dict:
         if self.client and self.client.address:

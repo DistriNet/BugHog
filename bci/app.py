@@ -21,6 +21,7 @@ def create_app():
     # Blueprint modules are only imported after loggers are configured
     from bci.web.blueprints.api import api
     from bci.web.blueprints.experiments import exp
+    from bci.web.blueprints.test import test
 
     app = Flask(__name__)
     # We don't store anything sensitive in the session, so we can use a simple secret key
@@ -29,6 +30,7 @@ def create_app():
 
     app.register_blueprint(api)
     app.register_blueprint(exp)
+    app.register_blueprint(test)
     sock.init_app(app)
 
     # Configure signal handlers
