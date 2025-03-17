@@ -61,11 +61,6 @@ class Chromium(Browser):
         if self.browser_config.extensions:
             raise AttributeError("Not implemented")
 
-        # Proxy settings
-        # args.append(f'--proxy-server=ftp={proxy.HOST}:{proxy.PORT};http={proxy.HOST}:{proxy.PORT};https={proxy.HOST}:{proxy.PORT}')
-        # os.environ['http.proxyHost'] = proxy.HOST
-        # os.environ['http.proxyPort'] = str(proxy.PORT)
-
         args.extend(self.browser_config.cli_options)
         args.extend(SELENIUM_USED_FLAGS)
         return args

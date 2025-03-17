@@ -40,16 +40,6 @@ class Firefox(Browser):
             else:
                 user_prefs.append(f'user_pref("{key}", {value});'.lower())
 
-        # add_user_pref('network.proxy.ftp', proxy.HOST)
-        # add_user_pref('network.proxy.ftp_port', proxy.PORT)
-        # add_user_pref('network.proxy.http', proxy.HOST)
-        # add_user_pref('network.proxy.http_port', proxy.PORT)
-        # add_user_pref('network.proxy.socks', proxy.HOST)
-        # add_user_pref('network.proxy.socks_port', proxy.PORT)
-        # add_user_pref('network.proxy.ssl', proxy.HOST)
-        # add_user_pref('network.proxy.ssl_port', proxy.PORT)
-        # add_user_pref('network.proxy.type', 1)
-
         add_user_pref('app.update.enabled', False)
         add_user_pref('browser.shell.checkDefaultBrowser', False)
         if 'default' in self.browser_config.browser_setting:
