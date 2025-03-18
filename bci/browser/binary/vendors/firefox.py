@@ -48,8 +48,22 @@ class FirefoxBinary(Binary):
         with requests.get(binary_url, stream=True) as req:
             with open(tar_file_path, 'wb') as file:
                 shutil.copyfileobj(req.raw, file)
-        with tarfile.open(tar_file_path, "r:bz2") as tar_ref:
+
+        # Determine correct archive format based on version
+        if int(self.state.version) >= 135:
+            tar_file_path = f'/tmp/{self.state.name}/archive.tar.xz'
+            tar_mode = "r:xz"
+        else:
+            tar_file_path = f'/tmp/{self.state.name}/archive.tar.bz2'
+            tar_mode = "r:bz2"
+        # Download the correct archive
+        with requests.get(binary_url, stream=True) as req:
+            with open(tar_file_path, 'wb') as file:
+                shutil.copyfileobj(req.raw, file)
+        # Extract the archive using the determined format
+        with tarfile.open(tar_file_path, tar_mode) as tar_ref:
             tar_ref.extractall(os.path.dirname(tar_file_path))
+
         bin_path = self.get_potential_bin_path()
         os.makedirs(os.path.dirname(bin_path), exist_ok=True)
         unzipped_folder_path = os.path.join(os.path.dirname(tar_file_path), "firefox")
