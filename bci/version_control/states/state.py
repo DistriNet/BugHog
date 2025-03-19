@@ -31,10 +31,13 @@ class StateResult:
 
     @property
     def reproduced(self):
-        entry_if_reproduced = {'var': 'reproduced', 'val': 'OK'}
-        reproduced_in_req_vars = [entry for entry in self.request_vars if entry == entry_if_reproduced] != []
-        reproduced_in_log_vars = [entry for entry in self.log_vars if entry == entry_if_reproduced] != []
-        return reproduced_in_req_vars or reproduced_in_log_vars
+        """
+        Returns whether the PoC was reproduced for the associated state.
+        """
+        return any(
+            {'var': entry['var'].lower(), 'val': entry['val'].lower()} == {'var': 'reproduced', 'val': 'ok'}
+            for entry in self.request_vars + self.log_vars
+        )
 
     @staticmethod
     def from_dict(data: dict, is_dirty: bool = False) -> StateResult:

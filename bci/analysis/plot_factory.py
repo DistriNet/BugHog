@@ -60,11 +60,10 @@ class PlotFactory:
             # Backwards compatibility
             requests_to_target = list(filter(lambda x: f'/report/?leak={target_mech_id}' in x['url'], doc['results']['requests']))
             # New way
-            if [req_var for req_var in doc['results']['req_vars'] if req_var['var'] == 'reproduced' and req_var['val'] == 'OK'] or \
-                    [log_var for log_var in doc['results']['log_vars'] if log_var['var'] == 'reproduced' and log_var['val'] == 'OK']:
-                reproduced = True
-            else:
-                reproduced = False
+            reproduced = any(
+                {'var': entry['var'].lower(), 'val': entry['val'].lower()} == {'var': 'reproduced', 'val': 'ok'}
+                for entry in doc['results']['req_vars'] + doc['results']['log_vars']
+            )
 
             new_doc = {
                 'revision_number': doc['state']['revision_number'],
