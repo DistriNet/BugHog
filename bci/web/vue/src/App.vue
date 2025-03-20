@@ -655,7 +655,7 @@ export default {
       <div :class="this.hide_advanced_browser_options ? 'hidden w-full' : 'w-full'">
         <div>
           <label for="cli_options" class="pb-2">CLI flags</label>
-          <input class="w-full" type="text" name="cli_options" v-model="this.cli_options_str">
+          <input class="w-full dark:!text-white dark:!bg-gray-800" type="text" name="cli_options" v-model="this.cli_options_str">
         </div>
         <div>
           <div>
@@ -663,7 +663,7 @@ export default {
           </div>
           <ul class="">
             <li v-for="cli_options_str in this.previous_cli_options_list">
-              <div role="button" @click="this.cli_options_str=cli_options_str" class="button my-1 !text-black !text-left !bg-white hover:!bg-gray-100">
+              <div role="button" @click="this.cli_options_str=cli_options_str" class="button my-1 !text-black !text-left !bg-white hover:!bg-gray-100 dark:!text-white dark:!bg-gray-800 dark:hover:!bg-gray-600">
                 {{ cli_options_str }}
               </div>
             </li>
