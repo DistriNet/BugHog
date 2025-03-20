@@ -7,8 +7,6 @@ from typing import Optional
 
 from werkzeug.datastructures import ImmutableMultiDict
 
-import bci.browser.cli_options.chromium as cli_options_chromium
-import bci.browser.cli_options.firefox as cli_options_firefox
 from bci.version_control.states.state import State, StateResult
 
 logger = logging.getLogger(__name__)
@@ -67,7 +65,10 @@ class BrowserConfiguration:
     @staticmethod
     def from_dict(data: dict) -> BrowserConfiguration:
         return BrowserConfiguration(
-            data['browser_name'], data['browser_setting'], data['cli_options'], data['extensions']
+            data['browser_name'],
+            data['browser_setting'],
+            data['cli_options'],
+            data['extensions']
         )
 
 
@@ -274,9 +275,7 @@ def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]
     if not mech_groups:
         raise MissingParametersException()
 
-    browser_configuration = BrowserConfiguration(
-        kwargs.get('browser_name'), kwargs.get('browser_setting'), __get_cli_arguments(kwargs), __get_extensions(kwargs)
-    )
+    browser_configuration = BrowserConfiguration.from_dict(kwargs)
     evaluation_configuration = EvaluationConfiguration(
         kwargs.get('project'), kwargs.get('automation'), int(kwargs.get('seconds_per_visit', 5))
     )
@@ -343,19 +342,6 @@ def __get_extensions(form_data: dict[str, str]) -> list[str]:
             ),
         )
     )
-
-
-@staticmethod
-def __get_cli_arguments(form_data: dict[str, str]) -> list[str]:
-    browser = form_data.get('browser_name', None)
-    match browser:
-        case 'chromium':
-            available_cli_options = cli_options_chromium.get_all_cli_options()
-        case 'firefox':
-            available_cli_options = cli_options_firefox.get_all_cli_options()
-        case _:
-            raise AttributeError(f"Unknown browser '{browser}'")
-    return list(filter(lambda x: x in form_data, available_cli_options))
 
 
 class MissingParametersException(Exception):

@@ -6,6 +6,7 @@ from flask import current_app
 from simple_websocket import Server
 
 from bci.analysis.plot_factory import PlotFactory
+from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import PlotParameters
 
 
@@ -22,6 +23,12 @@ class Clients:
     def __remove_disconnected_clients():
         with Clients.__semaphore:
             Clients.__clients = {k: v for k, v in Clients.__clients.items() if k.connected}
+
+    @staticmethod
+    def associate_browser(ws_client: Server, params: dict):
+        with Clients.__semaphore:
+            Clients.__clients[ws_client] = params
+        Clients.push_previous_cli_options(ws_client)
 
     @staticmethod
     def associate_params(ws_client: Server, params: dict):
@@ -41,6 +48,7 @@ class Clients:
             params['project'] = project
             Clients.__clients[ws_client] = params
             Clients.push_experiments(ws_client)
+            Clients.push_previous_cli_options(ws_client)
 
     @staticmethod
     def push_results(ws_client: Server):
@@ -53,7 +61,6 @@ class Clients:
             else:
                 revision_data = PlotFactory.get_plot_revision_data(plot_params)
                 version_data = PlotFactory.get_plot_version_data(plot_params)
-
 
             ws_client.send(
                 json.dumps(
@@ -103,3 +110,17 @@ class Clients:
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
             Clients.push_experiments(ws_client)
+
+    @staticmethod
+    def push_previous_cli_options(ws_client: Server):
+        if params := Clients.__clients.get(ws_client, None):
+            previous_cli_options = MongoDB().get_previous_cli_options(params)
+            ws_client.send(
+                json.dumps(
+                    {
+                        'update': {
+                            'previous_cli_options': previous_cli_options
+                        }
+                    }
+                )
+            )

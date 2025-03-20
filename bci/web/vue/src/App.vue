@@ -23,6 +23,8 @@ export default {
       projects: [],
       browsers: [],
       browser_settings: [],
+      cli_options_str: "",
+      previous_cli_options_list: [],
       db_collection_suffix: "",
       tests: [],
       select_all_tests: false,
@@ -39,7 +41,7 @@ export default {
         // Browser config
         browser_name: null,
         browser_setting: "default",
-        cli_options: "",
+        cli_options: [],
         extensions: [],
         // Eval config
         project: null,
@@ -87,7 +89,8 @@ export default {
       target_mech_id_input: null,
       target_mech_id: null,
       fatal_error: null,
-      hide_advanced: true,
+      hide_advanced_evaluation_options: true,
+      hide_advanced_browser_options: true,
       hide_logs: true,
       hide_poc_editor: true,
       system: null,
@@ -180,6 +183,14 @@ export default {
       this.eval_params.db_collection = this.db_collection;
       this.propagate_new_params();
     },
+    "cli_options_str": function (val) {
+      if (val !== "") {
+        this.eval_params.cli_options = val.trim().split(" ");
+      } else {
+        this.eval_params.cli_options = [];
+      }
+      this.propagate_new_params()
+    },
     "select_all_tests": function (val) {
       console.log("hi")
       if (this.select_all_tests === true) {
@@ -261,6 +272,10 @@ export default {
           }
           if (data.update.hasOwnProperty("experiments")) {
             this.tests = data.update.experiments;
+          }
+          if (data.update.hasOwnProperty("previous_cli_options")) {
+            this.previous_cli_options_list = data.update.previous_cli_options;
+            console.log(this.previous_cli_options_list);
           }
           else {
             for (const variable in data.update) {
@@ -346,6 +361,13 @@ export default {
         this.send_with_socket(
           {
             "new_params": this.eval_params
+          }
+        );
+      } else if (this.eval_params.browser_name !== null) {
+        console.log('Propagating browser change');
+        this.send_with_socket(
+          {
+            "new_browser": this.eval_params
           }
         );
       } else {
@@ -616,19 +638,53 @@ export default {
       </div>
     </div>
 
-    <!-- Advanced options -->
-    <div class="form-section h-fit col-span-2 row-start-4">
+    <!-- Advanced browser options -->
+    <div class="form-section col-span-2 row-start-4">
       <div class="flex">
-        <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced options</h2>
+        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+          Advanced browser options
+        </h2>
         <div class="w-full text-right">
-          <button class="collapse-button" @click="this.hide_advanced = !this.hide_advanced">
+          <button class="collapse-button" @click="this.hide_advanced_browser_options = !this.hide_advanced_browser_options">
             <div class="flex items-center">
               <p class="text-xl pb-1 px-1">+</p>
             </div>
           </button>
         </div>
       </div>
-      <div :class="hide_advanced ? 'hidden' : ''">
+      <div :class="this.hide_advanced_browser_options ? 'hidden w-full' : 'w-full'">
+        <div>
+          <label for="cli_options" class="pb-2">CLI flags</label>
+          <input class="w-full" type="text" name="cli_options" v-model="this.cli_options_str">
+        </div>
+        <div>
+          <div>
+            <label class="pt-4 pb-2">Previously used CLI flags</label>
+          </div>
+          <ul class="">
+            <li v-for="cli_options_str in this.previous_cli_options_list">
+              <div role="button" @click="this.cli_options_str=cli_options_str" class="button my-1 !text-black !text-left !bg-white hover:!bg-gray-100">
+                {{ cli_options_str }}
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced evaluation options -->
+    <div class="form-section h-fit col-span-2 row-start-5">
+      <div class="flex">
+        <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced evaluation options</h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_advanced_evaluation_options = !this.hide_advanced_evaluation_options">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="hide_advanced_evaluation_options ? 'hidden' : ''">
         <div class="grid grid-cols-[auto,auto,auto] justify-start">
           <div class="flex flex-col">
             <div class="form-subsection">
@@ -705,7 +761,7 @@ export default {
     </div>
 
     <!-- Logs -->
-    <div class="results-section h-fit col-span-2 row-start-5 flex-1">
+    <div class="results-section h-fit col-span-2 row-start-6 flex-1">
       <div class="flex">
         <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
         <div class="w-full text-right">

@@ -130,6 +130,8 @@ def init_websocket(ws):
             break
         try:
             message = json.loads(message)
+            if params := message.get('new_browser', None):
+                Clients.associate_browser(ws, params)
             if params := message.get('new_params', None):
                 Clients.associate_params(ws, params)
             if params := message.get('select_project', None):

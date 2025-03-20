@@ -120,6 +120,14 @@ class MongoDB:
                 raise ServerException(f"Could not find collection '{name}'")
         return self._db[name]
 
+    def get_all_collection_names_for_browser(self, browser_name: str) -> list[str]:
+        """
+        Returns all collections associated with the given browser.
+        """
+        if self._db is None:
+            raise ServerException('Database server does not have a database')
+        return self._db.list_collection_names(filter={'name': {'$regex': rf'^.+_{browser_name}$'}})
+
     @property
     def gridfs(self) -> GridFS:
         if self._db is None:
@@ -315,7 +323,7 @@ class MongoDB:
             'browser_config': params.browser_config,
             'state.type': 'version' if releases else 'revision',
             'extensions': {'$size': len(params.extensions) if params.extensions else 0},
-            'cli_options': {'$size': len(params.cli_options) if params.cli_options else 0}
+            'cli_options': {'$size': len(params.cli_options) if params.cli_options else 0},
         }
         if params.extensions:
             query['extensions']['$all'] = params.extensions
@@ -355,6 +363,29 @@ class MongoDB:
             return {'type': 'mongo', 'host': self.client.address[0], 'connected': True}
         else:
             return {'type': 'mongo', 'host': None, 'connected': False}
+
+    def get_previous_cli_options(self, params: dict) -> list[str]:
+        """
+        Returns a list of all cli options used for the browser defined in the given parameter dictionary.
+        """
+        if browser_name := params.get('browser_name', None):
+            collection_names = self.get_all_collection_names_for_browser(browser_name)
+            previous_cli_options = []
+            for name in collection_names:
+                # Appartently simply asking for a set of distinct arrays requires a complicated pipeline in MongoDB,
+                # so we'll use Python logic.
+                cursor = self.get_collection(name).find(
+                    {'cli_options': {'$exists': True, '$not': {'$size': 0}}}, {'_id': False, 'cli_options': True}
+                )
+                # We convert to tuples because they are, in contract to lists, hashable.
+                cli_options_list = set(' '.join(doc['cli_options']) for doc in cursor)
+                if cli_options_list:
+                    previous_cli_options.extend(list(filter(lambda x: x not in previous_cli_options, cli_options_list)))
+            previous_cli_options.sort()
+            return previous_cli_options
+        else:
+            logger.warning('Could not find browser name in parameters, returning empty list')
+            return []
 
 
 class ServerException(Exception):
