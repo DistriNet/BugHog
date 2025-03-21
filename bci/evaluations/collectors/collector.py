@@ -1,5 +1,5 @@
 import logging
-from abc import abstractmethod
+import re
 from enum import Enum
 
 from bci.evaluations.collectors.base import BaseCollector
@@ -50,9 +50,13 @@ class Collector:
         If this variable is detected, the evaluation should not need any more retries.
 
         **Warning**: this method should only be used for performance purposes.
+        TODO: we should ideally perform the same checks as in outcome_checker.py
+        TODO: another check in the StateResult class should also use this
         """
         all_data = self.collect_results()
-        return {'var': 'reproduced', 'val': 'OK'} in all_data['req_vars']
+        regex = r'^https?:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]+\/report\/\?leak=.+$'
+        return ({'var': 'reproduced', 'val': 'OK'} in all_data['req_vars']) or \
+            len([request for request in all_data['requests'] if re.match(regex, request['url'])]) > 0
 
     def collect_results(self) -> dict:
         all_data = {}

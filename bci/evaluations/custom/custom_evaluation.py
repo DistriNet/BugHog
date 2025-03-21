@@ -37,12 +37,11 @@ class CustomEvaluationFramework(EvaluationFramework):
 
         for root, dirs, files in os.walk(path):
             # Remove base path from root
-            root = root[len(path):]
+            root = root[len(path) :]
             keys = root.split('/')[1:]
-            subdir_tree = (
-                {dir: {} for dir in dirs if dir not in CustomEvaluationFramework.__files_and_folders_to_ignore} |
-                {file: None for file in files if file not in CustomEvaluationFramework.__files_and_folders_to_ignore}
-            )
+            subdir_tree = {
+                dir: {} for dir in dirs if dir not in CustomEvaluationFramework.__files_and_folders_to_ignore
+            } | {file: None for file in files if file not in CustomEvaluationFramework.__files_and_folders_to_ignore}
             if root:
                 set_nested_value(dir_tree, keys, subdir_tree)
             else:
@@ -101,7 +100,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         return None
 
     @staticmethod
-    def is_runnable_experiment(project: str, poc: str, dir_tree: dict[str,dict], data: dict[str,str]) -> bool:
+    def is_runnable_experiment(project: str, poc: str, dir_tree: dict[str, dict], data: dict[str, str]) -> bool:
         # Always runnable if there is either an interaction script or url_queue present
         if 'script' in data or 'url_queue' in data:
             return True
@@ -125,16 +124,13 @@ class CustomEvaluationFramework(EvaluationFramework):
         collector.start()
 
         is_dirty = False
+        tries_left = 3
+        experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
         try:
-            experiment = self.tests_per_project[params.evaluation_configuration.project][params.mech_group]
-
-            tries_left = 3
-            evaluation_should_stop = False
-            while not evaluation_should_stop:
-                if tries_left == 0:
-                    raise FailedSanityCheck()
+            sanity_check_was_successful = False
+            poc_was_reproduced = False
+            while not poc_was_reproduced and tries_left > 0:
                 tries_left -= 1
-
                 browser.pre_try_setup()
                 if 'script' in experiment:
                     interaction = Interaction(browser, experiment['script'], params)
@@ -144,7 +140,10 @@ class CustomEvaluationFramework(EvaluationFramework):
                     for url in url_queue:
                         browser.visit(url)
                 browser.post_try_cleanup()
-                evaluation_should_stop = collector.sanity_check_was_successful()
+                sanity_check_was_successful |= collector.sanity_check_was_successful()
+                poc_was_reproduced = collector.poc_is_likely_reproduced()
+            if not poc_was_reproduced and not sanity_check_was_successful:
+                raise FailedSanityCheck()
         except FailedSanityCheck:
             logger.error('Evaluation sanity check has failed', exc_info=True)
             is_dirty = True
@@ -152,6 +151,7 @@ class CustomEvaluationFramework(EvaluationFramework):
             logger.error(f'An error during evaluation: {e}', exc_info=True)
             is_dirty = True
         finally:
+            logger.debug(f'Evaluation finished with {tries_left} tries left')
             collector.stop()
             results = collector.collect_results()
         return params.create_test_result_with(browser_version, binary_origin, results, is_dirty)
@@ -212,7 +212,6 @@ class CustomEvaluationFramework(EvaluationFramework):
         self.sync_with_folders()
         Clients.push_experiments_to_all()
 
-
     def add_page(self, project: str, poc: str, domain: str, path: str, file_type: str):
         domain_path = os.path.join(Global.custom_page_folder, project, poc, domain)
         if not os.path.exists(domain_path):
@@ -245,7 +244,7 @@ class CustomEvaluationFramework(EvaluationFramework):
     def add_config(self, project: str, poc: str, type: str) -> bool:
         content = self.get_default_file_content(type)
 
-        if (content == ''):
+        if content == '':
             return False
 
         file_path = os.path.join(Global.custom_page_folder, project, poc, type)
