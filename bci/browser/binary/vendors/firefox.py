@@ -23,9 +23,6 @@ class FirefoxBinary(Binary):
     def __init__(self, state: State):
         super().__init__(state)
 
-    def get_release_tag(self, version):
-        return self.repo.get_release_tag(version)
-
     @property
     def executable_name(self) -> str:
         return "firefox"
@@ -71,7 +68,8 @@ class FirefoxBinary(Binary):
             file.write('{ "policies": { "DisableAppUpdate": true } }')
 
     def _get_version(self):
-        bin_path = self.get_bin_path()
+        if (bin_path := self.get_bin_path()) is None:
+            raise AttributeError(f"Binary not available for {self.browser_name} {self.version}")
         command = "./firefox --version"
         output = cli.execute_and_return_output(command, cwd=os.path.dirname(bin_path))
         match = re.match(r'Mozilla Firefox (?P<version>[0-9]+)\.[0-9]+.*', output)
@@ -79,13 +77,6 @@ class FirefoxBinary(Binary):
             return match.group("version")
         raise AttributeError(
             "Could not determine version of binary at '%s'. Version output: %s" % (bin_path, output))
-
-    def get_driver_path(self, browser_version):
-        driver_version = self.get_driver_version(browser_version)
-        driver_path = os.path.join(self.driver_folder_path, driver_version)
-        if os.path.exists(driver_path):
-            return driver_path
-        raise AttributeError("Could not find appropriate driver for Firefox %s" % browser_version)
 
     def get_driver_version(self, browser_version):
         if browser_version not in self.browser_version_to_driver_version.keys():

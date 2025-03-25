@@ -53,6 +53,7 @@ class TestCompositeSearch(unittest.TestCase):
             except SequenceFinished:
                 break
 
+        assert sequence.search_strategy is not None
         evaluated_indexes = [state.index for state in sequence.search_strategy._completed_states]
 
         assert sequence.search_strategy is not None

@@ -48,7 +48,7 @@ class Firefox(Browser):
             add_user_pref('network.cookie.cookieBehavior', 1)
             add_user_pref('browser.contentblocking.category', 'custom')
         elif 'tp' in self.browser_config.browser_setting:
-            if self.version >= 65:
+            if int(self.version) >= 65:
                 add_user_pref('privacy.trackingprotection.enabled', True)
                 add_user_pref('pref.privacy.disable_button.change_blocklis', False)
                 add_user_pref('pref.privacy.disable_button.tracking_protection_exceptions', False)
