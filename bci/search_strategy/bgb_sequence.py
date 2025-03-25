@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
-from bci.version_control.factory import StateFactory
+from bci.version_control.state_factory import StateFactory
 from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)

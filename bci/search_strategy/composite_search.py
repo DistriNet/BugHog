@@ -1,7 +1,7 @@
 from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.sequence_strategy import SequenceFinished
-from bci.version_control.factory import StateFactory
+from bci.version_control.state_factory import StateFactory
 from bci.version_control.states.state import State
 
 

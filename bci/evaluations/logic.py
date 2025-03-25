@@ -7,7 +7,7 @@ from typing import Optional
 
 from werkzeug.datastructures import ImmutableMultiDict
 
-from bci.version_control.states.state import State, StateResult
+from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,6 @@ class EvaluationParameters:
             self.browser_configuration.extensions,
             self.browser_configuration.cli_options,
             dirty_allowed,
-            self.sequence_configuration.target_cookie_name,
         )
 
 
@@ -106,8 +105,6 @@ class EvaluationRange:
 class SequenceConfiguration:
     nb_of_containers: int = 8
     sequence_limit: int = 10000
-    target_mech_id: str | None = None
-    target_cookie_name: str | None = None
     search_strategy: str | None = None
 
 
@@ -221,9 +218,6 @@ class TestResult:
             padded_version.append('0' * (padding_target - len(sub)) + sub)
         return '.'.join(padded_version)
 
-    def get_state_result(self) -> StateResult:
-        return StateResult.from_dict(self.data, self.is_dirty)
-
 
 @dataclass(frozen=True)
 class PlotParameters:
@@ -237,7 +231,6 @@ class PlotParameters:
     extensions: Optional[list[str]] = None
     cli_options: Optional[list[str]] = None
     dirty_allowed: bool = True
-    target_cookie_name: Optional[str] = None
 
     @staticmethod
     def from_dict(data: dict) -> PlotParameters:
@@ -253,37 +246,32 @@ class PlotParameters:
         else:
             revision_number_range = None
         return PlotParameters(
-            data.get("plot_mech_group"),
-            data.get("target_mech_id"),
-            data.get("browser_name"),
-            data.get("db_collection"),
+            data['plot_mech_group'],
+            data['target_mech_id'],
+            data['browser_name'],
+            data['db_collection'],
             major_version_range=major_version_range,
             revision_number_range=revision_number_range,
             browser_config=data.get("browser_setting", "default"),
             extensions=data.get("extensions", []),
             cli_options=data.get("cli_options", []),
             dirty_allowed=data.get("dirty_allowed", True),
-            target_cookie_name=None
-            if data.get("check_for") == "request"
-            else data.get("target_cookie_name", "generic"),
         )
 
 
 @staticmethod
 def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]:
-    mech_groups = kwargs.get('tests', [])
-    if not mech_groups:
+    mech_groups = kwargs.get('tests')
+    if mech_groups is None:
         raise MissingParametersException()
 
     browser_configuration = BrowserConfiguration.from_dict(kwargs)
     evaluation_configuration = EvaluationConfiguration(
-        kwargs.get('project'), kwargs.get('automation'), int(kwargs.get('seconds_per_visit', 5))
+        kwargs['project'], kwargs['automation'], int(kwargs.get('seconds_per_visit', 5))
     )
     sequence_configuration = SequenceConfiguration(
         int(kwargs.get('nb_of_containers')),
         int(kwargs.get('sequence_limit')),
-        kwargs.get('target_mech_id', None),
-        __get_cookie_name(kwargs),
         kwargs.get('search_strategy'),
     )
     evaluation_params_list = []

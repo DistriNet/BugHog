@@ -28,8 +28,6 @@ def get_default_sequence_config() -> SequenceConfiguration:
     return SequenceConfiguration(
         8,
         50,
-        None,
-        None,
         'comp_search',
     )
 

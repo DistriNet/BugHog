@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 
 class StateCondition(Enum):
@@ -28,27 +29,65 @@ class StateResult:
     request_vars: list[dict[str, str]]
     log_vars: list[dict[str, str]]
     is_dirty: bool
+    reproduced: bool
 
-    @property
-    def reproduced(self):
+    def has_same_outcome(self, other: StateResult) -> bool:
         """
-        Returns whether the PoC was reproduced for the associated state.
-        """
-        return any(
-            {'var': entry['var'].lower(), 'val': entry['val'].lower()} == {'var': 'reproduced', 'val': 'ok'}
-            for entry in self.request_vars + self.log_vars
-        )
+        Returns whether this and the given other result share the same outcome.
 
-    @staticmethod
-    def from_dict(data: dict, is_dirty: bool = False) -> StateResult:
-        return StateResult(data['requests'], data['req_vars'], data['log_vars'], is_dirty)
+        :returns bool: True if both state results are reproduced, not reproduced, or are both dirty.
+        """
+        return self.is_dirty == other.is_dirty and self.reproduced == other.reproduced
+
+    def __repr__(self) -> str:
+        return f'StateResult(reproduced={self.reproduced}, dirty={self.is_dirty})'
 
 
 class State:
     def __init__(self):
-        self.condition = StateCondition.PENDING
-        self.result: StateResult
-        self.outcome: bool | None = None
+        self.result: Optional[StateResult] = None
+        self.unavailable = False
+        self.failed_by_error = False
+
+    @property
+    def condition(self) -> StateCondition:
+        if self.result is None:
+            return StateCondition.PENDING
+        elif self.failed_by_error:
+            return StateCondition.FAILED
+        elif self.unavailable:
+            return StateCondition.UNAVAILABLE
+        elif self.result.is_dirty:
+            return StateCondition.FAILED
+        else:
+            return StateCondition.COMPLETED
+
+    def has_dirty_result(self) -> bool:
+        """
+        Returns whether this state has a dirty result.
+
+        :returns bool: True if this state has a result, which is dirty.
+        """
+        return self.result is not None and self.result.is_dirty
+
+    def has_dirty_or_no_result(self) -> bool:
+        """
+        Returns whether this state has no result or a dirty result.
+
+        :returns bool: True if this state has no result, or a dirty result.
+        """
+        return self.result is None or self.result.is_dirty
+
+    def has_same_outcome(self, other: State) -> bool:
+        """
+        Returns whether this and the given other state share the same result outcome.
+
+        :returns bool: True if states are both reproduced, not reproduced, or dirty.
+        """
+        if self.result is None or other.result is None:
+            return False
+        else:
+            return self.result.has_same_outcome(other.result)
 
     @property
     @abstractmethod
@@ -109,7 +148,7 @@ class State:
         else:
             has_available_binary = self.has_online_binary()
             if not has_available_binary:
-                self.condition = StateCondition.UNAVAILABLE
+                self.unavailable = True
             return has_available_binary
 
     def get_previous_and_next_state_with_binary(self) -> tuple[State, State]:

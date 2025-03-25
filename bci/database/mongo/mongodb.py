@@ -15,12 +15,11 @@ from bci.evaluations.logic import (
     DatabaseParameters,
     EvaluationParameters,
     PlotParameters,
-    StateResult,
     TestParameters,
     TestResult,
 )
-from bci.evaluations.outcome_checker import OutcomeChecker
-from bci.version_control.states.state import State, StateCondition
+from bci.version_control.state_result_factory import StateResultFactory
+from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +183,7 @@ class MongoDB:
         return nb_of_documents > 0
 
     def get_evaluated_states(
-        self, params: EvaluationParameters, boundary_states: tuple[State, State], outcome_checker: OutcomeChecker
+        self, params: EvaluationParameters, boundary_states: Optional[tuple[State, State]], result_factory: StateResultFactory
     ) -> list[State]:
         collection = self.get_collection(params.database_collection, create_if_not_found=True)
         query = {
@@ -194,7 +193,7 @@ class MongoDB:
             'results': {'$exists': True},
             'state.type': 'version' if params.evaluation_range.only_release_revisions else 'revision',
         }
-        if boundary_states:
+        if boundary_states is not None:
             query['state.revision_number'] = {
                 '$gte': boundary_states[0].revision_nb,
                 '$lte': boundary_states[1].revision_nb,
@@ -217,12 +216,7 @@ class MongoDB:
         states = []
         for doc in cursor:
             state = State.from_dict(doc['state'])
-            state.result = StateResult.from_dict(doc['results'], is_dirty=doc['dirty'])
-            state.outcome = outcome_checker.get_outcome(state.result)
-            if doc['dirty']:
-                state.condition = StateCondition.FAILED
-            else:
-                state.condition = StateCondition.COMPLETED
+            state.result = result_factory.get_result(doc['results'])
             states.append(state)
         return states
 
@@ -316,7 +310,7 @@ class MongoDB:
             return None
         return result['build_id']
 
-    def get_documents_for_plotting(self, params: PlotParameters, releases: bool = False):
+    def get_documents_for_plotting(self, params: PlotParameters, releases: bool = False) -> list:
         collection = self.get_collection(params.database_collection, create_if_not_found=True)
         query = {
             'mech_group': params.mech_group,

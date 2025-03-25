@@ -11,12 +11,11 @@ from bci.evaluations.logic import (
     EvaluationParameters,
     TestParameters,
 )
-from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
-from bci.version_control.factory import StateFactory
+from bci.version_control.state_factory import StateFactory
 from bci.version_control.states.revisions.firefox import BINARY_AVAILABILITY_MAPPING
 from bci.web.clients import Clients
 
@@ -111,8 +110,7 @@ class Main:
         sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
-        outcome_checker = OutcomeChecker(sequence_config)
-        state_factory = StateFactory(eval_params, outcome_checker)
+        state_factory = StateFactory(eval_params)
 
         if search_strategy == 'bgb_sequence':
             strategy = BiggestGapBisectionSequence(state_factory, sequence_limit)

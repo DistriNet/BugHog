@@ -8,6 +8,7 @@ from bci.configuration import Global
 from bci.evaluations.collectors.collector import Collector, Type
 from bci.evaluations.evaluation_framework import EvaluationFramework, FailedSanityCheck
 from bci.evaluations.logic import TestParameters, TestResult
+from bci.version_control.state_result_factory import StateResultFactory
 from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,7 @@ class CustomEvaluationFramework(EvaluationFramework):
         browser_version = browser.version
         binary_origin = browser.get_binary_origin()
 
+        state_result_factory = StateResultFactory(experiment=params.mech_group)
         collector = Collector([Type.REQUESTS, Type.LOGS])
         collector.start()
 
@@ -140,8 +142,9 @@ class CustomEvaluationFramework(EvaluationFramework):
                     for url in url_queue:
                         browser.visit(url)
                 browser.post_try_cleanup()
-                sanity_check_was_successful |= collector.sanity_check_was_successful()
-                poc_was_reproduced = collector.poc_is_likely_reproduced()
+                intermediary_state_result = state_result_factory.get_result(collector.collect_results())
+                sanity_check_was_successful |= not intermediary_state_result.is_dirty
+                poc_was_reproduced = intermediary_state_result.reproduced
             if not poc_was_reproduced and not sanity_check_was_successful:
                 raise FailedSanityCheck()
         except FailedSanityCheck:

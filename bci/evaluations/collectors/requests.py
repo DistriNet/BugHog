@@ -82,7 +82,7 @@ class RequestCollector(BaseCollector):
         data = []
         # Important: we only consider requests to the /report/ endpoint where the bughog parameter immediately follows.
         # Otherwise conditional endpoints (e.g., /report/if/Referer/) cause false positives.
-        regex = r'/report/\?bughog_(.+)=(.+)'
+        regex = r'/report/\?(?:.+&)*bughog_(.+)=(.+)'
         request_urls = [request['url'] for request in self.data['requests'] if 'url' in request]
         data = self._parse_bughog_variables(request_urls, regex)
         self.data['req_vars'] = data

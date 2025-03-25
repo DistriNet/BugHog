@@ -1,12 +1,11 @@
 import unittest
-from typing import Callable
+from typing import Callable, Optional
 from unittest.mock import MagicMock
 
 from bci.evaluations.logic import EvaluationConfiguration, EvaluationRange
-from bci.evaluations.outcome_checker import OutcomeChecker
 from bci.search_strategy.sequence_strategy import SequenceStrategy
-from bci.version_control.factory import StateFactory
-from bci.version_control.states.state import State
+from bci.version_control.state_factory import StateFactory
+from bci.version_control.states.state import State, StateResult
 
 
 class TestSequenceStrategy(unittest.TestCase):
@@ -22,15 +21,14 @@ class TestSequenceStrategy(unittest.TestCase):
     @staticmethod
     def create_state_factory(
         is_available: Callable,
-        evaluated_indexes: list[int] = None,
-        outcome_func: Callable = None) -> StateFactory:
+        evaluated_indexes: Optional[list[int]] = None,
+        outcome_func: Optional[Callable] = None) -> StateFactory:
         eval_params = MagicMock(spec=EvaluationConfiguration)
         eval_params.evaluation_range = MagicMock(spec=EvaluationRange)
         eval_params.evaluation_range.major_version_range = [0, 99]
 
         factory = MagicMock(spec=StateFactory)
         factory.__eval_params = eval_params
-        factory.__outcome_checker = TestSequenceStrategy.create_outcome_checker(outcome_func)
         factory.create_state = lambda index: TestSequenceStrategy.create_state(index, is_available, outcome_func)
         first_state = TestSequenceStrategy.create_state(0, is_available, outcome_func)
         last_state = TestSequenceStrategy.create_state(99, is_available, outcome_func)
@@ -43,24 +41,17 @@ class TestSequenceStrategy(unittest.TestCase):
         return factory
 
     @staticmethod
-    def create_state(index, is_available: Callable, outcome_func: Callable) -> State:
+    def create_state(index, is_available: Callable, outcome_func: Optional[Callable]) -> State:
         state = MagicMock(spec=State)
         state.index = index
         state.has_available_binary = lambda: is_available(index)
-        state.outcome = outcome_func(index) if outcome_func else None
+        state.has_same_outcome = lambda x: State.has_same_outcome(state, x)
+        state.has_dirty_or_no_result = lambda: State.has_dirty_or_no_result(state)
+        state.result = StateResult([], [], [], False, outcome_func(index) if outcome_func else False)
         state.__eq__ = State.__eq__
         state.__repr__ = State.__repr__
         state.get_previous_and_next_state_with_binary = lambda: State.get_previous_and_next_state_with_binary(state)
         return state
-
-    @staticmethod
-    def create_outcome_checker(outcome_func: Callable) -> OutcomeChecker:
-        if outcome_func:
-            outcome_checker = MagicMock()
-            outcome_checker.get_outcome = outcome_func
-            return outcome_checker
-        else:
-            return None
 
     @staticmethod
     def always_has_binary(index) -> bool:

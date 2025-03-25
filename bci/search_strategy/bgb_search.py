@@ -5,7 +5,7 @@ from typing import Optional
 
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.sequence_strategy import SequenceFinished
-from bci.version_control.factory import StateFactory
+from bci.version_control.state_factory import StateFactory
 from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
     """
     This search strategy will split the biggest gap between two states in half and return the state in the middle.
-    It will only consider states where the non-None outcome differs.
+    It will only consider state pairs if their non-dirty result differs.
     It stops when there are no more states to evaluate between two states with different outcomes.
     """
 
-    def __init__(self, state_factory: StateFactory, completed_states: Optional[list[State]]=None) -> None:
+    def __init__(self, state_factory: StateFactory, completed_states: Optional[list[State]] = None) -> None:
         """
         Initializes the search strategy.
 
@@ -58,28 +58,34 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         """
         Returns the next pair of states to split.
         """
-        # Make pairwise list of states and remove pairs with the same outcome
         states = self._completed_states
-        pairs = [(state1, state2) for state1, state2 in zip(states, states[1:]) if state1.outcome != state2.outcome]
+        # Remove all sequences of states that are either resultless or dirty that are confined by states with the same result.
+        states_to_remove = []
+        for i, state in enumerate(states):
+            # Skip first and last state:
+            if i == 0 or i == len(states) - 1:
+                continue
+            # Skip pairs that do has a result, which also is not dirty.
+            if not state.has_dirty_or_no_result():
+                continue
+            preceding_states = [state for state in states[:i] if not state.has_dirty_or_no_result()]
+            succeeding_states = [state for state in states[i+1:] if not state.has_dirty_or_no_result()]
+            if preceding_states[-1].has_same_outcome(succeeding_states[0]):
+                states_to_remove.append(state)
+        for state in states_to_remove:
+            states.remove(state)
+
+        # Make pairwise list of states and remove pairs with the same outcome
+        pairs = [(state1, state2) for state1, state2 in zip(states, states[1:]) if not state1.has_same_outcome(state2)]
         if not pairs:
             return None
-        # Remove the first and last pair if they have a first and last state with a None outcome, respectively
-        if pairs[0][0].outcome is None:
+        # Remove the first and last pair if they have a first and last state without a result, respectively
+        if pairs[0][0].result is None:
             pairs = pairs[1:]
-        if pairs[-1][1].outcome is None:
+        if pairs[-1][1].result is None:
             pairs = pairs[:-1]
         # Remove all pairs that have already been identified as unavailability gaps
         pairs = [pair for pair in pairs if pair not in self._unavailability_gap_pairs]
-        # Remove any pair where the same None-outcome state is present in a pair where the sibling states have the same outcome
-        pairs_with_failed = [pair for pair in pairs if pair[0].outcome is None or pair[1].outcome is None]
-        for i in range(0, len(pairs_with_failed), 2):
-            if i + 1 >= len(pairs_with_failed):
-                break
-            first_pair = pairs_with_failed[i]
-            second_pair = pairs_with_failed[i + 1]
-            if first_pair[0].outcome == second_pair[1].outcome:
-                pairs.remove(first_pair)
-                pairs.remove(second_pair)
 
         if not pairs:
             return None

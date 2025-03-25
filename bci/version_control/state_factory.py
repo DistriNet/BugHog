@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import EvaluationParameters
-from bci.evaluations.outcome_checker import OutcomeChecker
+from bci.version_control.state_result_factory import StateResultFactory
 from bci.version_control.states.revisions.chromium import ChromiumRevision
 from bci.version_control.states.revisions.firefox import FirefoxRevision
 from bci.version_control.states.state import State
@@ -12,14 +12,14 @@ from bci.version_control.states.versions.firefox import FirefoxVersion
 
 
 class StateFactory:
-    def __init__(self, eval_params: EvaluationParameters, outcome_checker: OutcomeChecker) -> None:
+    def __init__(self, eval_params: EvaluationParameters) -> None:
         """
         Create a state factory object with the given evaluation parameters and boundary indices.
 
         :param eval_params: The evaluation parameters.
         """
         self.__eval_params = eval_params
-        self.__outcome_checker = outcome_checker
+        self.__state_result_factory = StateResultFactory(experiment=eval_params.evaluation_range.mech_group)
         self.boundary_states = self.__create_boundary_states()
 
     def create_state(self, index: int) -> State:
@@ -63,7 +63,7 @@ class StateFactory:
         """
         Create evaluated state objects within the evaluation range where the result is fetched from the database.
         """
-        return MongoDB().get_evaluated_states(self.__eval_params, self.boundary_states, self.__outcome_checker)
+        return MongoDB().get_evaluated_states(self.__eval_params, self.boundary_states, self.__state_result_factory)
 
     def __create_version_state(self, index: int) -> BaseVersion:
         """

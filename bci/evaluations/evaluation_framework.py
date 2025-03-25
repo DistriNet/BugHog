@@ -7,7 +7,6 @@ from bci.browser.configuration.browser import Browser
 from bci.configuration import Global
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import TestParameters, TestResult, WorkerParameters
-from bci.version_control.states.state import StateCondition
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class EvaluationFramework(ABC):
             MongoDB().store_result(result)
             logger.info(f'Test finalized: {test_params}')
         except Exception as e:
-            state.condition = StateCondition.FAILED
+            state.failed_by_error = True
             if is_worker:
                 raise e
             else:

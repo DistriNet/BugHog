@@ -1,5 +1,6 @@
 from bci.database.mongo.mongodb import MongoDB
 from bci.evaluations.logic import PlotParameters
+from bci.version_control.state_result_factory import StateResultFactory
 
 
 class PlotFactory:
@@ -40,7 +41,7 @@ class PlotFactory:
         return new_docs
 
     @staticmethod
-    def __add_outcome_info(params: PlotParameters, docs: dict):
+    def __add_outcome_info(params: PlotParameters, docs: list):
         if not docs:
             return {
                 'revision_number': [],
@@ -48,32 +49,21 @@ class PlotFactory:
                 'browser_version_str': [],
                 'outcome': []
             }
-
         docs_with_outcome = []
-        target_mech_id = params.target_mech_id if params.target_mech_id else params.mech_group
+        state_result_factory = StateResultFactory(params.mech_group)
 
         for doc in docs:
-            # DISCLAIMER:
-            # Because Nginx takes care of all HTTPS traffic, flask (which doubles as proxy) only sees HTTP traffic.
-            # Browser <--HTTPS--> Nginx <--HTTP--> Flask
-
-            # Backwards compatibility
-            requests_to_target = list(filter(lambda x: f'/report/?leak={target_mech_id}' in x['url'], doc['results']['requests']))
-            # New way
-            reproduced = any(
-                {'var': entry['var'].lower(), 'val': entry['val'].lower()} == {'var': 'reproduced', 'val': 'ok'}
-                for entry in doc['results']['req_vars'] + doc['results']['log_vars']
-            )
-
+            state_result_data = doc['results']
+            state_result = state_result_factory.get_result(state_result_data)
             new_doc = {
                 'revision_number': doc['state']['revision_number'],
                 'browser_version': int(doc['browser_version'].split('.')[0]),
                 'browser_version_str': doc['browser_version'].split('.')[0]
             }
-            if doc['dirty']:
+            if state_result.is_dirty:
                 new_doc['outcome'] = 'Error'
                 docs_with_outcome.append(new_doc)
-            elif len(requests_to_target) > 0 or reproduced:
+            elif state_result.reproduced:
                 new_doc['outcome'] = 'Reproduced'
                 docs_with_outcome.append(new_doc)
             else:

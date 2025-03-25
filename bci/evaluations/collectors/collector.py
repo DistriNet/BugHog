@@ -1,5 +1,4 @@
 import logging
-import re
 from enum import Enum
 
 from bci.evaluations.collectors.base import BaseCollector
@@ -33,30 +32,6 @@ class Collector:
     def stop(self):
         for collector in self.collectors:
             collector.stop()
-
-    def sanity_check_was_successful(self) -> bool:
-        all_data = self.collect_results()
-        if {'var': 'sanity_check', 'val': 'OK'} in all_data['req_vars']:
-            return True
-        # We still perform the legacy sanity check
-        elif [request for request in all_data['requests'] if 'report/?leak=baseline' in request['url']]:
-            return True
-        else:
-            return False
-
-    def poc_is_likely_reproduced(self) -> bool:
-        """
-        Returns whether the PoC is likely reproduced by simply checking the `bughog_reproduced` variable.
-        If this variable is detected, the evaluation should not need any more retries.
-
-        **Warning**: this method should only be used for performance purposes.
-        TODO: we should ideally perform the same checks as in outcome_checker.py
-        TODO: another check in the StateResult class should also use this
-        """
-        all_data = self.collect_results()
-        regex = r'^https?:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]+\/report\/\?leak=.+$'
-        return ({'var': 'reproduced', 'val': 'OK'} in all_data['req_vars']) or \
-            len([request for request in all_data['requests'] if re.match(regex, request['url'])]) > 0
 
     def collect_results(self) -> dict:
         all_data = {}
