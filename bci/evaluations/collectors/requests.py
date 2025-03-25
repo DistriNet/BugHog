@@ -4,6 +4,7 @@ import logging
 import socket
 import socketserver
 from threading import Thread
+from urllib.parse import parse_qs, urlparse
 
 from .base import BaseCollector
 
@@ -79,10 +80,18 @@ class RequestCollector(BaseCollector):
             self.__httpd.server_close()
 
     def parse_data(self):
-        data = []
         # Important: we only consider requests to the /report/ endpoint where the bughog parameter immediately follows.
         # Otherwise conditional endpoints (e.g., /report/if/Referer/) cause false positives.
-        regex = r'/report/\?(?:.+&)*bughog_(.+)=(.+)'
-        request_urls = [request['url'] for request in self.data['requests'] if 'url' in request]
-        data = self._parse_bughog_variables(request_urls, regex)
-        self.data['req_vars'] = data
+        request_variables = set()
+        parsed_queries = [
+            parse_qs(urlparse(request['url']).query)
+            for request in self.data['requests']
+            if urlparse(request['url']).path in ['/report', '/report/']
+        ]
+        for parsed_query in parsed_queries:
+            request_variables.update(
+                (key[7:], values[0])
+                for key, values in parsed_query.items()
+                if key.startswith('bughog_')
+            )
+        self.data['req_vars'] = [{'var': pair[0], 'val': pair[1]} for pair in request_variables]

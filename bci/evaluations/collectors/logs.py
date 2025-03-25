@@ -1,3 +1,5 @@
+import re
+
 from .base import BaseCollector
 
 
@@ -20,5 +22,11 @@ class LogCollector(BaseCollector):
         with open('/tmp/browser.log', 'r+') as log_file:
             log_lines = [line for line in log_file.readlines()]
             log_file.write('')
-        data = self._parse_bughog_variables(log_lines, regex)
+        regex_match_lists = [re.findall(regex, line) for line in log_lines if re.search(regex, line)]
+        # Flatten list
+        regex_matches = [regex_match for regex_match_list in regex_match_lists for regex_match in regex_match_list]
+        for match in regex_matches:
+            var = match[0]
+            val = match[1]
+            data.append({'var': var, 'val': val})
         self.data['log_vars'] = data
