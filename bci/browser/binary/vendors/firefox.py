@@ -1,12 +1,8 @@
 import logging
 import os
 import re
-import shutil
-import tarfile
 
-import requests
-
-from bci import cli, util
+from bci import cli
 from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.browser.binary.binary import Binary
 from bci.version_control.states.state import State
@@ -19,7 +15,6 @@ EXTENSION_FOLDER_PATH = '/app/browser/extensions/firefox'
 
 
 class FirefoxBinary(Binary):
-
     def __init__(self, state: State):
         super().__init__(state)
 
@@ -35,50 +30,17 @@ class FirefoxBinary(Binary):
     def bin_folder_path(self) -> str:
         return BIN_FOLDER_PATH
 
-    def download_binary(self):
-        if self.is_available_locally():
-            logger.debug(f'Binary for {self.state} was already downloaded ({self.get_bin_path()})')
-            return
-        binary_url = self.state.get_online_binary_url()
-        logger.debug(f'Downloading binary for {self.state} from \'{binary_url}\'')
-        tar_file_path = f'/tmp/{self.state.name}/archive.tar.bz2'
-        if os.path.exists(os.path.dirname(tar_file_path)):
-            shutil.rmtree(os.path.dirname(tar_file_path))
-        os.makedirs(os.path.dirname(tar_file_path))
-        with requests.get(binary_url, stream=True) as req:
-            with open(tar_file_path, 'wb') as file:
-                shutil.copyfileobj(req.raw, file)
-
-        # Determine correct archive format based on version
-        if int(self.state.version) >= 135:
-            tar_file_path = f'/tmp/{self.state.name}/archive.tar.xz'
-            tar_mode = "r:xz"
-        else:
-            tar_file_path = f'/tmp/{self.state.name}/archive.tar.bz2'
-            tar_mode = "r:bz2"
-        # Download the correct archive
-        with requests.get(binary_url, stream=True) as req:
-            with open(tar_file_path, 'wb') as file:
-                shutil.copyfileobj(req.raw, file)
-        # Extract the archive using the determined format
-        with tarfile.open(tar_file_path, tar_mode) as tar_ref:
-            tar_ref.extractall(os.path.dirname(tar_file_path))
-
-        bin_path = self.get_potential_bin_path()
-        os.makedirs(os.path.dirname(bin_path), exist_ok=True)
-        unzipped_folder_path = os.path.join(os.path.dirname(tar_file_path), "firefox")
-        util.safe_move_dir(unzipped_folder_path, os.path.dirname(bin_path))
-        cli.execute_and_return_status("chmod -R a+x %s" % os.path.dirname(bin_path))
-        cli.execute_and_return_status("chmod -R a+w %s" % os.path.dirname(bin_path))
-        # Remove temporary files in /tmp/COMMIT_POS
-        shutil.rmtree(os.path.dirname(tar_file_path))
+    def configure_binary(self) -> None:
+        binary_folder = os.path.dirname(self.get_potential_bin_path())
+        cli.execute_and_return_status(f'chmod -R a+x {binary_folder}')
+        cli.execute_and_return_status(f'chmod -R a+w {binary_folder}')
         # Add policy.json to prevent updating. (this measure is effective from version 60)
         # https://github.com/mozilla/policy-templates/blob/master/README.md
         # (For earlier versions, the prefs.js file is used)
-        distributions_path = os.path.join(os.path.dirname(bin_path), "distribution")
+        distributions_path = os.path.join(binary_folder, 'distribution')
         os.makedirs(distributions_path, exist_ok=True)
-        policies_path = os.path.join(distributions_path, "policies.json")
-        with open(policies_path, "a") as file:
+        policies_path = os.path.join(distributions_path, 'policies.json')
+        with open(policies_path, 'a') as file:
             file.write('{ "policies": { "DisableAppUpdate": true } }')
 
     def _get_version(self):

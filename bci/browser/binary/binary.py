@@ -102,8 +102,21 @@ class Binary:
     def is_available_online(self):
         return self.state.has_online_binary()
 
-    @abstractmethod
     def download_binary(self):
+        if self.is_available_locally():
+            logger.debug(f'Binary for {self.state} was already downloaded ({self.get_bin_path()})')
+        else:
+            binary_urls = self.state.get_online_binary_urls()
+            binary_dst_folder = os.path.dirname(self.get_potential_bin_path())
+            util.download_and_extract(binary_urls, binary_dst_folder)
+        self.configure_binary()
+
+    @abstractmethod
+    def configure_binary(self):
+        """
+        Configures the browser binary.
+        This method is idempotent.
+        """
         pass
 
     def is_built(self):

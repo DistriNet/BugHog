@@ -139,7 +139,10 @@ class State:
         pass
 
     @abstractmethod
-    def get_online_binary_url(self) -> str:
+    def get_online_binary_urls(self) -> list[str]:
+        """
+        Returns a list of URLs where the associated binary can potentially be downloaded from.
+        """
         pass
 
     def has_available_binary(self) -> bool:
