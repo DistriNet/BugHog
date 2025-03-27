@@ -136,6 +136,10 @@ class BinaryCache:
                 logger.debug(f'Stored binary in {elapsed_time:.2f}s')
 
     @staticmethod
+    def remove_binary_files(state: State) -> None:
+        BinaryCache.__remove_revision_binary_files(state.type, state.index)
+
+    @staticmethod
     def __count_cached_binaries(state_type: Optional[str] = None) -> int:
         """
         Counts the number of cached binaries in the database.

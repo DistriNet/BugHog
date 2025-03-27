@@ -30,11 +30,11 @@ class ChromiumVersion(BaseVersion):
         MongoDB().store_binary_availability_online_cache('chromium', self, has_binary_online)
         return has_binary_online
 
-    def get_online_binary_url(self):
-        return (
+    def get_online_binary_urls(self) -> list[str]:
+        return [(
             'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/%s%%2F%s%%2Fchrome-%s.zip?alt=media'
             % ('Linux_x64', self._revision_nb, 'linux')
-        )
+        )]
 
     def convert_to_revision(self) -> ChromiumRevision:
         return ChromiumRevision(revision_nb=self._revision_nb)

@@ -26,14 +26,14 @@ class FirefoxRevision(BaseRevision):
     def has_online_binary(self) -> bool:
         return RevisionCache.firefox_has_binary_for(revision_nb=self.revision_nb, revision_id=self._revision_id)
 
-    def get_online_binary_url(self) -> str:
+    def get_online_binary_urls(self) -> list[str]:
         result = RevisionCache.firefox_get_binary_info(self._revision_id)
         if result is None:
             raise AttributeError(f"Could not find binary url for '{self._revision_id}")
         binary_base_url = result['files_url']
         app_version = result['app_version']
         binary_url = f'{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.bz2'
-        return binary_url
+        return [binary_url]
 
     def get_previous_and_next_state_with_binary(self) -> tuple[State, State]:
         previous_revision_nb, next_revision_nb = RevisionCache.firefox_get_previous_and_next_revision_nb_with_binary(

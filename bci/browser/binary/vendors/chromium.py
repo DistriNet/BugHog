@@ -1,14 +1,11 @@
 import logging
 import os
 import re
-import shutil
-import zipfile
-
-import requests
 
 from bci import cli, util
 from bci.browser.binary.artisanal_manager import ArtisanalBuildManager
 from bci.browser.binary.binary import Binary
+from bci.database.mongo.binary_cache import BinaryCache
 from bci.version_control.states.state import State
 
 logger = logging.getLogger(__name__)
@@ -19,7 +16,6 @@ EXTENSION_FOLDER_PATH = '/app/browser/extensions/chromium'
 
 
 class ChromiumBinary(Binary):
-
     def __init__(self, state: State):
         super().__init__(state)
 
@@ -38,41 +34,12 @@ class ChromiumBinary(Binary):
     def bin_folder_path(self) -> str:
         return BIN_FOLDER_PATH
 
-    # def get_full_version(self, version: int):
-        # if re.match(r'[0-9]+\.[0-9]+\.[0-9]+', version):
-        #     return version + ".0"
-        # if re.match(r'[0-9]+', version):
-        #     return self.repo.get_release_tag(version)
-        # if re.match(r'[0-9]{2}', version):
-        #     return self.full_versions[version] + ".0"
-        # raise AttributeError("Could not convert version '%i' to full version" % version)
-        # return self.repo.get_release_tag(version)
-
     # Downloadable binaries
 
-    def download_binary(self):
-        if self.is_available_locally():
-            logger.debug(f'Binary for {self.state} was already downloaded ({self.get_bin_path()})')
-            return
-        binary_url = self.state.get_online_binary_url()
-        logger.info(f'Downloading binary for {self.state} from \'{binary_url}\'')
-        zip_file_path = f'/tmp/{self.state.name}/archive.zip'
-        if os.path.exists(os.path.dirname(zip_file_path)):
-            shutil.rmtree(os.path.dirname(zip_file_path))
-        os.makedirs(os.path.dirname(zip_file_path))
-        with requests.get(binary_url, stream=True) as req:
-            with open(zip_file_path, 'wb') as file:
-                shutil.copyfileobj(req.raw, file)
-        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            zip_ref.extractall(os.path.dirname(zip_file_path))
-        bin_path = self.get_potential_bin_path()
-        os.makedirs(os.path.dirname(bin_path), exist_ok=True)
-        unzipped_folder_path = os.path.join(os.path.dirname(zip_file_path), "chrome-linux")
-        self.__remove_unnecessary_files(unzipped_folder_path)
-        util.safe_move_dir(unzipped_folder_path, os.path.dirname(bin_path))
-        cli.execute_and_return_status("chmod -R a+x %s" % os.path.dirname(bin_path))
-        # Remove temporary files in /tmp/COMMIT_POS
-        shutil.rmtree(os.path.dirname(zip_file_path))
+    def configure_binary(self):
+        binary_folder = os.path.dirname(self.get_potential_bin_path())
+        self.__remove_unnecessary_files(binary_folder)
+        cli.execute_and_return_status(f'chmod -R a+x {binary_folder}')
 
     def __remove_unnecessary_files(self, binary_folder_path: str) -> None:
         """
@@ -90,6 +57,7 @@ class ChromiumBinary(Binary):
         if bin_path := self.get_bin_path():
             output = cli.execute_and_return_output(command, cwd=os.path.dirname(bin_path))
         else:
+            BinaryCache.remove_binary_files(self.state)
             raise AttributeError(f'Could not get binary path for {self.state}')
         match = re.match(r'Chromium (?P<version>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', output)
         if match:

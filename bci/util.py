@@ -6,12 +6,15 @@ import json
 import logging
 import os
 import shutil
+import tarfile
 import time
+import zipfile
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def safe_move_file(src_path, dst_path):
@@ -37,6 +40,7 @@ def safe_move_dir(src_path, dst_path):
             safe_move_dir(new_src_path, new_dst_path)
         else:
             raise AttributeError("Something went wrong")
+    shutil.rmtree(src_path)
 
 
 def copy_folder(src_path, dst_path):
@@ -83,7 +87,7 @@ def read_web_report(file_name):
 
 
 def request_html(url: str):
-    LOGGER.debug(f"Requesting {url}")
+    logger.debug(f"Requesting {url}")
     resp = requests.get(url, timeout=60)
     if resp.status_code >= 400:
         raise PageNotFound(f"Could not connect to url '{url}'")
@@ -91,21 +95,84 @@ def request_html(url: str):
 
 
 def request_json(url: str):
-    LOGGER.debug(f"Requesting {url}")
+    logger.debug(f"Requesting {url}")
     resp = requests.get(url, timeout=60)
     if resp.status_code >= 400:
         raise PageNotFound(f"Could not connect to url '{url}'")
-    LOGGER.debug('Request completed')
+    logger.debug('Request completed')
     return resp.json()
 
 
 def request_final_url(url: str) -> str:
-    LOGGER.debug(f"Requesting {url}")
+    logger.debug(f"Requesting {url}")
     resp = requests.get(url, timeout=60)
     if resp.status_code >= 400:
         raise PageNotFound(f"Could not connect to url '{url}'")
-    LOGGER.debug('Request completed')
+    logger.debug('Request completed')
     return resp.url
+
+
+def download_and_extract(urls: list[str], dst_folder_path: str) -> bool:
+        """
+        Downloads the archive residing at the given URL and extracts it to the given dest_path.
+        This method currently supports zip, tar.bz2 and tar.xz archives.
+
+        :return bool: Returns True if the archive was successfully downloaded and extracted, otherwise False.
+        """
+        for url in urls:
+            logger.debug(f"Attempting to download archive from '{url}'")
+            tmp_file_name = urlparse(url).path.split('/')[-1]
+            tmp_file_path = os.path.join('/tmp', tmp_file_name)
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+            with requests.get(url, stream=True) as req:
+                if req.status_code != 200:
+                    continue
+                with open(tmp_file_path, 'wb') as file:
+                    shutil.copyfileobj(req.raw, file)
+            _, file_extension = os.path.splitext(tmp_file_path)
+
+            logger.debug(f"Extracting downloaded archive '{tmp_file_path}'")
+            match file_extension:
+                case '.zip':
+                    unzip(tmp_file_path, dst_folder_path)
+                case '.bz2':
+                    untar(tmp_file_path, dst_folder_path)
+                case '.xz':
+                    untar(tmp_file_path, dst_folder_path)
+                case _:
+                    AttributeError(f"File extension {file_extension} is not supported.")
+            os.remove(tmp_file_path)
+            return True
+        return False
+
+
+def unzip(src_archive_path: str, dst_folder_path: str) -> None:
+    with zipfile.ZipFile(src_archive_path, 'r') as zip:
+        members = zip.namelist()
+        top_dirs_and_files = {name.split('/')[0] for name in members}
+        # If there is a single top-level directory, we move all contents up.
+        if len(top_dirs_and_files) == 1:
+            parent_folder_path = os.path.dirname(dst_folder_path)
+            zip.extractall(parent_folder_path)
+            safe_move_dir(os.path.join(parent_folder_path, top_dirs_and_files.pop()), dst_folder_path)
+        else:
+            os.makedirs(dst_folder_path, exist_ok=True)
+            zip.extractall(dst_folder_path)
+
+
+def untar(src_archive_path: str, dst_folder_path: str) -> None:
+    os.makedirs(dst_folder_path, exist_ok=True)
+    # We do not inspects contents first like in unzip, because this is a very costly operation for tar archives.
+    with tarfile.open(src_archive_path, 'r:*') as tar:
+        tar.extractall(dst_folder_path)
+        members = os.listdir(dst_folder_path)
+        top_dirs_and_files = {name.split('/')[0] for name in members}
+        # If there is a single top-level directory, we move all contents up.
+        if len(top_dirs_and_files) == 1:
+            safe_move_dir(os.path.join(dst_folder_path, members.pop()), dst_folder_path + '_2')
+            shutil.rmtree(dst_folder_path)
+            safe_move_dir(os.path.join(dst_folder_path + '_2'), dst_folder_path)
 
 
 class PageNotFound(Exception):

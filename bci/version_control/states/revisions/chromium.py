@@ -22,16 +22,16 @@ class ChromiumRevision(BaseRevision):
         if cached_binary_available_online is not None:
             return cached_binary_available_online
         url = f'https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{self._revision_nb}%2Fchrome-linux.zip'
-        req = requests.get(url)
-        has_binary_online = req.status_code == 200
+        response = requests.get(url, stream=True)
+        has_binary_online = response.status_code == 200
         MongoDB().store_binary_availability_online_cache('chromium', self, has_binary_online)
         return has_binary_online
 
-    def get_online_binary_url(self):
-        return (
+    def get_online_binary_urls(self) -> list[str]:
+        return [(
             'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/%s%%2F%s%%2Fchrome-%s.zip?alt=media'
             % ('Linux_x64', self._revision_nb, 'linux')
-        )
+        )]
 
     def _fetch_missing_data(self) -> None:
         """
