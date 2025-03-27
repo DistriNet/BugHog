@@ -389,6 +389,7 @@ export default {
       })
       this.selected.project = project;
       this.eval_params.tests = [];
+      this.select_all_tests = false;
     },
     set_curr_browser(browser) {
       this.eval_params.browser_name = browser["name"];
@@ -546,7 +547,7 @@ export default {
           <ul class="horizontal-select">
             <li>
               <div class="bg-gray-100 dark:bg-gray-800">
-                <input type="checkbox" class="ml-1" v-model="select_all_tests">
+                <input id="select_all_test" type="checkbox" class="ml-1" v-model="this.select_all_tests">
                 <label for="vue-checkbox-list" class="flex group w-full">
                   <div class="pl-0 w-full">
                     <p class="truncate w-0 grow">
@@ -698,13 +699,6 @@ export default {
                 <label for="upper_revision_nb">Upper rev nb</label>
                 <input v-model.lazy="eval_params.upper_revision_nb" class="number-input w-32" type="number">
               </div>
-            </div>
-
-            <div class="form-subsection row-start-2">
-              <section-header section="reproduction_id"></section-header>
-              <input v-model="target_mech_id_input" type="text" class="input-box" id="mech_id" name="mech_id"
-                :placeholder="eval_params.plot_mech_group"><br>
-              <br>
             </div>
           </div>
 
