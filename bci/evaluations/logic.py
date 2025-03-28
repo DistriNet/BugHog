@@ -221,10 +221,10 @@ class TestResult:
 
 @dataclass(frozen=True)
 class PlotParameters:
-    mech_group: str
-    target_mech_id: str
-    browser_name: str
-    database_collection: str
+    mech_group: Optional[str]
+    target_mech_id: Optional[str]
+    browser_name: Optional[str]
+    database_collection: Optional[str]
     major_version_range: Optional[tuple[int,int]] = None
     revision_number_range: Optional[tuple[int,int]] = None
     browser_config: str = 'default'
@@ -246,10 +246,10 @@ class PlotParameters:
         else:
             revision_number_range = None
         return PlotParameters(
-            data['plot_mech_group'],
-            data['target_mech_id'],
-            data['browser_name'],
-            data['db_collection'],
+            data.get('plot_mech_group', None),
+            data.get('target_mech_id', None),
+            data.get('browser_name', None),
+            data.get('db_collection', None),
             major_version_range=major_version_range,
             revision_number_range=revision_number_range,
             browser_config=data.get("browser_setting", "default"),
