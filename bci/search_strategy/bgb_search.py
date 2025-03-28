@@ -59,17 +59,21 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         Returns the next pair of states to split.
         """
         states = self._completed_states
-        # Remove all sequences of states that are either resultless or dirty that are confined by states with the same result.
+        # Remove all states that are confined by states with the same result, ignoring resultless and dirty states.
         states_to_remove = []
         for i, state in enumerate(states):
-            # Skip first and last state:
+            # Skip first and last state.
             if i == 0 or i == len(states) - 1:
                 continue
-            # Skip pairs that do has a result, which also is not dirty.
+            # Skip pairs that have a result, which also is not dirty.
             if not state.has_dirty_or_no_result():
                 continue
             preceding_states = [state for state in states[:i] if not state.has_dirty_or_no_result()]
             succeeding_states = [state for state in states[i+1:] if not state.has_dirty_or_no_result()]
+            # Normally, there should always be at least one preceding and one succeeding state, because we evaluate
+            # border states first. However, we never want this function to fail and thus double check this.
+            if len(preceding_states) == 0 or len(succeeding_states) == 0:
+                continue
             if preceding_states[-1].has_same_outcome(succeeding_states[0]):
                 states_to_remove.append(state)
         for state in states_to_remove:
