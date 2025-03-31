@@ -16,6 +16,7 @@ from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
+from bci.version_control.state_result_factory import StateResultFactory
 from bci.version_control.state_factory import StateFactory
 from bci.version_control.states.revisions.firefox import BINARY_AVAILABILITY_MAPPING
 from bci.web.clients import Clients
@@ -110,8 +111,29 @@ class Main:
                 worker_manager.wait_until_all_evaluations_are_done()
                 logger.debug(f"Last experiment has finished for iteration {i}/{nb_of_iterations}. This iteration took {iteration_time}s.")
 
+        # Retry all tests with a dirty result once.
+        self.retry_dirty_tests(eval_params, worker_manager)
+
         self.state['reason'] = 'finished'
         self.__update_eval_queue(eval_params.evaluation_range.mech_group, 'done')
+
+    def retry_dirty_tests(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
+        state_result_factory = StateResultFactory()
+        dirty_states = MongoDB().get_evaluated_states(eval_params, None, state_result_factory, dirty=True)
+        if (nb_of_dirty_states := len(dirty_states)) == 0:
+            logger.info("No tests are associated with a dirty result.")
+            return
+
+        logger.info(f"Retrying {nb_of_dirty_states} tests with a dirty result...")
+        for dirty_state in dirty_states:
+            if self.stop_gracefully or self.stop_forcefully:
+                return
+            worker_params = eval_params.create_worker_params_for(dirty_state, self.db_connection_params)
+            test_params = worker_params.create_test_params()
+            MongoDB().remove_datapoint(test_params)
+            worker_manager.start_test(worker_params)
+        dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, state_result_factory, dirty=True)
+        logger.info(f"Dirty test results reduced from {dirty_states} to {dirty_states_after_retry}.")
 
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:

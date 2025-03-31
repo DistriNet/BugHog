@@ -166,7 +166,7 @@ class MongoDB:
 
     def get_result(self, params: TestParameters) -> Optional[TestResult]:
         collection = self.__get_data_collection(params)
-        query = self.__to_query(params)
+        query = self.__to_test_query(params)
         document = collection.find_one(query)
         if document:
             return params.create_test_result_with(
@@ -178,12 +178,12 @@ class MongoDB:
 
     def has_result(self, params: TestParameters) -> bool:
         collection = self.__get_data_collection(params)
-        query = self.__to_query(params)
+        query = self.__to_test_query(params)
         nb_of_documents = collection.count_documents(query)
         return nb_of_documents > 0
 
     def get_evaluated_states(
-        self, params: EvaluationParameters, boundary_states: Optional[tuple[State, State]], result_factory: StateResultFactory
+        self, params: EvaluationParameters, boundary_states: Optional[tuple[State, State]], result_factory: StateResultFactory, dirty: Optional[bool]=None
     ) -> list[State]:
         collection = self.get_collection(params.database_collection, create_if_not_found=True)
         query = {
@@ -212,6 +212,8 @@ class MongoDB:
             }
         else:
             query['cli_options'] = []
+        if dirty is not None:
+            query['dirty'] = dirty
         cursor = collection.find(query)
         states = []
         for doc in cursor:
@@ -220,7 +222,7 @@ class MongoDB:
             states.append(state)
         return states
 
-    def __to_query(self, params: TestParameters) -> dict:
+    def __to_test_query(self, params: TestParameters) -> dict:
         query = {
             'state': params.state.to_dict(),
             'browser_automation': params.evaluation_configuration.automation,
@@ -345,7 +347,7 @@ class MongoDB:
 
     def remove_datapoint(self, params: TestParameters) -> None:
         collection = self.get_collection(params.database_collection)
-        query = self.__to_query(params)
+        query = self.__to_test_query(params)
         collection.delete_one(query)
 
     def remove_all_data_from_collection(self, collection_name: str) -> None:
