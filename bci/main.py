@@ -132,8 +132,9 @@ class Main:
             test_params = worker_params.create_test_params()
             MongoDB().remove_datapoint(test_params)
             worker_manager.start_test(worker_params)
+        worker_manager.wait_until_all_evaluations_are_done()
         dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, state_result_factory, dirty=True)
-        logger.info(f"Dirty test results reduced from {dirty_states} to {dirty_states_after_retry}.")
+        logger.info(f"Dirty test results reduced from {nb_of_dirty_states} to {len(dirty_states_after_retry)}.")
 
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
