@@ -349,6 +349,10 @@ export default {
         .then((res) => {
           if (res.data.status == "OK") {
             this.system = res.data;
+            if ("cpu_count" in res.data) {
+              console.log("CPU: " + Math.max(res.data["cpu_count"] - 1, 1));
+              this.eval_params.nb_of_containers = Math.max(res.data["cpu_count"] - 1, 1);
+            }
           }
         })
         .catch((error) => {
