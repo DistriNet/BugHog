@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Optional
 
-from bci.util import PageNotFound, request_final_url, request_html
+from bci.util import ResourceNotFound, request_final_url, request_html
 from bci.version_control.revision_parser.parser import RevisionParser
 
 REV_ID_BASE_URL = 'https://chromium.googlesource.com/chromium/src/+/'
@@ -15,7 +15,7 @@ class ChromiumRevisionParser(RevisionParser):
     def get_revision_id(self, revision_nb: int) -> Optional[str]:
         try:
             final_url = request_final_url(f'{REV_NUMBER_BASE_URL}{revision_nb}')
-        except PageNotFound:
+        except ResourceNotFound:
             logger.warning(f"Could not find revision id for revision number '{revision_nb}'")
             return None
         rev_id = final_url[-40:]
