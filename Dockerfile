@@ -6,7 +6,7 @@ COPY /bci/web/vue ./
 RUN npm run build
 
 
-FROM openresty/openresty:1.27.1.1-bullseye AS nginx
+FROM openresty/openresty:1.27.1.1-3-bullseye AS nginx
 RUN apt update -y && \
     apt install -y curl && \
     rm -rf /var/lib/apt/lists/*
