@@ -134,10 +134,13 @@ class MongoDB:
         return GridFS(self._db)
 
     def store_result(self, result: TestResult):
+        """
+        Upserts the result.
+        """
         browser_config = result.params.browser_configuration
         eval_config = result.params.evaluation_configuration
         collection = self.__get_data_collection(result.params)
-        document = {
+        query = {
             'browser_automation': eval_config.automation,
             'browser_version': result.browser_version,
             'binary_origin': result.binary_origin,
@@ -146,23 +149,26 @@ class MongoDB:
             'cli_options': browser_config.cli_options,
             'extensions': browser_config.extensions,
             'state': result.params.state.to_dict(),
-            'mech_group': result.params.mech_group,
-            'results': result.data,
-            'dirty': result.is_dirty,
-            'ts': str(datetime.now(timezone.utc).replace(microsecond=0)),
+            'mech_group': result.params.mech_group
         }
         if result.driver_version:
-            document['driver_version'] = result.driver_version
+            query['driver_version'] = result.driver_version
 
         if browser_config.browser_name == 'firefox':
             build_id = self.get_build_id_firefox(result.params.state)
             if build_id is None:
-                document['artisanal'] = True
-                document['build_id'] = 'artisanal'
+                query['artisanal'] = True
+                query['build_id'] = 'artisanal'
             else:
-                document['build_id'] = build_id
-
-        collection.insert_one(document)
+                query['build_id'] = build_id
+        update = {
+            '$set': {
+                'results': result.data,
+                'dirty': result.is_dirty,
+                'ts': str(datetime.now(timezone.utc).replace(microsecond=0)),
+            }
+        }
+        collection.update_one(query, update, upsert=True)
 
     def get_result(self, params: TestParameters) -> Optional[TestResult]:
         collection = self.__get_data_collection(params)

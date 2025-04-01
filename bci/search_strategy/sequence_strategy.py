@@ -32,10 +32,11 @@ class SequenceStrategy:
 
     def _add_state(self, elem: State) -> None:
         """
-        Adds an element to the list of evaluated states and sorts the list.
+        Adds an element to the list of evaluated states if not already a member, and sorts the list.
         """
-        self._completed_states.append(elem)
-        self._completed_states.sort(key=lambda x: x.index)
+        if elem not in self._completed_states:
+            self._completed_states.append(elem)
+            self._completed_states.sort(key=lambda x: x.index)
 
     def _fetch_evaluated_states(self) -> None:
         """
