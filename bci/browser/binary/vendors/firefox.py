@@ -45,7 +45,7 @@ class FirefoxBinary(Binary):
 
     def _get_version(self):
         if (bin_path := self.get_bin_path()) is None:
-            raise AttributeError(f"Binary not available for {self.browser_name} {self.version}")
+            raise AttributeError(f"Binary not available for {self.browser_name} {self.state}")
         command = "./firefox --version"
         output = cli.execute_and_return_output(command, cwd=os.path.dirname(bin_path))
         match = re.match(r'Mozilla Firefox (?P<version>[0-9]+)\.[0-9]+.*', output)
