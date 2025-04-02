@@ -11,6 +11,7 @@
 BugHog is a powerful framework designed specifically to address the challenging task of pinpointing the exact code revisions in which a particular browser bug was introduced or fixed.
 
 This framework has been developed as part of the _"A Bug's Life: Analyzing the Lifecycle and Mitigation Process of Content Security Policy Bugs"_ paper to identify Content Security Policy bug lifecycles, published at [USENIX Security '23](https://www.usenix.org/conference/usenixsecurity23/presentation/franken).
+Since then, it has continued to evolve and has been exhibited at major cybersecurity conferences, including [Black Hat USA](https://www.blackhat.com/us-24/arsenal/schedule/index.html#bughog-38604).
 
 <div align="center">
     <img
