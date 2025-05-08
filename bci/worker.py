@@ -11,17 +11,16 @@ from bci.evaluations.logic import WorkerParameters
 logger = logging.getLogger('bci.worker')
 
 
-def run(params: WorkerParameters):
+def run(args):
 
     # Only perform configuration steps for separate workers
     if __name__ == '__main__':
-        MongoDB().connect(params.database_connection_params)
+        database_connection_params = WorkerParameters.get_database_params(args)
+        MongoDB().connect(database_connection_params)
 
-    # click passes options with multiple=True as a tuple, so we convert it to a list
-    # browser_cli_options = list(browser_cli_options)
+    # Needs an initialized database
+    params = WorkerParameters.deserialize(args)
     evaluation_framework = CustomEvaluationFramework()
-    # browser_build, repo_state = get_browser_build_and_repo_state(params)
-
     try:
         evaluation_framework.evaluate(params, is_worker=True)
     except Exception:
@@ -36,9 +35,8 @@ if __name__ == '__main__':
         logger.info('Worker did not receive any arguments.')
         os._exit(0)
     args = sys.argv[1]
-    params = WorkerParameters.deserialize(args)
     logger.info('Worker started')
-    run(params)
+    run(args)
     logger.info('Worker finished, exiting...')
     logging.shutdown()
     os._exit(0)

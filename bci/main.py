@@ -18,7 +18,6 @@ from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bci.version_control.state_result_factory import StateResultFactory
 from bci.version_control.state_factory import StateFactory
-from bci.version_control.states.revisions.firefox import BINARY_AVAILABILITY_MAPPING
 from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ class Main:
         Global.initialize_folders()
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
-        RevisionCache.store_firefox_binary_availability(BINARY_AVAILABILITY_MAPPING)  # TODO: find better place
+        RevisionCache.update()
         self.evaluation_framework = CustomEvaluationFramework()
         logger.info('BugHog is ready!')
 

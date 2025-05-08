@@ -42,7 +42,7 @@ class MongoDB:
 
     binary_availability_collection_names = {
         'chromium': 'chromium_binary_availability',
-        'firefox': 'firefox_central_binary_availability',
+        'firefox': 'firefox_binary_availability',
     }
 
     def __init__(self):
@@ -108,6 +108,12 @@ class MongoDB:
             self._db.create_collection('firefox_binary_availability')
             self._db['firefox_binary_availability'].create_index([('revision_number', ASCENDING)])
             self._db['firefox_binary_availability'].create_index(['node'])
+        if 'firefox_revision_nb_to_id' not in self._db.list_collection_names():
+            self._db.create_collection('firefox_revision_nb_to_id')
+        if 'firefox_release_base_revs' not in self._db.list_collection_names():
+            self._db.create_collection('firefox_release_base_revs')
+        if 'chromium_release_base_revs' not in self._db.list_collection_names():
+            self._db.create_collection('chromium_release_base_revs')
 
     def get_collection(self, name: str, create_if_not_found: bool = False) -> Collection:
         if self._db is None:

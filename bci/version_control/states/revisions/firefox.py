@@ -1,15 +1,8 @@
 from typing import Optional
 
 from bci.database.mongo.revision_cache import RevisionCache
-from bci.util import request_json
 from bci.version_control.states.revisions.base import BaseRevision
 from bci.version_control.states.state import State
-
-BINARY_AVAILABILITY_URL = 'https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_binary_availability.json'
-REVISION_NUMBER_MAPPING_URL = 'https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/firefox_revision_nb_to_id.json'
-
-BINARY_AVAILABILITY_MAPPING = request_json(BINARY_AVAILABILITY_URL)['data']
-REVISION_NUMBER_MAPPING = request_json(REVISION_NUMBER_MAPPING_URL)['data']
 
 
 class FirefoxRevision(BaseRevision):
@@ -47,6 +40,6 @@ class FirefoxRevision(BaseRevision):
 
     def _fetch_missing_data(self):
         if self._revision_id is None:
-            self._revision_id = REVISION_NUMBER_MAPPING.get(str(self._revision_nb), None)
-        if self._revision_nb is None:
-            RevisionCache.firefox_get_revision_number(self._revision_id)
+            self._revision_id = RevisionCache.firefox_get_revision_id(self._revision_nb)
+        if self._revision_nb is None and self._revision_id is not None:
+            self._revision_nb = RevisionCache.firefox_get_revision_number(self._revision_id)

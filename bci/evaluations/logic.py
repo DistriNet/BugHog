@@ -161,6 +161,11 @@ class WorkerParameters:
         return json.dumps(param_dict)
 
     @staticmethod
+    def get_database_params(string: str) -> DatabaseParameters:
+        data = json.loads(string)
+        return  DatabaseParameters.from_dict(data['database_connection_params'])
+
+    @staticmethod
     def deserialize(string: str) -> WorkerParameters:
         data = json.loads(string)
         browser_config = BrowserConfiguration.from_dict(data['browser_configuration'])
