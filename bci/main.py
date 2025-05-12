@@ -6,6 +6,7 @@ from bci.configuration import Global, Loggers
 from bci.database.mongo.mongodb import MongoDB, ServerException
 from bci.database.mongo.revision_cache import RevisionCache
 from bci.distribution.worker_manager import WorkerManager
+from bci.evaluations import experiments
 from bci.evaluations.custom.custom_evaluation import CustomEvaluationFramework
 from bci.evaluations.logic import (
     DatabaseParameters,
@@ -16,8 +17,8 @@ from bci.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bci.search_strategy.composite_search import CompositeSearch
 from bci.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
-from bci.version_control.state_result_factory import StateResultFactory
 from bci.version_control.state_factory import StateFactory
+from bci.version_control.state_result_factory import StateResultFactory
 from bci.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class Main:
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
         RevisionCache.update()
+        experiments.verify()
         self.evaluation_framework = CustomEvaluationFramework()
         logger.info('BugHog is ready!')
 

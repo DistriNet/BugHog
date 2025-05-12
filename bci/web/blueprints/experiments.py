@@ -1,26 +1,14 @@
 import datetime
-import logging
-import threading
 import importlib.util
+import logging
 import sys
+import threading
 
 import requests
+from bci.evaluations.experiments import SUPPORTED_DOMAINS
 from flask import Blueprint, Request, make_response, render_template, request, url_for
 
-from bci.web.page_parser import load_experiment_pages
-
-ALLOWED_DOMAINS = [
-    "leak.test",
-    "a.test",
-    "sub.a.test",
-    "sub.sub.a.test",
-    "b.test",
-    "sub.b.test",
-    "adition.com",
-]
-
 logger = logging.getLogger(__name__)
-experiment_pages = load_experiment_pages("/app/experiments/pages", ALLOWED_DOMAINS)
 exp = Blueprint("experiments", __name__, template_folder="/app/bci/web/templates")
 
 
@@ -28,9 +16,9 @@ exp = Blueprint("experiments", __name__, template_folder="/app/bci/web/templates
 def before_request():
     __report(request)
     host = request.host.lower()
-    if host not in ALLOWED_DOMAINS:
+    if host not in SUPPORTED_DOMAINS:
         logger.error(
-            f"Host '{host}' is not supported by this framework. Supported hosts are {ALLOWED_DOMAINS}"
+            f"Host '{host}' is not supported by this framework. Supported hosts are {SUPPORTED_DOMAINS}"
         )
         return f"Host '{host}' is not supported by this framework."
 

@@ -24,7 +24,6 @@ class RevisionCache:
                     RevisionCache.__update_collection(collection_name, transform(result))
             except util.ResourceNotFound:
                 logger.warning(f'Could not update revision cache with resource at {url}')
-                logger.debug(f'Could not update revision cache with resource at {url}', exc_info=True)
 
         executor = ThreadPoolExecutor()
         executor.submit(safe_request_json_and_update, 'firefox_binary_availability', transform=lambda x: list(x.values()))
