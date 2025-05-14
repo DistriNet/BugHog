@@ -6,17 +6,17 @@
 #
 blinker==1.9.0
     # via flask
-certifi==2025.1.31
+certifi==2025.4.26
     # via requests
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.0
     # via flask
 dnspython==2.7.0
     # via pymongo
 docker==7.1.0
     # via -r requirements.in
-flask==3.1.0
+flask==3.1.1
     # via
     #   -r requirements.in
     #   flask-sock
@@ -26,7 +26,7 @@ flatten-dict==0.4.2
     # via -r requirements.in
 gunicorn==23.0.0
     # via -r requirements.in
-h11==0.14.0
+h11==0.16.0
     # via wsproto
 idna==3.10
     # via requests
@@ -36,13 +36,14 @@ jinja2==3.1.6
     # via flask
 markupsafe==3.0.2
     # via
+    #   flask
     #   jinja2
     #   werkzeug
 mouseinfo==0.1.3
     # via pyautogui
-packaging==24.2
+packaging==25.0
     # via gunicorn
-pillow==11.1.0
+pillow==11.2.1
     # via
     #   -r requirements.in
     #   pyscreeze
@@ -50,7 +51,7 @@ pyautogui==0.9.54
     # via -r requirements.in
 pygetwindow==0.0.9
     # via pyautogui
-pymongo==4.11.2
+pymongo==4.12.1
     # via -r requirements.in
 pymsgbox==1.0.9
     # via pyautogui
@@ -78,7 +79,7 @@ six==1.17.0
     # via
     #   flatten-dict
     #   xlib
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   docker
     #   requests
