@@ -11,15 +11,33 @@ from bci.evaluations.logic import WorkerParameters
 logger = logging.getLogger('bci.worker')
 
 
-def run(args):
+def __run_by_worker() -> None:
+    """
+    Executes evaluation based on given parameters.
+    Should only be called by worker.
+    """
+    Loggers.configure_loggers()
+    if len(sys.argv) < 2:
+        logger.info('Worker did not receive any arguments.')
+        os._exit(0)
+    args = sys.argv[1]
 
-    # Only perform configuration steps for separate workers
-    if __name__ == '__main__':
-        database_connection_params = WorkerParameters.get_database_params(args)
-        MongoDB().connect(database_connection_params)
+    logger.info('Worker started')
+    database_connection_params = WorkerParameters.get_database_params(args)
+    MongoDB().connect(database_connection_params)
 
-    # Needs an initialized database
     params = WorkerParameters.deserialize(args)
+    run(params)
+    logger.info('Worker finished, exiting...')
+
+    logging.shutdown()
+    os._exit(0)
+
+
+def run(params: WorkerParameters):
+    """
+    Executes evaluation based on given parameters.
+    """
     evaluation_framework = CustomEvaluationFramework()
     try:
         evaluation_framework.evaluate(params, is_worker=True)
@@ -30,13 +48,4 @@ def run(args):
 
 
 if __name__ == '__main__':
-    Loggers.configure_loggers()
-    if len(sys.argv) < 2:
-        logger.info('Worker did not receive any arguments.')
-        os._exit(0)
-    args = sys.argv[1]
-    logger.info('Worker started')
-    run(args)
-    logger.info('Worker finished, exiting...')
-    logging.shutdown()
-    os._exit(0)
+    __run_by_worker()

@@ -9,7 +9,7 @@ from bci.database.mongo.mongodb import MongoDB
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = 'https://distrinet.pages.gitlab.kuleuven.be/users/gertjan-franken/bughog-revision-metadata/'
+BASE_URL = 'https://bughog.distrinet-research.be/'
 
 
 class RevisionCache:
@@ -24,10 +24,11 @@ class RevisionCache:
                     RevisionCache.__update_collection(collection_name, transform(result))
             except util.ResourceNotFound:
                 logger.warning(f'Could not update revision cache with resource at {url}')
+            except Exception:
+                logger.error(f'Could not update revision cache for {collection_name}', exc_info=True)
 
         executor = ThreadPoolExecutor()
         executor.submit(safe_request_json_and_update, 'firefox_binary_availability', transform=lambda x: list(x.values()))
-        executor.submit(safe_request_json_and_update, 'firefox_revision_nb_to_id', transform=lambda x: list(x))
         executor.submit(safe_request_json_and_update, 'firefox_release_base_revs')
         executor.submit(safe_request_json_and_update, 'chromium_release_base_revs')
         executor.shutdown(wait=False)
@@ -87,11 +88,11 @@ class RevisionCache:
 
     @staticmethod
     def firefox_get_revision_id(revision_nb: int) -> Optional[str]:
-        collection = MongoDB().get_collection('firefox_revision_nb_to_id')
-        data = collection.find_one({})
-        if data is None:
+        collection = MongoDB().get_collection('firefox_binary_availability')
+        result = collection.find_one({'revision_number': revision_nb})
+        if result is None:
             return None
-        return data.get(revision_nb, None)
+        return result.get('node', None)
 
     @staticmethod
     def __get_release_base_rev_collection(browser: str) -> str:

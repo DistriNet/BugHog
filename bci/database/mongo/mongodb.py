@@ -108,8 +108,6 @@ class MongoDB:
             self._db.create_collection('firefox_binary_availability')
             self._db['firefox_binary_availability'].create_index([('revision_number', ASCENDING)])
             self._db['firefox_binary_availability'].create_index(['node'])
-        if 'firefox_revision_nb_to_id' not in self._db.list_collection_names():
-            self._db.create_collection('firefox_revision_nb_to_id')
         if 'firefox_release_base_revs' not in self._db.list_collection_names():
             self._db.create_collection('firefox_release_base_revs')
         if 'chromium_release_base_revs' not in self._db.list_collection_names():
