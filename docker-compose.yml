@@ -44,9 +44,6 @@ services:
     hostname: bh_core
     ports:
       - "5000:5000"
-    build:
-      context: .
-      target: dev
     image: bh_core_dev
     environment:
       - "DEVELOPMENT=1"
@@ -138,11 +135,11 @@ services:
         aliases:
           - node
     volumes:
-      - ./bci/web/vue/public:/app/public:rw
-      - ./bci/web/vue/src:/app/src:rw
-      - ./bci/web/vue/postcss.config.js:/app/postcss.config.js:rw
-      - ./bci/web/vue/tailwind.config.js:/app/tailwind.config.js:rw
-      - ./bci/web/vue/vite.config.js:/app/vite.config.js:rw
+      - ./bughog/web/vue/public:/app/public:rw
+      - ./bughog/web/vue/src:/app/src:rw
+      - ./bughog/web/vue/postcss.config.js:/app/postcss.config.js:rw
+      - ./bughog/web/vue/tailwind.config.js:/app/tailwind.config.js:rw
+      - ./bughog/web/vue/vite.config.js:/app/vite.config.js:rw
     command: ["npm", "run", "dev", "--", "--host"]
     profiles:
       - dev

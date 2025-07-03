@@ -1,7 +1,5 @@
 {
-    "python.defaultInterpreterPath": "/usr/local/bin/python",
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
+    "python.defaultInterpreterPath": "/app/.venv/bin/python",
     "python.testing.pytestArgs": [
         "test"
     ],

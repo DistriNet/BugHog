@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
-	"name": "Development",
+	"name": "bughog-devcontainer",
 
 	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
 	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
@@ -14,11 +14,18 @@
 	"service": "core_dev",
 	"runServices": ["node_dev", "nginx_dev"],
 
+	"containerEnv": {
+		"UV_PROJECT_ENVIRONMENT": "/app/.venv"
+	},
+
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
 	"workspaceFolder": "/app",
 	"customizations": {
 		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "/app/.venv/bin/python"
+			},
 			"extensions": [
 				"charliermarsh.ruff",
 				"ms-python.debugpy",
@@ -28,8 +35,7 @@
 		}
 	},
 
-	// Install pip requirements
-	"postCreateCommand": "pip install -r requirements.txt"
+	"postCreateCommand": "uv sync --group dev"
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

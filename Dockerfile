@@ -1,8 +1,8 @@
 FROM node:22.14-alpine as ui-build-stage
 WORKDIR /app
-COPY /bci/web/vue/package*.json ./
+COPY /bughog/web/vue/package*.json ./
 RUN npm install
-COPY /bci/web/vue ./
+COPY /bughog/web/vue ./
 RUN npm run build
 
 
@@ -21,10 +21,11 @@ CMD ["start.sh"]
 
 
 FROM python:3.13-slim-bullseye AS base
+COPY --from=ghcr.io/astral-sh/uv:0.7.15 /uv /uvx /bin/
 WORKDIR /app
 
 RUN apt-get update
-RUN apt install -y curl gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libnspr4 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils libgbm-dev xvfb dbus-x11 libnss3-tools python3-pip python3-tk python3-xlib gnome-screenshot vim git procps &&\
+RUN apt install -y curl gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libnspr4 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils libgbm-dev xvfb dbus-x11 libnss3-tools python3-tk python3-xlib gnome-screenshot vim git procps &&\
     rm -rf /var/lib/apt/lists/*
 
 # Install Docker
@@ -54,36 +55,31 @@ RUN curl -sSLo multiarch-support.deb http://security.debian.org/debian-security/
     ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.0d
 
 RUN mkdir -p /app/logs && \
-    mkdir -p /app/browser/binaries/chromium/downloaded && \
-    mkdir -p /app/browser/binaries/firefox/downloaded && \
-    mkdir -p /app/browser/binaries/chromium/artisanal && \
-    mkdir -p /app/browser/binaries/firefox/artisanal
+    mkdir -p /app/subject/browser/binaries/chromium/downloaded && \
+    mkdir -p /app/subject/browser/binaries/firefox/downloaded && \
+    mkdir -p /app/subject/browser/binaries/chromium/artisanal && \
+    mkdir -p /app/subject/browser/binaries/firefox/artisanal
 
-COPY browser/profiles /app/browser/profiles
+COPY subject/browser/profiles /app/subject/browser/profiles
 COPY --chmod=0755 scripts/ /app/scripts/
 RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 
 # Install python packages
-COPY requirements.txt /app/requirements.txt
-RUN pip install --user -r /app/requirements.txt
+COPY pyproject.toml /app/
+RUN uv sync
 
 # Initiate PyAutoGUI
 RUN touch /root/.Xauthority && \
     xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
 
+    
 FROM base AS core
 # Copy rest of source code
-COPY bci /app/bci
+COPY bughog /app/bughog
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 
 FROM base AS worker
-# Copy rest of source code
-COPY bci /app/bci
+# Copy rest of source codez
+COPY bughog /app/bughog
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
-
-
-FROM base AS dev
-COPY requirements_dev.txt /app/requirements_dev.txt
-RUN pip install --user -r requirements_dev.txt
-ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
