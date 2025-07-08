@@ -39,7 +39,7 @@ export default {
       eval_params: {
         check_for: "request",
         // Subject config
-        subject_type: 'webbrowser',
+        subject_type: null,
         subject_name: null,
         subject_setting: "default",
         cli_options: [],
@@ -135,9 +135,11 @@ export default {
         return `Connecting to database...`;
       }
     },
-    "subjects": function () {
+    "available_subjects": function () {
+      const subject_type = this.eval_params.subject_type;
       if (this.eval_params.subject_type !== null) {
-        return this.subject_availability[this.eval_params.subject_type];
+        const result = this.subject_availability.find(type_entry => type_entry.subject_type === subject_type);
+        return result['subjects'];
       } else {
         return [];
       }
@@ -188,7 +190,7 @@ export default {
     },
     "eval_params.subject_type": {
       handler(val) {
-        this.get_projects();
+        this.set_curr_subject_type(val)
       },
       immediate: true
     },
@@ -307,8 +309,8 @@ export default {
       return websocket;
     },
     send_with_socket(data_in_dict) {
-      if (this.websocket === undefined || this.websocket.readyState > 1) {
-        console.log(`Websocket connection died, reviving... (readyState: ${this.websocket.readyState})`);
+      if (this.websocket === null || this.websocket === undefined || this.websocket.readyState > 1) {
+        console.log(`Websocket connection died, reviving...`);
         this.websocket = this.create_socket();
       } else if (this.websocket.readyState === 0) {
         console.log(`Websocket is still trying to connect... (readyState: ${this.websocket.readyState})`);
@@ -335,6 +337,10 @@ export default {
       this.eval_params.subject_type = selected_type;
     },
     get_projects(cb) {
+      if (this.eval_params.subject_type === null) {
+        console.error('Could not get projects because the subject type is not defined.');
+        return;
+      }
       const path = `/api/poc/${this.eval_params.subject_type}/`;
       axios.get(path)
         .then((res) => {
@@ -403,6 +409,14 @@ export default {
       } else {
         this.set_curr_project(option)
       }
+    },
+    set_curr_subject_type(subject_type) {
+      this.eval_params.subject_type = subject_type;
+      this.send_with_socket({
+        "select_subject_type": subject_type
+      })
+      this.eval_params.subject_name = null;
+      this.get_projects();
     },
     set_curr_project(project) {
       this.eval_params.project = project;
@@ -528,8 +542,8 @@ export default {
         <div class="form-subsection">
           <h2 class="form-subsection-title">Browser</h2>
           <div class="flex flex-row justify-center mx-5">
-            <div v-for="subject in subjects" class="radio-item flex-auto">
-              <input type="radio" name="subject.name" @click="set_curr_subject(subject)">
+            <div v-for="subject in available_subjects" class="radio-item flex-auto">
+              <input type="radio" name="subject.name" @click="set_curr_subject(subject.name)">
               <label>{{ subject["name"] }}</label>
             </div>
           </div>
@@ -668,7 +682,7 @@ export default {
     </div>
 
     <!-- Advanced subject options -->
-    <div class="form-section col-span-2 row-start-4">
+    <!-- <div class="form-section col-span-2 row-start-4">
       <div class="flex">
         <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
           Advanced subject options
@@ -699,7 +713,7 @@ export default {
           </ul>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Advanced evaluation options -->
     <div class="form-section h-fit col-span-2 row-start-5">

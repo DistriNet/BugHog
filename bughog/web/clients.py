@@ -1,13 +1,14 @@
 import json
+import logging
 import threading
-from venv import logger
 
-from flask import current_app
 from simple_websocket import Server
 
 from bughog.analysis.plot_factory import PlotFactory
-from bughog.database.mongo.mongodb import MongoDB
 from bughog.parameters import EvaluationParameters
+from bughog.subject import factory
+
+logger = logging.getLogger(__name__)
 
 
 class Clients:
@@ -25,10 +26,20 @@ class Clients:
             Clients.__clients = {k: v for k, v in Clients.__clients.items() if k.connected}
 
     @staticmethod
-    def associate_browser(ws_client: Server, params: dict):
+    def associate_subject_type(ws_client: Server, subject_type: str):
+        with Clients.__semaphore:
+            if not (params := Clients.__clients.get(ws_client, None)):
+                params = {}
+            params['subject_type'] = subject_type
+            Clients.__clients[ws_client] = params
+            Clients.push_experiments(ws_client)
+        # Clients.push_previous_cli_options(ws_client)
+
+    @staticmethod
+    def associate_subject(ws_client: Server, params: dict):
         with Clients.__semaphore:
             Clients.__clients[ws_client] = params
-        Clients.push_previous_cli_options(ws_client)
+        # Clients.push_previous_cli_options(ws_client)
 
     @staticmethod
     def associate_params(ws_client: Server, params: dict):
@@ -48,7 +59,7 @@ class Clients:
             params['project'] = project
             Clients.__clients[ws_client] = params
             Clients.push_experiments(ws_client)
-            Clients.push_previous_cli_options(ws_client)
+            # Clients.push_previous_cli_options(ws_client)
 
     @staticmethod
     def push_results(ws_client: Server):
@@ -101,11 +112,9 @@ class Clients:
 
         subject_type = client_info.get('subject_type')
         project = client_info.get('project')
-        if project:
-            from bughog.main import Main
-
-            main: Main = current_app.config['main']
-            experiments = main.get_experiments(subject_type, project)
+        if project and subject_type:
+            experiments = factory.create_experiments(subject_type)
+            experiments = experiments.get_experiments(project)
             ws_client.send(json.dumps({'update': {'experiments': experiments}}))
 
     @staticmethod
@@ -114,8 +123,8 @@ class Clients:
         for ws_client in Clients.__clients.keys():
             Clients.push_experiments(ws_client)
 
-    @staticmethod
-    def push_previous_cli_options(ws_client: Server):
-        if params := Clients.__clients.get(ws_client, None):
-            previous_cli_options = MongoDB().get_previous_cli_options(params)
-            ws_client.send(json.dumps({'update': {'previous_cli_options': previous_cli_options}}))
+    # @staticmethod
+    # def push_previous_cli_options(ws_client: Server):
+    #     if params := Clients.__clients.get(ws_client, None):
+    #         previous_cli_options = MongoDB().get_previous_cli_options(params)
+    #         ws_client.send(json.dumps({'update': {'previous_cli_options': previous_cli_options}}))

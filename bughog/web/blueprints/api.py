@@ -107,8 +107,10 @@ def init_websocket(ws):
             break
         try:
             message = json.loads(message)
-            if params := message.get('new_browser', None):
-                Clients.associate_browser(ws, params)
+            if params := message.get('select_subject_type', None):
+                Clients.associate_subject_type(ws, params)
+            if params := message.get('new_subject', None):
+                Clients.associate_subject(ws, params)
             if params := message.get('new_params', None):
                 Clients.associate_params(ws, params)
             if params := message.get('select_project', None):
@@ -200,6 +202,7 @@ def poc_file_content(subject_type: str, project: str, poc: str, file: str):
         else:
             return {'status': 'NOK'}
 
+
 @api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/', methods=['POST'])
 def add_page(subject_type: str, project: str, poc: str):
     if request.json is None:
@@ -224,6 +227,7 @@ def add_config(subject_type: str, project: str, poc: str):
     type = data['type']
     success = factory.create_experiments(subject_type).add_config(project, poc, type)
     if success:
+        Clients.push_experiments_to_all()
         return {'status': 'OK'}
     else:
         return {'status': 'NOK'}
@@ -245,6 +249,7 @@ def create_experiment(subject_type: str, project: str):
     poc_name = data['poc_name']
     try:
         factory.create_experiments(subject_type).create_empty_poc(project, poc_name)
+        Clients.push_experiments_to_all()
         return {'status': 'OK'}
     except AttributeError as e:
         return {'status': 'NOK', 'msg': str(e)}

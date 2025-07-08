@@ -1,13 +1,10 @@
 import json
 import logging
 import os
-from dataclasses import dataclass
 import re
-from typing import Optional
 
 from bughog.evaluation.file_structure import Folder
 from bughog.subject.evaluation_framework import EvaluationFramework
-from bughog.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
@@ -123,8 +120,6 @@ class Experiments:
             file.write(self.get_default_file_content(file_type))
 
         self.reload_experiments()
-        # Notify clients of change (an experiment might now be runnable)
-        Clients.push_experiments_to_all()
 
     def add_config(self, project: str, poc: str, type: str) -> bool:
         content = self.get_default_file_content(type)
@@ -137,9 +132,6 @@ class Experiments:
             file.write(content)
 
         self.reload_experiments()
-        # Notify clients of change (an experiment might now be runnable)
-        Clients.push_experiments_to_all()
-
         return True
 
     def __get_project_folder(self, project_name: str) -> Folder:

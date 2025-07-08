@@ -382,21 +382,21 @@ class MongoDB:
         else:
             return {'type': 'mongo', 'host': None, 'connected': False}
 
-    def get_previous_cli_options(self, params: dict) -> list[str]:
-        """
-        Returns a list of all cli options used for the browser defined in the given parameter dictionary.
-        """
-        previous_cli_options = []
-        collection = self.__get_data_collection(params)
-        cursor = collection.find(
-            {'cli_options': {'$exists': True, '$not': {'$size': 0}}}, {'_id': False, 'cli_options': True}
-        )
-        # We convert to tuples because they are, in contrast to lists, hashable.
-        cli_options_list = set(' '.join(doc['cli_options']) for doc in cursor)
-        if cli_options_list:
-            previous_cli_options.extend(list(filter(lambda x: x not in previous_cli_options, cli_options_list)))
-        previous_cli_options.sort()
-        return previous_cli_options
+    # def get_previous_cli_options(self, params: dict) -> list[str]:
+    #     """
+    #     Returns a list of all cli options used for the browser defined in the given parameter dictionary.
+    #     """
+    #     previous_cli_options = []
+    #     collection = self.__get_data_collection(params)
+    #     cursor = collection.find(
+    #         {'cli_options': {'$exists': True, '$not': {'$size': 0}}}, {'_id': False, 'cli_options': True}
+    #     )
+    #     # We convert to tuples because they are, in contrast to lists, hashable.
+    #     cli_options_list = set(' '.join(doc['cli_options']) for doc in cursor)
+    #     if cli_options_list:
+    #         previous_cli_options.extend(list(filter(lambda x: x not in previous_cli_options, cli_options_list)))
+    #     previous_cli_options.sort()
+    #     return previous_cli_options
 
 
 class ServerException(Exception):

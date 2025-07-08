@@ -12,7 +12,11 @@ from bughog.subject.webbrowser.firefox.subject import Firefox
 from bughog.version_control.state.release.base import ReleaseState
 
 subjects = {
-    'webbrowser': {
+    'js_engine': {
+        'collectors': [],
+        'subjects': []
+    },
+    'web_browser': {
         'collectors': [
             RequestCollector
         ],
