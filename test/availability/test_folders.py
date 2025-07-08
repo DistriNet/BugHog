@@ -1,9 +1,9 @@
 import os
 import unittest
 
-from bci.configuration import Global
-import bci.browser.binary.vendors.chromium as chromium
-import bci.browser.binary.vendors.firefox as firefox
+from bughog.configuration import Global
+import bughog.browser.binary.vendors.chromium as chromium
+import bughog.browser.binary.vendors.firefox as firefox
 
 
 class TestFolderAvailability(unittest.TestCase):

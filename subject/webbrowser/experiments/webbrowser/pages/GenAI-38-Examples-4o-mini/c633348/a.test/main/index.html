@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Security-Policy" content="frame-src 'none'; report-uri https://a.test/report">
+  </head>
+  <body>
+    <iframe src="https://b.test" id="child-frame"></iframe>
+    <script>
+      document.addEventListener('securitypolicyviolation', function (e) {
+        console.log('securitypolicyviolation_event.sourceFile=' + e.sourceFile);
+        console.log('securitypolicyviolation_event.lineNumber=' + e.lineNumber);
+        console.log('securitypolicyviolation_event.columnNumber=' + e.columnNumber);
+      });
+    </script>
+  </body>
+</html>

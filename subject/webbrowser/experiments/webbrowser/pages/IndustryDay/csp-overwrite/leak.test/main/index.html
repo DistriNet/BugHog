@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<!-- https://issues.chromium.org/issues/40052073 -->
+<html>
+  <head>
+    <meta http-equiv="content-security-policy" content="img-src 'self'" />
+  </head>
+  <body>
+    <script>
+      url =
+        '<meta http-equiv="content-security-policy" content="default-src *"><img src="https://a.test/report/?bughog_reproduced=OK">';
+      window.open("javascript:'" + url + "'", "_self");
+    </script>
+  </body>
+</html>

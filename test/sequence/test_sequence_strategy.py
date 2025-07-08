@@ -2,10 +2,10 @@ import unittest
 from typing import Callable, Optional
 from unittest.mock import MagicMock
 
-from bci.evaluations.logic import EvaluationConfiguration, EvaluationRange
-from bci.search_strategy.sequence_strategy import SequenceStrategy
-from bci.version_control.state_factory import StateFactory
-from bci.version_control.states.state import State, StateResult
+from bughog.parameters import EvaluationConfiguration, EvaluationRange
+from bughog.search_strategy.sequence_strategy import SequenceStrategy
+from bughog.version_control.state_factory import StateFactory
+from bughog.version_control.states.base import State, StateResult
 
 
 class TestSequenceStrategy(unittest.TestCase):

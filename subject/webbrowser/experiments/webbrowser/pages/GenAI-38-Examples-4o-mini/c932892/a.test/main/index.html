@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'none'; report-uri https://a.test/report/?leak=c932892">
+</head>
+<body>
+    <script>
+        document.addEventListener('securitypolicyviolation', function(e) {
+            console.log('Blocked URI:', e.blockedURI);
+            if (e.blockedURI) {
+                // Redirect to the report URL upon violation
+                document.location.href = 'https://a.test/report/?leak=c932892';
+            }
+        });
+        // Attempt to load an image that will cause a CSP violation
+        var img = document.createElement('img');
+        img.src = 'https://bugs.chromium.org/blocked-resource.png';
+        document.body.appendChild(img);
+    </script>
+</body>
+</html>

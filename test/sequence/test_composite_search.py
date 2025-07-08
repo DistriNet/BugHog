@@ -1,7 +1,7 @@
 import unittest
 
-from bci.search_strategy.composite_search import CompositeSearch
-from bci.search_strategy.sequence_strategy import SequenceFinished
+from bughog.search_strategy.composite_search import CompositeSearch
+from bughog.search_strategy.sequence_strategy import SequenceFinished
 from test.sequence.test_sequence_strategy import TestSequenceStrategy as helper
 
 

@@ -1,0 +1,174 @@
+import logging
+import os
+import re
+
+from bughog.configuration import Global
+from bughog.database.mongo.mongodb import MongoDB
+from bughog.evaluation.experiment_result import ExperimentResult
+from bughog.parameters import EvaluationParameters
+from bughog.subject import factory
+from bughog.subject.executable import Executable, ExecutableStatus
+from bughog.version_control.state.base import State
+from bughog.web.clients import Clients
+
+logger = logging.getLogger(__name__)
+
+
+class Evaluation:
+    def __init__(self, subject_type: str):
+        self.subject_type = subject_type
+        self.framework = factory.create_evaluation_framework(subject_type)
+        self.should_stop = False
+
+    def conduct_experiment(self, executable: Executable, params: EvaluationParameters) -> ExperimentResult:
+        logger.info(f'Starting test for {params}')
+
+        state_result_factory = StateResultFactory(experiment=params.experiment)
+        collector = self.framework.collector
+        collector.start()
+
+        is_dirty = False
+        tries_left = 3
+        script = self.__get_interaction_script(params.evaluation_configuration.project, params.experiment)
+        try:
+            sanity_check_was_successful = False
+            poc_was_reproduced = False
+            while not poc_was_reproduced and tries_left > 0:
+                tries_left -= 1
+                executable.pre_try_setup()
+                # TODO: fix interaction
+                # BrowserInteraction(executable, script, params).execute()
+                executable.post_try_cleanup()
+                intermediary_result = state_result_factory.get_result(collector.collect_results())
+                sanity_check_was_successful |= not intermediary_state_result.is_dirty
+                poc_was_reproduced = intermediary_state_result.reproduced
+            if not poc_was_reproduced and not sanity_check_was_successful:
+                raise FailedSanityCheck()
+        except FailedSanityCheck:
+            logger.error('Evaluation sanity check has failed', exc_info=True)
+            is_dirty = True
+        except Exception as e:
+            logger.error(f'An error during evaluation: {e}', exc_info=True)
+            is_dirty = True
+        finally:
+            logger.debug(f'Evaluation finished with {tries_left} tries left')
+            collector.stop()
+            raw_results, result_variables = collector.collect_results()
+        return ExperimentResult(executable.version, executable.origin, executable.state, raw_results, result_variables, is_dirty)
+
+    def create_empty_project(self, project_name: str):
+        # TODO: call framework
+        self.reload_experiments()
+
+    def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
+        file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
+        if os.path.isfile(file_path):
+            if content == '':
+                logger.warning('Attempt to save empty file ignored')
+                return False
+            with open(file_path, 'w') as file:
+                file.write(content)
+            return True
+        return False
+
+    def create_empty_poc(self, project: str, poc_name: str):
+        self.is_valid_name(poc_name)
+        poc_path = os.path.join(Global.custom_page_folder, project, poc_name)
+        if os.path.exists(poc_path):
+            raise AttributeError(f"The given PoC name '{poc_name}' already exists.")
+
+        os.makedirs(poc_path)
+        self.reload_experiments()
+        Clients.push_experiments_to_all()
+
+    def add_page(self, project: str, poc: str, domain: str, path: str, file_type: str):
+        domain_path = os.path.join(Global.custom_page_folder, project, poc, domain)
+        if not os.path.exists(domain_path):
+            os.makedirs(domain_path)
+
+        self.is_valid_name(path)
+        if file_type == 'py':
+            file_name = path if path.endswith('.py') else path + '.py'
+            file_path = os.path.join(domain_path, file_name)
+        else:
+            page_path = os.path.join(domain_path, path)
+            if not os.path.exists(page_path):
+                os.makedirs(page_path)
+            new_file_name = f'index.{file_type}'
+            file_path = os.path.join(page_path, new_file_name)
+            headers_file_path = os.path.join(page_path, 'headers.json')
+            if not os.path.exists(headers_file_path):
+                with open(headers_file_path, 'w') as file:
+                    file.write(self.get_default_file_content('headers.json'))
+
+        if os.path.exists(file_path):
+            raise AttributeError(f"The given page '{path}' does already exist.")
+        with open(file_path, 'w') as file:
+            file.write(self.get_default_file_content(file_type))
+
+        self.reload_experiments()
+        # Notify clients of change (an experiment might now be runnable)
+        Clients.push_experiments_to_all()
+
+    def add_config(self, project: str, poc: str, type: str) -> bool:
+        content = self.get_default_file_content(type)
+
+        if content == '':
+            return False
+
+        file_path = os.path.join(Global.custom_page_folder, project, poc, type)
+        with open(file_path, 'w') as file:
+            file.write(content)
+
+        self.reload_experiments()
+        # Notify clients of change (an experiment might now be runnable)
+        Clients.push_experiments_to_all()
+
+        return True
+
+    @staticmethod
+    def get_default_file_content(file_type: str) -> str:
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'default_files/{file_type}')
+
+        if not os.path.exists(path):
+            return ''
+
+        with open(path, 'r') as file:
+            return file.read()
+
+    def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
+        if MongoDB().has_result(params):
+            logger.warning(
+                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
+            )
+            return
+
+        executable = create_executable(params, state)
+        executable.pre_evaluation_setup()
+
+        if self.should_stop:
+            self.should_stop = False
+            return
+        try:
+            executable.pre_experiment_setup()
+            result = self.conduct_experiment(executable, params)
+            MongoDB().store_result(result)
+            logger.info(f'Experiment finalized: {params}')
+        except Exception as e:
+            executable.status = ExecutableStatus.EXPERIMENT_FAILED
+            if is_worker:
+                raise e
+            else:
+                logger.error('An error occurred during evaluation', exc_info=True)
+        finally:
+            executable.post_experiment_cleanup()
+
+        executable.post_evaluation_cleanup()
+        logger.debug('Evaluation finished')
+
+    def stop_gracefully(self):
+        self.should_stop = True
+
+
+class FailedSanityCheck(Exception):
+    pass

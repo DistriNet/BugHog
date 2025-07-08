@@ -1,0 +1,18 @@
+<html>
+<head>
+  <meta http-equiv="Content-Security-Policy" content="img-src none">
+</head>
+<body>
+  <iframe id="frame" src="http://example.com/"></iframe>
+  <script>
+    setTimeout(() => {
+      document.getElementById('frame').src = 'about:blank';
+    }, 2000);
+    setTimeout(() => {
+      const img = document.createElement('img');
+      img.src = 'test_image.png';
+      document.getElementById('frame').contentDocument.body.appendChild(img);
+    }, 3000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-security-policy" content="default-src 'self';script-src 'self' 'unsafe-inline'">
+</head>
+<body>
+    <img id='123' />
+    <script>
+        var elem = document.getElementById('123');
+        elem.src = "https://a.test/report/?bughog_reproduced=OK"
+    </script>
+</body>
+</html>

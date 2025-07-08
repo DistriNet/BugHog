@@ -1,0 +1,2 @@
+https://webkitgtk.org/releases/webkitgtk-2.47.2.tar.xz
+https://a.test/report/?bughog_sanity_check=OK

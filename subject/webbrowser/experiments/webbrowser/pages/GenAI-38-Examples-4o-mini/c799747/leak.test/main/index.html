@@ -1,0 +1,7 @@
+<meta http-equiv="Content-Security-Policy" content="script-src 'nonce-test'">
+<script nonce="test">
+var attackerControlledString = "<script>alert(document.domain)<\/script>";
+var blob = new Blob([attackerControlledString], {type: 'text/html'});
+var url = URL.createObjectURL(blob);
+document.location.href = url;
+</script>

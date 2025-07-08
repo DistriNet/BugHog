@@ -1,0 +1,13 @@
+<meta http-equiv="Content-Security-Policy" content="object-src data:;"></meta>
+
+<object width="300" height="300"
+    data="data:application/x-silverlight-2,"
+    type="application/x-silverlight-2" >
+    <param name="source" value="SilverlightApplication1.xap"/>
+</object>
+<script>
+  var obj = document.querySelector('object');
+  obj.addEventListener('load', function() {
+    document.location.href = "https://a.test/report/?leak=c320796";
+  });
+</script>

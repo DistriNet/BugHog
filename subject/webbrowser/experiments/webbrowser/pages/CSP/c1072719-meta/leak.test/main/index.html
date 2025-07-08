@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  </head>
+  <body>
+    <script>
+      url =
+        '<meta http-equiv="content-security-policy" content="default-src *"><img src="https://a.test/report/?leak=c1072719-meta">';
+      window.open("javascript:'" + url + "'", "_self");
+    </script>
+  </body>
+</html>

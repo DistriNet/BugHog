@@ -1,7 +1,7 @@
 import unittest
 
-from bci.search_strategy.bgb_sequence import BiggestGapBisectionSequence
-from bci.search_strategy.sequence_strategy import SequenceFinished
+from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
+from bughog.search_strategy.sequence_strategy import SequenceFinished
 from test.sequence.test_sequence_strategy import TestSequenceStrategy as helper
 
 

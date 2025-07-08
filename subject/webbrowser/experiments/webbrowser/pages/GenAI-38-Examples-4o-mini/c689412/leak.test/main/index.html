@@ -1,0 +1,10 @@
+<html>
+<head>
+<meta http-equiv=content-security-policy content="object-src 'none';script-src 'nonce-random-secret'">
+<title> Fake XSS </title>
+</head>
+<body>
+<base href=data:/,-alert(1)/>
+<script src="./lib/jquery.js" nonce=random-secret></script>
+</body>
+</html>

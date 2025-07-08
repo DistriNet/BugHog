@@ -1,0 +1,12 @@
+<html>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'none';object-src data:;img-src 'none';frame-src data:"/>
+<!-- CSP is set and both script-src and img-src is 'none' -->
+<body>
+
+<!-- inline script will run and remote image load -->
+<object data='data:text/html;,<svg version="1.1" width="660" height="342" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><script>console.log("Remote Image test")</script><image xlink:href="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png?x" width="660" height="342"/></svg>'></object>
+
+<!-- CSP works fine -->
+<iframe src='data:text/html;,<script>console.log("Remote Image test")</script><img src="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png?x" width="660" height="342"/>'></iframe>
+</body>
+</html>

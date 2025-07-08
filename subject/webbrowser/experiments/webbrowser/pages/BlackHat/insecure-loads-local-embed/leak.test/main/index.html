@@ -1,0 +1,14 @@
+<embed id="abc"></embed>
+
+<script>
+window.onload = function () {
+    console.log("Window loaded");
+    var embed = document.getElementById("abc");
+    embed.onload = function () {
+        console.log("Embed loaded");
+        document.location = "/report/?bughog_reproduced=OK";
+    }
+    embed.src="http://localhost:8080/me.webp";
+    console.log("Src set");
+}
+</script>

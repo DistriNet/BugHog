@@ -1,0 +1,6 @@
+[
+    {
+        "key": "Content-Security-Policy-Report-Only",
+        "value": "default-src 'self'; img-src 'self'; script-src 'self'; frame-src 'self'; report-uri /csp-rep"
+    }
+]

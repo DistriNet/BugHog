@@ -55,12 +55,12 @@ RUN curl -sSLo multiarch-support.deb http://security.debian.org/debian-security/
     ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.0d
 
 RUN mkdir -p /app/logs && \
-    mkdir -p /app/subject/browser/binaries/chromium/downloaded && \
-    mkdir -p /app/subject/browser/binaries/firefox/downloaded && \
-    mkdir -p /app/subject/browser/binaries/chromium/artisanal && \
-    mkdir -p /app/subject/browser/binaries/firefox/artisanal
+    mkdir -p /app/subject/webbrowser/binaries/chromium/downloaded && \
+    mkdir -p /app/subject/webbrowser/binaries/firefox/downloaded && \
+    mkdir -p /app/subject/webbrowser/binaries/chromium/artisanal && \
+    mkdir -p /app/subject/webbrowser/binaries/firefox/artisanal
 
-COPY subject/browser/profiles /app/subject/browser/profiles
+COPY subject/webbrowser/profiles /app/subject/webbrowser/profiles
 COPY --chmod=0755 scripts/ /app/scripts/
 RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 
@@ -72,7 +72,7 @@ RUN uv sync
 RUN touch /root/.Xauthority && \
     xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
 
-    
+
 FROM base AS core
 # Copy rest of source code
 COPY bughog /app/bughog

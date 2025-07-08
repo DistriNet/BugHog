@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="https://test.shhnjk.com/" />
+  <script>
+    // Simulate CSP violation
+    var nonCspUrl = "http://malicious.com/"
+    fetch(nonCspUrl);
+  </script>
+</head>
+<body>
+  <h1>Test Report URI Bypass</h1>
+</body>
+</html>

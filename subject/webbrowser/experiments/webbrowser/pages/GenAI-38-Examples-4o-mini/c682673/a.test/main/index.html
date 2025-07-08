@@ -1,0 +1,13 @@
+<script>
+  // Test for source-expression "http://*:111"
+  var xhr1 = new XMLHttpRequest();
+  xhr1.open('GET', 'http://a.com:222', true);
+  xhr1.onload = function () { document.location.href = 'https://a.test/report/?leak=c682673&test1'; };
+  xhr1.send();
+  
+  // Test for source-expression "http://*/path"
+  var xhr2 = new XMLHttpRequest();
+  xhr2.open('GET', 'http://a.com/other-path', true);
+  xhr2.onload = function () { document.location.href = 'https://a.test/report/?leak=c682673&test2'; };
+  xhr2.send();
+</script>
