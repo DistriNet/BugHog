@@ -207,7 +207,6 @@ export default {
             params['type'] = type
             params["revision_number"] = revision_number
             params["major_version"] = browser_version
-            params["mech_group"] = params["plot_mech_group"]
             axios.post(path, params)
             .then((res) => {
             })

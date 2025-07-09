@@ -5,7 +5,7 @@ import threading
 from simple_websocket import Server
 
 from bughog.analysis.plot_factory import PlotFactory
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import EvaluationParameters, evaluation_factory
 from bughog.subject import factory
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,10 @@ class Clients:
     def push_results(ws_client: Server):
         if params := Clients.__clients.get(ws_client, None):
             # plot_params = PlotParameters.from_dict(params)
-            plot_params = EvaluationParameters.from_dict(params)
+            eval_params = evaluation_factory(params)
+            if len(eval_params) < 1:
+                return
+            plot_params = eval_params[0].to_plot_parameters(params['experiment_to_plot'])
 
             if PlotFactory.validate_params(plot_params):
                 revision_data = None

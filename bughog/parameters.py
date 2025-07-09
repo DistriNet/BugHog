@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import base64
-import json
 import logging
 from dataclasses import asdict, dataclass
 import pickle
-from typing import Literal, Optional
+from typing import Optional
 
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -43,6 +42,18 @@ class EvaluationParameters:
         pickled_bytes = base64.b64decode(pickled_str)
         return pickle.loads(pickled_bytes)
 
+    def to_plot_parameters(self, experiment_name: str, dirty_results_allowed: bool = True) -> PlotParameters:
+        return PlotParameters(
+            self.subject_configuration,
+            self.evaluation_configuration,
+            self.evaluation_range,
+            self.sequence_configuration,
+            self.database_params,
+            experiment_name,
+            dirty_results_allowed,
+        )
+
+
 @dataclass(frozen=True)
 class SubjectConfiguration:
     subject_type: str
@@ -56,7 +67,9 @@ class SubjectConfiguration:
 
     @staticmethod
     def from_dict(data: dict) -> SubjectConfiguration:
-        return SubjectConfiguration(data['subject_type'], data['subject_name'], data['subject_setting'], data['cli_options'], data['extensions'])
+        return SubjectConfiguration(
+            data['subject_type'], data['subject_name'], data['subject_setting'], data['cli_options'], data['extensions']
+        )
 
 
 @dataclass(frozen=True)
@@ -207,41 +220,42 @@ class DatabaseParameters:
 #         return '.'.join(padded_version)
 
 
-# @dataclass(frozen=True)
-# class PlotParameters:
-#     experiment: Optional[str]
-#     subject_name: Optional[str]
-#     database_collection: Optional[str]
-#     major_version_range: Optional[tuple[int, int]] = None
-#     revision_number_range: Optional[tuple[int, int]] = None
-#     subject_config: str = 'default'
-#     cli_options: Optional[list[str]] = None
-#     dirty_allowed: bool = True
+@dataclass(frozen=True)
+class PlotParameters(EvaluationParameters):
+    experiment: Optional[str]
+    dirty_results_allowed: bool
+    # subject_name: Optional[str]
+    # database_collection: Optional[str]
+    # major_version_range: Optional[tuple[int, int]] = None
+    # revision_number_range: Optional[tuple[int, int]] = None
+    # subject_config: str = 'default'
+    # cli_options: Optional[list[str]] = None
+    # dirty_allowed: bool = True
 
-#     @staticmethod
-#     def from_dict(data: dict) -> PlotParameters:
-#         if data.get('lower_version', None) and data.get('upper_version', None):
-#             major_version_range = (data['lower_version'], data['upper_version'])
-#         else:
-#             major_version_range = None
-#         if data.get('lower_revision_nb', None) and data.get('upper_revision_nb', None):
-#             revision_number_range = (
-#                 data['lower_revision_nb'],
-#                 data['upper_revision_nb'],
-#             )
-#         else:
-#             revision_number_range = None
-#         return PlotParameters(
-#             data.get('plot_experiment', None),
-#             data.get('target_mech_id', None),
-#             data.get('subject_name', None),
-#             data.get('db_collection', None),
-#             major_version_range=major_version_range,
-#             revision_number_range=revision_number_range,
-#             subject_config=data.get('subject_setting', 'default'),
-#             cli_options=data.get('cli_options', []),
-#             dirty_allowed=data.get('dirty_allowed', True),
-#        )
+    # @staticmethod
+    # def from_dict(data: dict) -> PlotParameters:
+    #     if data.get('lower_version', None) and data.get('upper_version', None):
+    #         major_version_range = (data['lower_version'], data['upper_version'])
+    #     else:
+    #         major_version_range = None
+    #     if data.get('lower_revision_nb', None) and data.get('upper_revision_nb', None):
+    #         revision_number_range = (
+    #             data['lower_revision_nb'],
+    #             data['upper_revision_nb'],
+    #         )
+    #     else:
+    #         revision_number_range = None
+    #     return PlotParameters(
+    #         data.get('plot_experiment', None),
+    #         data.get('target_mech_id', None),
+    #         data.get('subject_name', None),
+    #         data.get('db_collection', None),
+    #         major_version_range=major_version_range,
+    #         revision_number_range=revision_number_range,
+    #         subject_config=data.get('subject_setting', 'default'),
+    #         cli_options=data.get('cli_options', []),
+    #         dirty_allowed=data.get('dirty_allowed', True),
+    #    )
 
 
 # @dataclass(frozen=True)

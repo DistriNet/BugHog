@@ -15,6 +15,7 @@
       darkmode: Boolean,
       poc: String,
       project: String,
+      subject_type: String,
     },
     data() {
       return {
@@ -121,7 +122,7 @@
         if (file_path !== null) {
           params["path"] = file_path;
         }
-        const path = `/api/poc/${project}/${poc}/${file_name}/`;
+        const path = `/api/poc/${subject_type}/${project}/${poc}/${file_name}/`;
         axios.get(path, {params: params})
         .then((res) => {
           if (res.data.status === "OK") {
@@ -166,7 +167,7 @@
           if (file_path !== null) {
             get_params["path"] = file_path;
           }
-          const path = `/api/poc/${project}/${poc}/${file_name}/`;
+          const path = `/api/poc/${subject_type}/${project}/${poc}/${file_name}/`;
           axios.post(path, data, {params: get_params})
           .then((res) => {
             if (res.data.status == "NOK") {
@@ -180,7 +181,7 @@
       },
       update_poc_tree(poc_name) {
         const active_poc_name = poc_name === undefined ? this.active_poc.name : poc_name;
-        const path = `/api/poc/${this.project}/${active_poc_name}/`;
+        const path = `/api/poc/${this.subject_type}/${this.project}/${active_poc_name}/`;
         axios.get(path)
         .then((res) => {
           if (res.data.status === "OK") {
@@ -213,7 +214,7 @@
         }
       },
       add_page() {
-        const url = `/api/poc/${this.project}/${this.poc}/`;
+        const url = `/api/poc/${this.subject_type}/${this.project}/${this.poc}/`;
         const domain = this.dialog.domain.name;
         const page = this.dialog.page.name;
         const file_type = this.dialog.file.type;
@@ -236,7 +237,7 @@
         });
       },
       add_config() {
-        const url = `/api/poc/${this.project}/${this.poc}/config`;
+        const url = `/api/poc/${this.subject_type}/${this.project}/${this.poc}/config`;
         axios.post(url, {
           "type": this.config_type,
         })

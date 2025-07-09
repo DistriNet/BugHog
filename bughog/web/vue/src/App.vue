@@ -64,7 +64,7 @@ export default {
         // Database collection
         db_collection: null,
         // For plotting
-        plot_mech_group: null,
+        experiment_to_plot: null,
       },
       server_info: {
         db_info: {
@@ -102,7 +102,7 @@ export default {
   computed: {
     "missing_plot_params": function () {
       const missing_params = [];
-      const required_params_for_plotting = ["subject_type", "subject_name", "project", "plot_mech_group"];
+      const required_params_for_plotting = ["subject_type", "subject_name", "project", "experiment_to_plot"];
       for (const index in required_params_for_plotting) {
         const param = required_params_for_plotting[index];
         if (this.eval_params[param] === null) {
@@ -176,13 +176,13 @@ export default {
     },
     "target_mech_id_input": function (val) {
       if (val === null || val === "") {
-        this.eval_params.target_mech_id = this.eval_params.plot_mech_group;
+        this.eval_params.target_mech_id = this.eval_params.experiment_to_plot;
       } else {
         this.eval_params.target_mech_id = val;
       }
       this.propagate_new_params();
     },
-    "eval_params.plot_mech_group": function (val) {
+    "eval_params.experiment_to_plot": function (val) {
       if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
         this.eval_params.target_mech_id = val;
       }
@@ -335,6 +335,10 @@ export default {
     update_subject_type(event) {
       const selected_type = event.target.value;
       this.eval_params.subject_type = selected_type;
+      this.eval_params.subject_name = null;
+      this.eval_params.project == null;
+      this.unset_curr_project();
+      this.selected.experiment == null;
     },
     get_projects(cb) {
       if (this.eval_params.subject_type === null) {
@@ -419,16 +423,26 @@ export default {
       this.get_projects();
     },
     set_curr_project(project) {
+      if (project !== null) {
+        this.send_with_socket({
+          "select_project": project
+        });
+      }
       this.eval_params.project = project;
-      this.send_with_socket({
-        "select_project": project
-      })
       this.selected.project = project;
       this.eval_params.tests = [];
       this.select_all_tests = false;
+      if (project === null) {
+        this.tests = [];
+      }
+    },
+    unset_curr_project() {
+      this.set_curr_project(null);
     },
     set_curr_subject(subject) {
-      this.eval_params.subject_name = subject["name"];
+      console.log(subject)
+      this.eval_params.subject_name = subject.name;
+      console.log(this.eval_params.subject_name)
       this.curr_options.min_subject_version = subject["min_version"];
       this.curr_options.max_subject_version = subject["max_version"];
       this.slider.state = [subject["min_version"], subject["max_version"]];
@@ -532,25 +546,25 @@ export default {
       </label>
     </header>
 
-    <!-- Browser settings and experiments -->
+    <!-- Subject settings and experiments -->
     <div class="row-start-2 row-span-1 gap-3 flex flex-col">
-      <!-- Browser settings -->
+      <!-- Subject settings -->
       <div class="form-section">
         <section-header section="eval_range"></section-header>
 
-        <!-- Browser -->
+        <!-- Subject -->
         <div class="form-subsection">
-          <h2 class="form-subsection-title">Browser</h2>
+          <h2 class="form-subsection-title">Subject</h2>
           <div class="flex flex-row justify-center mx-5">
             <div v-for="subject in available_subjects" class="radio-item flex-auto">
-              <input type="radio" name="subject.name" @click="set_curr_subject(subject.name)">
+              <input type="radio" name="subject.name" @click="set_curr_subject(subject)">
               <label>{{ subject["name"] }}</label>
             </div>
           </div>
         </div>
 
         <div class="form-subsection">
-          <h2 class="form-subsection-title">Browser version range</h2>
+          <h2 class="form-subsection-title">Subject version range</h2>
           <div class="flex flex-wrap">
             <div class="w-5/6 m-auto pt-12">
               <Slider
@@ -637,7 +651,7 @@ export default {
       <div class="results-section mt-2 h-full flex flex-col">
         <section-header section="results" left></section-header>
         <div class="flex flex-wrap justify-between h-fit">
-          <select class="w-fit h-fit" v-model="eval_params.plot_mech_group">
+          <select class="w-fit h-fit" v-model="eval_params.experiment_to_plot">
             <option disabled value="">Select an experiment</option>
             <option v-for="test in eval_params.tests">{{ test }}</option>
           </select>
@@ -677,7 +691,8 @@ export default {
         :darkmode="this.darkmode"
         :available_domains="this.available_domains"
         :project="this.selected.project"
-        :poc="this.selected.experiment"></poc-editor>
+        :poc="this.selected.experiment"
+        :subject_type="this.eval_params.subject_type"></poc-editor>
       </div>
     </div>
 
