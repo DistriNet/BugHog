@@ -29,10 +29,10 @@ class StateFactory:
         :param index: The index of the state.
         """
         eval_range = self.__eval_params.evaluation_range
-        if eval_range.only_release_revisions:
-            return self.__create_version_state(index)
+        if eval_range.only_release_commits:
+            return self.__create_release_state(index)
         else:
-            return self.__create_revision_state(index)
+            return self.__create_commit_state(index)
 
     def __create_boundary_states(self) -> tuple[State, State]:
         """
@@ -40,36 +40,36 @@ class StateFactory:
         """
         eval_range = self.__eval_params.evaluation_range
         if eval_range.major_version_range:
-            first_state = self.__create_version_state(eval_range.major_version_range[0])
-            last_state = self.__create_version_state(eval_range.major_version_range[1])
-            if not eval_range.only_release_revisions:
+            first_state = self.__create_release_state(eval_range.major_version_range[0])
+            last_state = self.__create_release_state(eval_range.major_version_range[1])
+            if not eval_range.only_release_commits:
                 first_state = first_state.convert_to_commit_state()
                 last_state = last_state.convert_to_commit_state()
             return first_state, last_state
-        elif eval_range.revision_number_range:
-            if eval_range.only_release_revisions:
-                raise ValueError('Release revisions are not allowed in this evaluation range')
+        elif eval_range.commit_nb_range:
+            if eval_range.only_release_commits:
+                raise ValueError("Release revisions are not allowed in this evaluation range")
             return (
-                self.__create_revision_state(eval_range.revision_number_range[0]),
-                self.__create_revision_state(eval_range.revision_number_range[1]),
+                self.__create_commit_state(eval_range.commit_nb_range[0]),
+                self.__create_commit_state(eval_range.commit_nb_range[1]),
             )
         else:
-            raise ValueError('No evaluation range specified')
+            raise ValueError("No evaluation range specified")
 
     def create_evaluated_states(self) -> list[State]:
         """
         Create evaluated state objects within the evaluation range where the result is fetched from the database.
         """
-        return MongoDB().get_evaluated_states(self.__eval_params, self.boundary_states, self.__state_result_factory)
+        return MongoDB().get_evaluated_states(self.__eval_params, self.boundary_states)
 
-    def __create_version_state(self, index: int) -> ReleaseState:
+    def __create_release_state(self, index: int) -> ReleaseState:
         """
         Create a version state object associated with the given index.
         """
-        return self.__subject.release_state_class(self.__oracle, index)
+        return ReleaseState(self.__oracle, index)
 
-    def __create_revision_state(self, index: int) -> CommitState:
+    def __create_commit_state(self, index: int) -> CommitState:
         """
         Create a revision state object associated with the given index.
         """
-        return self.__subject.commit_state_class(self.__oracle, index)
+        return CommitState(self.__oracle, commit_nb=index)

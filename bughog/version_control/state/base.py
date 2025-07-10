@@ -1,44 +1,18 @@
 from __future__ import annotations
 
 import base64
+import os
 import pickle
-from abc import abstractmethod
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from bughog.subject.state_oracle import StateOracle
 
 
-@dataclass(frozen=True)
-class StateResult:
-    requests: list[dict[str, str]]
-    logs: list[str]
-    result_vars: list[dict[str, str]]
-    is_dirty: bool
-    reproduced: bool
-
-    def has_same_outcome(self, other: StateResult) -> bool:
-        """
-        Returns whether this and the given other result share the same outcome.
-
-        :returns bool: True if both state results are reproduced, not reproduced, or are both dirty.
-        """
-        return self.is_dirty == other.is_dirty and self.reproduced == other.reproduced
-
-    def from_dict(result: dict) -> StateResult:
-        return StateResult(
-            result['requests'],
-            result
-        )
-
-    def __repr__(self) -> str:
-        return f'StateResult(reproduced={self.reproduced}, dirty={self.is_dirty})'
-
-
-class State:
+class State(ABC):
     def __init__(self, oracle: StateOracle):
         self.oracle = oracle
-        self.result_variables: Optional[State]
+        self.result_variables: Optional[set[tuple[str,str]]]
 
     # def has_dirty_result(self) -> bool:
     #     """
@@ -68,8 +42,12 @@ class State:
     #         return self.result.has_same_outcome(other.result)
 
     @property
-    @abstractmethod
     def name(self) -> str:
+        return self.get_name(self.index)
+
+    @staticmethod
+    @abstractmethod
+    def get_name(index: int) -> str:
         pass
 
     @property
@@ -90,28 +68,12 @@ class State:
     def commit_nb(self) -> int:
         pass
 
-    @abstractmethod
-    def to_parameters(self) -> StateParameters:
-        pass
-
-    @classmethod
-    def from_parameters(cls, oracle: StateOracle, params: StateParameters) -> State:
-        from bughog.version_control.states.revisions.base import CommitState
-        from bughog.version_control.states.versions.base import ReleaseState
-
-        if params.type == 'release':
-            return ReleaseState(oracle, params.version_or_commit)
-        elif params.type == 'commit':
-            return CommitState(oracle, commit_nb=params.version_or_commit)
-        else:
-            raise ValueError('Unknown state type')
-
     def serialize(self) -> str:
         """
         Returns a dictionary representation of the state.
         """
         pickled_bytes = pickle.dumps(self, pickle.HIGHEST_PROTOCOL)
-        return base64.b64encode(pickled_bytes).decode('ascii')
+        return base64.b64encode(pickled_bytes).decode("ascii")
 
     @staticmethod
     def deserialize(pickled_str: str) -> State:
@@ -125,22 +87,27 @@ class State:
     @staticmethod
     def from_dict(subject_type: str, subject_name: str, data: dict) -> State:
         from bughog.subject import factory
-        
-        subject_class = factory.get_subject_class(subject_type, subject_name)
-        oracle = subject_class.state_oracle
-        match data['type']:
-            case 'commit':
-                state_class = subject_class.commit_state_class
-                return state_class(oracle, commit_nb=data.get('commit_nb'), commit_id=data.get('commit_id'))
-            case 'release':
-                state_class = subject_class.release_state_class
-                return state_class(oracle, release_version=data['release_version'])
-            case _:
-                raise Exception(f'Unknown state type: {data["type"]}')
+        from bughog.version_control.state.commit.base import CommitState
+        from bughog.version_control.state.release.base import ReleaseState
 
-    @abstractmethod
-    def has_executable_online(self) -> bool:
-        pass
+        subject_class = factory.get_subject_class(subject_type, subject_name)
+        oracle = subject_class().state_oracle
+        match data["type"]:
+            case "commit":
+                return CommitState(oracle, commit_nb=data.get("commit_nb"), commit_id=data.get("commit_id"))
+            case "release":
+                return ReleaseState(oracle, release_version=data["release_version"])
+            case _:
+                raise Exception(f"Unknown state type: {data['type']}")
+
+    def has_available_executable(self) -> bool:
+        return self.has_local_executable() or self.has_publicly_available_executable()
+
+    def get_local_executable_folder_path(self) -> str:
+        return self.oracle.get_local_executable_folder_path(self.name)
+
+    def has_local_executable(self) -> bool:
+        return os.path.isdir(self.get_local_executable_folder_path())
 
     @abstractmethod
     def has_publicly_available_executable(self) -> bool:
@@ -154,10 +121,10 @@ class State:
         pass
 
     def get_previous_and_next_state_with_binary(self) -> tuple[State, State]:
-        raise NotImplementedError(f'This function is not implemented for {self}')
+        raise NotImplementedError(f"This function is not implemented for {self}")
 
     def __repr__(self) -> str:
-        return f'State(index={self.index})'
+        return f"State(index={self.index})"
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, State):

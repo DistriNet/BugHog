@@ -4,6 +4,7 @@ import os
 import re
 
 from bughog.evaluation.file_structure import Folder
+from bughog.parameters import EvaluationParameters
 from bughog.subject.evaluation_framework import EvaluationFramework
 
 logger = logging.getLogger(__name__)
@@ -147,9 +148,11 @@ class Experiments:
                 return experiment
         raise Exception(f"Could not find experiment '{experiment_name}'")
 
-    def __get_interaction_script(self, project_name: str, experiment_name: str) -> list[str]:
+    def get_interaction_script(self, params: EvaluationParameters) -> list[str]:
+        project_name = params.evaluation_configuration.project
+        experiment_name = params.evaluation_range.experiment_name
         experiment = self.__get_experiment_folder(project_name, experiment_name)
-        script_path = os.path.join(experiment.path, experiment.name, 'script.cmd')
+        script_path = os.path.join(experiment.path, 'script.cmd')
         if os.path.isfile(script_path):
             # If an interaction script is specified, it is parsed and used
             with open(script_path) as file:
@@ -162,9 +165,6 @@ class Experiments:
 
     def create_empty_poc(self, project: str, experiment: str):
         return self.framework.create_empty_experiment(project, experiment)
-
-    def execute_script_command(self, command: str):
-        return self.framework.execute_script_command(command)
 
     def get_default_file_content(self, file_type: str) -> str:
         return self.framework.get_default_file_content(file_type)

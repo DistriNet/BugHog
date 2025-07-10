@@ -36,5 +36,5 @@ class LogCollector(BaseCollector):
         return {'logs': []}
 
     @property
-    def result_variables(self) -> dict[str, str]:
+    def result_variables(self) -> set[tuple[str, str]]:
         return self.data['log_vars']

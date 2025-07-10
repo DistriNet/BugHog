@@ -2,6 +2,12 @@ from bughog.subject.evaluation_framework import EvaluationFramework
 
 
 class BrowserEvaluationFramework(EvaluationFramework):
+    def experiment_sanity_check_succeeded(self, result_variables: tuple[str, str]) -> bool:
+        for variable, value in result_variables:
+            if variable.lower() == 'sanity_check' and value.lower() == 'ok':
+                return True
+        return False
+
     def experiment_is_valid(self, project: str, experiment: str) -> bool:
         dir_tree = self.evaluation_framework.dir_tree
         # Always runnable if there is either an interaction script or url_queue present

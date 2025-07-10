@@ -3,9 +3,9 @@ import re
 
 from bughog import cli, util
 from bughog.parameters import SubjectConfiguration
-from bughog.subject.executable import Executable
-from bughog.subject.webbrowser.profile import prepare_chromium_profile
-from bughog.version_control.states.base import State
+from bughog.subject.webbrowser.executable import BrowserExecutable
+from bughog.subject.webbrowser.profile import prepare_chromium_profile, remove_profile_execution_folder
+from bughog.version_control.state.base import State
 
 DEFAULT_FLAGS = [
     '--use-fake-ui-for-media-stream',
@@ -29,9 +29,10 @@ DEFAULT_FLAGS = [
 ]
 
 
-class ChromiumExecutable(Executable):
+class ChromiumExecutable(BrowserExecutable):
     def __init__(self, config: SubjectConfiguration, state: State) -> None:
         super().__init__(config, state)
+        self._profile_path = None
 
     @property
     def executable_name(self) -> str:
@@ -39,7 +40,7 @@ class ChromiumExecutable(Executable):
 
     def _get_version(self) -> str:
         command = f'./{self.executable_name} --version'
-        output = cli.execute_and_return_output(command, cwd=self.executable_folder)
+        output = cli.execute_and_return_output(command, cwd=self.staging_folder)
         match = re.match(r'Chromium (?P<version>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', output)
         if match:
             return match.group('version')
@@ -47,18 +48,24 @@ class ChromiumExecutable(Executable):
 
     def _configure_executable(self):
         # Remove unneccessary files
-        locales_folder_path = os.path.join(self.executable_folder, 'locales')
+        locales_folder_path = os.path.join(self.staging_folder, 'locales')
         if os.path.isdir(locales_folder_path):
             util.remove_all_in_folder(locales_folder_path, except_files=['en-GB.pak', 'en-US.pak'])
-        cli.execute_and_return_status(f'chmod -R a+x {self.executable_folder}')
+        cli.execute_and_return_status(f'chmod -R a+x {self.staging_folder}')
 
-    def get_navigation_sleep_duration(self) -> int:
+    @property
+    def navigation_sleep_duration(self) -> int:
         return 1
 
-    def get_open_console_hotkey(self) -> list[str]:
+    @property
+    def open_console_hotkey(self) -> list[str]:
         return ['ctrl', 'shift', 'j']
 
-    def _get_terminal_args(self) -> list[str]:
+    @property
+    def supported_options(self) -> list[str]:
+        return []
+
+    def _get_cli_command(self) -> list[str]:
         assert self._profile_path is not None
 
         args = [self.executable_path]
@@ -104,3 +111,7 @@ class ChromiumExecutable(Executable):
                 else:
                     raise AttributeError('Chrome 86 and up not supported yet')
         self._profile_path = profile_path
+
+    def _remove_profile_folder(self):
+        if self._profile_path:
+            remove_profile_execution_folder(self._profile_path)

@@ -55,12 +55,12 @@ RUN curl -sSLo multiarch-support.deb http://security.debian.org/debian-security/
     ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.0d
 
 RUN mkdir -p /app/logs && \
-    mkdir -p /app/subject/webbrowser/binaries/chromium/downloaded && \
-    mkdir -p /app/subject/webbrowser/binaries/firefox/downloaded && \
-    mkdir -p /app/subject/webbrowser/binaries/chromium/artisanal && \
-    mkdir -p /app/subject/webbrowser/binaries/firefox/artisanal
+    mkdir -p /app/subject/web_browser/binaries/chromium/downloaded && \
+    mkdir -p /app/subject/web_browser/binaries/firefox/downloaded && \
+    mkdir -p /app/subject/web_browser/binaries/chromium/artisanal && \
+    mkdir -p /app/subject/web_browser/binaries/firefox/artisanal
 
-COPY subject/webbrowser/profiles /app/subject/webbrowser/profiles
+COPY subject/web_browser/profiles /app/subject/web_browser/profiles
 COPY --chmod=0755 scripts/ /app/scripts/
 RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 

@@ -52,9 +52,9 @@ export default {
         tests: [],
         lower_version: null,
         upper_version: null,
-        lower_revision_nb: null,
-        upper_revision_nb: null,
-        only_release_revisions: true,
+        lower_commit_nb: null,
+        upper_commit_nb: null,
+        only_release_commits: true,
         // Sequence config
         nb_of_containers: 8,
         sequence_limit: 50,
@@ -748,13 +748,13 @@ export default {
             <div class="form-subsection">
               <section-header section="subject_rev_range"></section-header>
               <div class="p-1 w-1/2">
-                <label for="lower_revision_nb">Lower rev nb</label>
-                <input v-model.lazy="eval_params.lower_revision_nb" class="number-input w-32" type="number">
+                <label for="lower_commit_nb">Lower commit nb</label>
+                <input v-model.lazy="eval_params.lower_commit_nb" class="number-input w-32" type="number">
               </div>
 
               <div class="p-1 w-1/2">
-                <label for="upper_revision_nb">Upper rev nb</label>
-                <input v-model.lazy="eval_params.upper_revision_nb" class="number-input w-32" type="number">
+                <label for="upper_commit_nb">Upper rev nb</label>
+                <input v-model.lazy="eval_params.upper_commit_nb" class="number-input w-32" type="number">
               </div>
             </div>
           </div>

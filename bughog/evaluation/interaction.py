@@ -2,29 +2,23 @@ import logging
 from inspect import signature
 from urllib.parse import quote_plus
 
-from bughog.subject.interaction import Interaction
-from bughog.subject.webbrowser.executable import BrowserExecutable
-from bughog.subject.webbrowser.interaction.simulation import Simulation
-from bughog.subject.webbrowser.interaction.simulation_exception import SimulationException
+from bughog.parameters import EvaluationParameters
+from bughog.subject.simulation import Simulation
+from bughog.subject.webbrowser.interaction.simulation import SimulationException
 
 logger = logging.getLogger(__name__)
 
 
-class BrowserInteraction(Interaction):
+class Interaction:
 
-    def __init__(self, executable: BrowserExecutable, script: list[str], params: ExperimentParameters) -> None:
-        super().__init__(executable, script, params)
+    def __init__(self, script: list[str], params: EvaluationParameters) -> None:
+        self.script = script
+        self.params = params
 
-    def _do_experiment(self) -> None:
-        simulation = Simulation(self.executable, self.params)
+    def execute(self, simulation: Simulation) -> None:
         if self._interpret(simulation):
-            simulation.sleep(str(self.executable.get_navigation_sleep_duration()))
-
-    def _do_sanity_check(self) -> None:
-        simulation = Simulation(self.executable, self.params)
-        if self._interpret(simulation):
-            simulation.navigate('https://a.test/report/?bughog_sanity_check=OK')
-
+            simulation.sleep(str(simulation.executable.navigation_sleep_duration))
+            simulation.do_sanity_check()
 
     def _interpret(self, simulation: Simulation) -> bool:
         try:
@@ -35,9 +29,9 @@ class BrowserInteraction(Interaction):
                 cmd, *args = statement.split()
                 method_name = cmd.lower()
 
-                if method_name not in Simulation.public_methods:
+                if method_name not in simulation.supported_commands:
                     raise Exception(
-                        f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), Simulation.public_methods))}.'
+                        f'Invalid command `{cmd}`. Expected one of {", ".join(map(lambda m: m.upper(), simulation.supported_commands))}.'
                     )
 
                 method = getattr(simulation, method_name)

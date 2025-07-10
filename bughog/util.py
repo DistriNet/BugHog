@@ -3,6 +3,7 @@ Functions from the os and shutil libraries show erroneous behavior when attempti
 to another. These methods should be safe.
 """
 
+import functools
 import json
 import logging
 import os
@@ -204,6 +205,16 @@ def untar(src_archive_path: str, dst_folder_path: str) -> None:
             safe_move_dir(os.path.join(dst_folder_path, members.pop()), dst_folder_path + '_2')
             shutil.rmtree(dst_folder_path)
             safe_move_dir(os.path.join(dst_folder_path + '_2'), dst_folder_path)
+
+
+def ensure_folder_exists(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        path = func(*args, **kwargs)
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+        return path
+    return wrapper
 
 
 class ResourceNotFound(Exception):

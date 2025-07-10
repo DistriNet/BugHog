@@ -7,7 +7,6 @@ from typing import Optional
 
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.parameters import SubjectConfiguration
-from bughog.version_control.state.base import State
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ class ExecutableCache:
     """
 
     @staticmethod
-    def fetch_executable_files(subject_config: SubjectConfiguration, state: State, executable_path: str) -> bool:
+    def fetch_executable_files(subject_config: SubjectConfiguration, state_name: str, executable_folder_path: str) -> bool:
         """
         Fetches the executable files from the database and stores them in the directory of the given path.
 
@@ -35,8 +34,7 @@ class ExecutableCache:
             'file_type': 'executable',
             'subject_type': subject_config.subject_type,
             'subject_name': subject_config.subject_name,
-            'state_type': state.type,
-            'state_index': state.index,
+            'state_name': state_name,
         }
         if files_collection.count_documents(query) == 0:
             return False
@@ -45,7 +43,6 @@ class ExecutableCache:
             query,
             {'$inc': {'access_count': 1}, '$set': {'last_access_ts': datetime.datetime.now()}},
         )
-        executable_folder_path = os.path.dirname(executable_path)
         if not os.path.exists(executable_folder_path):
             os.mkdir(executable_folder_path)
 
@@ -71,7 +68,7 @@ class ExecutableCache:
         return True
 
     @staticmethod
-    def store_executable_files(subject_config: SubjectConfiguration, state: State, executable_path: str):
+    def store_executable_files(subject_config: SubjectConfiguration, state_name: str, executable_folder_path: str):
         """
         Stores the files in the folder of the given path in the database.
 
@@ -84,15 +81,14 @@ class ExecutableCache:
             return False
 
         while ExecutableCache.__count_cached_executables() >= MongoDB().executable_cache_limit:
-            if ExecutableCache.__count_cached_executables(state_type='revision') <= 0:
+            if ExecutableCache.__count_cached_executables(state_type='commit') <= 0:
                 # There are only version binaries in the cache, which will never be removed
                 return False
-            ExecutableCache.__remove_least_used_revision_executable_files()
+            ExecutableCache.__remove_least_used_commit_executable_files()
 
-        logger.debug(f'Caching executable files for {state}...')
+        logger.debug(f'Caching executable files for {state_name}...')
         fs = MongoDB().gridfs
 
-        executable_folder_path = os.path.dirname(executable_path)
         last_access_ts = datetime.datetime.now()
 
         def store_file(file_path: str) -> None:
@@ -103,8 +99,7 @@ class ExecutableCache:
                     file_type='executable',
                     subject_type=subject_config.subject_type,
                     subject_name=subject_config.subject_name,
-                    state_type=state.type,
-                    state_index=state.index,
+                    state_name=state_name,
                     relative_file_path=os.path.relpath(file_path, executable_folder_path),
                     access_count=0,
                     last_access_ts=last_access_ts,
@@ -129,20 +124,20 @@ class ExecutableCache:
             if futures_with_exception:
                 logger.error(
                     (
-                        f'Something went wrong caching executable files for {state}, '
+                        f'Something went wrong caching executable files for {state_name}, '
                         'Removing possibly imcomplete executable files from cache.'
                     ),
                     exc_info=futures_with_exception[0].exception(),
                 )
-                ExecutableCache.__remove_revision_executable_files(state.type, state.index)
-                logger.debug(f'Removed possibly incomplete cached executable files for {state}.')
+                ExecutableCache.__remove_commit_executable_files(state_name)
+                logger.debug(f'Removed possibly incomplete cached executable files for {state_name}.')
             else:
                 elapsed_time = time.time() - start_time
                 logger.debug(f'Stored executable in {elapsed_time:.2f}s')
 
     @staticmethod
-    def remove_executable_files(state: State) -> None:
-        ExecutableCache.__remove_revision_executable_files(state.type, state.index)
+    def remove_executable_files(state_name) -> None:
+        ExecutableCache.__remove_commit_executable_files(state_name)
 
     @staticmethod
     def __count_cached_executables(state_type: Optional[str] = None) -> int:
@@ -160,28 +155,28 @@ class ExecutableCache:
         return len(files_collection.find(query).distinct('state_index'))
 
     @staticmethod
-    def __remove_least_used_revision_executable_files() -> None:
+    def __remove_least_used_commit_executable_files() -> None:
         """
-        Removes the least used revision executable files from the database.
+        Removes the least used commit executable files from the database.
         """
         files_collection = MongoDB().get_collection('fs.files')
 
         grid_cursor = files_collection.find(
-            {'file_type': 'executable', 'state_type': 'revision'},
+            {'file_type': 'executable', 'state_type': 'commit'},
             sort=[('access_count', 1), ('last_access_ts', 1)],
         )
         for state_doc in grid_cursor:
-            state_index = state_doc['state_index']
-            ExecutableCache.__remove_revision_executable_files('revision', state_index)
+            state_name = state_doc['state_name']
+            ExecutableCache.__remove_commit_executable_files(state_name)
             break
 
     @staticmethod
-    def __remove_revision_executable_files(state_type: str, state_index: int) -> None:
+    def __remove_commit_executable_files(state_name: str) -> None:
         """
         Removes the executable files associated with the parameters.
         """
         fs = MongoDB().gridfs
         files_collection = MongoDB().get_collection('fs.files')
 
-        for grid_doc in files_collection.find({'state_index': state_index, 'state_type': state_type}):
+        for grid_doc in files_collection.find({'state_name': state_name}):
             fs.delete(grid_doc['_id'])

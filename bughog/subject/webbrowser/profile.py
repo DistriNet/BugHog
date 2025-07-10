@@ -42,7 +42,7 @@ def prepare_firefox_profile(profile_name: Optional[str] = None) -> str:
 
 def remove_profile_execution_folder(profile_path: str):
     assert profile_path.startswith(PROFILE_EXECUTION_FOLDER)
-    cli.execute(f'rm -rf {profile_path}')
+    cli.execute(f'rm -rf {profile_path}', ignore_error=True)
 
 
 def __create_folder(folder_path: str) -> str:

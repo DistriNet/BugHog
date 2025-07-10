@@ -6,7 +6,7 @@ export default {
     },
     data() {
         return {
-            browser_name: null,
+            subject_name: null,
             poc: null,
             project: null,
             plot: null,
@@ -42,8 +42,8 @@ export default {
                 this.x_min = 1;
                 this.x_max = 1000000;
             } else {
-                this.x_min = Math.min(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
-                this.x_max = Math.max(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                this.x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
+                this.x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
             }
 
             this.plot = Bokeh.Plotting.figure({
@@ -58,7 +58,7 @@ export default {
 
             if (this.revision_source) {
                 this.plot.circle(
-                { field: "revision_number" },
+                { field: "commit_nb" },
                 { field: "outcome" },
                 6,
                 {
@@ -71,7 +71,7 @@ export default {
 
             if (this.version_source) {
                 this.plot.rect(
-                { field: 'revision_number' },
+                { field: 'commit_nb' },
                 { field: 'outcome' },
                 12, // width
                 12, // height
@@ -86,14 +86,14 @@ export default {
                 )
 
                 this.plot.text(
-                { field: 'revision_number' },
+                { field: 'commit_nb' },
                 { field: 'outcome' },
-                { field: 'browser_version_str' },
+                { field: 'subject_version_str' },
                 {
                     source: this.version_source,
                     x_offset: 0,
                     y_offset: -20,
-                    text: { field: 'browser_version_str' },
+                    text: { field: 'subject_version_str' },
                     text_color: "black",
                     text_align: 'center',
                     text_font_size: '14px',
@@ -103,8 +103,8 @@ export default {
                 )
             }
 
-            const urlTemplate = this.browser_name === 'chromium' ? 'https://crrev.com/' :
-            this.browser_name === 'firefox' ? 'https://hg.mozilla.org/mozilla-central/rev/' :
+            const urlTemplate = this.subject_name === 'chromium' ? 'https://crrev.com/' :
+            this.subject_name === 'firefox' ? 'https://hg.mozilla.org/mozilla-central/rev/' :
             null;
 
             if (urlTemplate) {
@@ -113,12 +113,12 @@ export default {
                     callback: (e) => {
                         var index;
                         if ((index = this.revision_source.selected.indices[0]) !== undefined) {
-                            var revision_number = this.revision_source.data.revision_number[index];
-                            var browser_version = this.revision_source.data.browser_version[index];
+                            var commit_nb = this.revision_source.data.commit_nb[index];
+                            var subject_version = this.revision_source.data.subject_version[index];
                             var type = "revision";
                         } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
-                            var revision_number = this.version_source.data.revision_number[index];
-                            var browser_version = this.version_source.data.browser_version[index];
+                            var commit_nb = this.version_source.data.commit_nb[index];
+                            var subject_version = this.version_source.data.subject_version[index];
                             var type = "version";
                         } else {
                             console.log("Nothing interesting was selected...");
@@ -127,11 +127,11 @@ export default {
 
                         if (this.shift_down === true) {
                             // Ask to remove datapoint
-                            this.remove_datapoint(revision_number, browser_version, type);
+                            this.remove_datapoint(commit_nb, subject_version, type);
                         } else {
                             // Open revision page
                             if (this.revision_source.selected.indices.length > 0) {
-                                window.open(urlTemplate + revision_number);
+                                window.open(urlTemplate + commit_nb);
                             }
                         }
                         this.revision_source.selected.indices = [];
@@ -140,15 +140,15 @@ export default {
                 });
                 this.plot.add_tools(tapTool);
             } else {
-                throw new Error(`Unknown browser name: ${browser_name}`);
+                throw new Error(`Unknown subject name: ${subject_name}`);
             }
 
             this.plot.below[0].formatter = new Bokeh.BasicTickFormatter({ use_scientific: false });
 
             const hover = new Bokeh.HoverTool({
                 tooltips: [
-                ['Revision Number', '@revision_number'],
-                ['Browser Version', '@browser_version']
+                ['Revision Number', '@commit_nb'],
+                ['Subject Version', '@subject_version']
                 ]
             });
             this.plot.add_tools(hover);
@@ -159,13 +159,13 @@ export default {
             Bokeh.Plotting.show(this.plot, document.getElementById('gantt'));
             console.log("Gantt chart initialized!");
         },
-        update_plot(browser_name, revision_data, version_data, project, poc) {
+        update_plot(subject_name, revision_data, version_data, project, poc) {
             if (revision_data === null && version_data === null) {
                 return;
             }
 
-            let init_required = this.revision_source === null || this.browser_name !== browser_name;
-            this.browser_name = browser_name;
+            let init_required = this.revision_source === null || this.subject_name !== subject_name;
+            this.subject_name = subject_name;
             this.project = project;
             this.poc = poc;
 
@@ -178,15 +178,15 @@ export default {
                 this.version_source.data = version_data;
             }
 
-            this.update_x_range(this.browser_name !== browser_name)
+            this.update_x_range(this.subject_name !== subject_name)
         },
         update_x_range(force_update) {
             console.log("executing update_x_range");
             if (this.plot !== null) {
                 if (this.revision_source.length !== 0 || this.version_source.length !== 0) {
                     console.log("calculating new x");
-                    var new_x_min = Math.min(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
-                    var new_x_max = Math.max(...this.revision_source.data.revision_number.concat(this.version_source.data.revision_number));
+                    var new_x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
+                    var new_x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
                     if (new_x_min != this.x_min || force_update === true) {
                         console.log("updating x_min");
                         this.x_min = new_x_min;
@@ -200,13 +200,13 @@ export default {
                 }
             }
         },
-        remove_datapoint(revision_number, browser_version, type) {
-            console.log("Removing datapoint ", revision_number, type);
+        remove_datapoint(commit_nb, subject_version, type) {
+            console.log("Removing datapoint ", commit_nb, type);
             const path = "/api/data/remove/"
             var params = this.eval_params
             params['type'] = type
-            params["revision_number"] = revision_number
-            params["major_version"] = browser_version
+            params["commit_nb"] = commit_nb
+            params["major_version"] = subject_version
             axios.post(path, params)
             .then((res) => {
             })

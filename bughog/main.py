@@ -135,7 +135,7 @@ class Main:
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
         subject = create_subject(eval_params)
-        state_factory = StateFactory(subject, eval_params)
+        state_factory = StateFactory(subject.state_oracle, eval_params)
 
         if search_strategy == 'bgb_sequence':
             strategy = BiggestGapBisectionSequence(state_factory, sequence_limit)

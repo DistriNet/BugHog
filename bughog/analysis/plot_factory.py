@@ -1,4 +1,5 @@
 from bughog.database.mongo.mongodb import MongoDB
+from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.parameters import EvaluationParameters
 
 
@@ -37,20 +38,20 @@ class PlotFactory:
     @staticmethod
     def __add_outcome_info(params: EvaluationParameters, docs: list, target_variable: str):
         if not docs:
-            return {'revision_number': [], 'browser_version': [], 'browser_version_str': [], 'outcome': []}
+            return {'commit_nb': [], 'subject_version': [], 'subject_version_str': [], 'outcome': []}
         docs_with_outcome = []
 
         for doc in docs:
-            result_variables = doc['result_variables']
+            result_variables = set((variables[0], variables[1]) for variables in doc['result_variables'])
             new_doc = {
-                'revision_number': doc['state']['commit_number'],
+                'commit_nb': doc['state']['commit_nb'],
                 'subject_version': int(doc['subject_version'].split('.')[0]),
                 'subject_version_str': doc['subject_version'].split('.')[0],
             }
             if doc['dirty']:
                 new_doc['outcome'] = 'Error'
                 docs_with_outcome.append(new_doc)
-            elif {'reproduced': 'ok'} in result_variables:
+            elif ExperimentResult.poc_is_reproduced(result_variables):
                 new_doc['outcome'] = 'Reproduced'
                 docs_with_outcome.append(new_doc)
             else:

@@ -67,9 +67,6 @@ class Browser:
         remove_profile_execution_folder(self._profile_path)
         self._profile_path = None
 
-    def __empty_downloads_folder(self):
-        download_folder = '/root/Downloads'
-        util.remove_all_in_folder(download_folder)
 
     def __get_execution_folder_path(self) -> str:
         return os.path.join(EXECUTION_PARENT_FOLDER, str(self.state.name))

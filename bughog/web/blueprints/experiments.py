@@ -9,7 +9,7 @@ from bughog.evaluation.experiment import SUPPORTED_DOMAINS
 from flask import Blueprint, Request, make_response, render_template, request, url_for
 
 logger = logging.getLogger(__name__)
-exp = Blueprint("experiments", __name__, template_folder="/app/bci/web/templates")
+exp = Blueprint("experiments", __name__, template_folder="/app/bughog/web/templates")
 
 
 @exp.before_request

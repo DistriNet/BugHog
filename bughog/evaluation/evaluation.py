@@ -1,12 +1,13 @@
 import logging
 import os
-import re
 
 from bughog.configuration import Global
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.experiment_result import ExperimentResult
+from bughog.evaluation.interaction import Interaction
 from bughog.parameters import EvaluationParameters
 from bughog.subject import factory
+from bughog.subject.subject import Subject
 from bughog.subject.executable import Executable, ExecutableStatus
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
@@ -17,32 +18,62 @@ logger = logging.getLogger(__name__)
 class Evaluation:
     def __init__(self, subject_type: str):
         self.subject_type = subject_type
-        self.framework = factory.create_evaluation_framework(subject_type)
+        self.experiments = factory.create_experiments(subject_type)
         self.should_stop = False
 
-    def conduct_experiment(self, executable: Executable, params: EvaluationParameters) -> ExperimentResult:
+    def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
+        if MongoDB().has_result(params, state):
+            logger.warning(
+                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
+            )
+            return
+
+        subject = factory.create_subject(params)
+        executable = subject.create_executable(params.subject_configuration, state)
+        executable.pre_evaluation_setup()
+
+        if self.should_stop:
+            self.should_stop = False
+            return
+        try:
+            executable.pre_experiment_setup()
+            result = self.conduct_experiment(subject, executable, params)
+            MongoDB().store_result(params, result)
+            logger.info(f'Experiment finalized: {params}')
+        except Exception as e:
+            executable.status = ExecutableStatus.EXPERIMENT_FAILED
+            if is_worker:
+                raise e
+            else:
+                logger.error('An error occurred during evaluation', exc_info=True)
+        finally:
+            executable.post_experiment_cleanup()
+
+        executable.post_evaluation_cleanup()
+        logger.debug('Evaluation finished')
+
+    def conduct_experiment(self, subject: Subject, executable: Executable, params: EvaluationParameters) -> ExperimentResult:
         logger.info(f'Starting test for {params}')
 
-        state_result_factory = StateResultFactory(experiment=params.experiment)
-        collector = self.framework.collector
+        collector = subject.create_result_collector()
         collector.start()
 
         is_dirty = False
         tries_left = 3
-        script = self.__get_interaction_script(params.evaluation_configuration.project, params.experiment)
+        script = self.experiments.get_interaction_script(params)
         try:
-            sanity_check_was_successful = False
+            sanity_check_successful = True
             poc_was_reproduced = False
             while not poc_was_reproduced and tries_left > 0:
                 tries_left -= 1
                 executable.pre_try_setup()
-                # TODO: fix interaction
-                # BrowserInteraction(executable, script, params).execute()
+                simulation = subject.create_simulation(executable, params)
+                Interaction(script, params).execute(simulation)
                 executable.post_try_cleanup()
-                intermediary_result = state_result_factory.get_result(collector.collect_results())
-                sanity_check_was_successful |= not intermediary_state_result.is_dirty
-                poc_was_reproduced = intermediary_state_result.reproduced
-            if not poc_was_reproduced and not sanity_check_was_successful:
+                _, intermediary_variables = collector.collect_results()
+                sanity_check_successful &= self.experiments.framework.experiment_sanity_check_succeeded(intermediary_variables)
+                poc_was_reproduced = ExperimentResult.poc_is_reproduced(intermediary_variables)
+            if not poc_was_reproduced and not sanity_check_successful:
                 raise FailedSanityCheck()
         except FailedSanityCheck:
             logger.error('Evaluation sanity check has failed', exc_info=True)
@@ -54,11 +85,7 @@ class Evaluation:
             logger.debug(f'Evaluation finished with {tries_left} tries left')
             collector.stop()
             raw_results, result_variables = collector.collect_results()
-        return ExperimentResult(executable.version, executable.origin, executable.state, raw_results, result_variables, is_dirty)
-
-    def create_empty_project(self, project_name: str):
-        # TODO: call framework
-        self.reload_experiments()
+        return ExperimentResult(executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty)
 
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
         file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
@@ -135,36 +162,6 @@ class Evaluation:
 
         with open(path, 'r') as file:
             return file.read()
-
-    def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
-        if MongoDB().has_result(params):
-            logger.warning(
-                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
-            )
-            return
-
-        executable = create_executable(params, state)
-        executable.pre_evaluation_setup()
-
-        if self.should_stop:
-            self.should_stop = False
-            return
-        try:
-            executable.pre_experiment_setup()
-            result = self.conduct_experiment(executable, params)
-            MongoDB().store_result(result)
-            logger.info(f'Experiment finalized: {params}')
-        except Exception as e:
-            executable.status = ExecutableStatus.EXPERIMENT_FAILED
-            if is_worker:
-                raise e
-            else:
-                logger.error('An error occurred during evaluation', exc_info=True)
-        finally:
-            executable.post_experiment_cleanup()
-
-        executable.post_evaluation_cleanup()
-        logger.debug('Evaluation finished')
 
     def stop_gracefully(self):
         self.should_stop = True

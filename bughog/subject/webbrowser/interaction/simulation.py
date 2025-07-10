@@ -1,40 +1,18 @@
 import os
-from time import sleep
 
 import pyautogui as gui
 import Xlib.display
 from pyvirtualdisplay.display import Display
 
-from bughog.parameters import ExperimentParameters
-from bughog.subject.webbrowser.executable import BrowserExecutable
-from bughog.subject.webbrowser.interaction.simulation_exception import SimulationException
+from bughog.parameters import EvaluationParameters
+from bughog.subject.executable import Executable
+from bughog.subject.simulation import Simulation
 
 
 
-class Simulation:
-    executable: BrowserExecutable
-    params: ExperimentParameters
-
-    public_methods: list[str] = [
-        'navigate',
-        'new_tab',
-        'click_position',
-        'click',
-        'write',
-        'press',
-        'hold',
-        'release',
-        'hotkey',
-        'sleep',
-        'screenshot',
-        'report_leak',
-        'assert_file_contains',
-        'open_file',
-        'open_console',
-    ]
-
-    def __init__(self, browser_config: BrowserExecutable, params: ExperimentParameters):
-        self.executable = browser_config
+class BrowserSimulation(Simulation):
+    def __init__(self, executable: Executable, params: EvaluationParameters):
+        self.executable = executable
         self.params = params
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
         disp.start()
@@ -42,6 +20,29 @@ class Simulation:
 
     def __del__(self):
         self.executable.terminate()
+
+    @property
+    def supported_commands(self) -> list[str]:
+        return [
+            'navigate',
+            'new_tab',
+            'click_position',
+            'click',
+            'write',
+            'press',
+            'hold',
+            'release',
+            'hotkey',
+            'sleep',
+            'screenshot',
+            'report_leak',
+            'assert_file_contains',
+            'open_file',
+            'open_console',
+        ]
+
+    def do_sanity_check(self):
+        self.navigate('https://a.test/report/?bughog_sanity_check=ok')
 
     def parse_position(self, position: str, max_value: int) -> int:
         # Screen percentage
@@ -54,8 +55,8 @@ class Simulation:
     # --- PUBLIC METHODS ---
     def navigate(self, url: str):
         self.executable.terminate()
-        self.executable.open(url)
-        self.sleep(str(self.executable.get_navigation_sleep_duration()))
+        self.executable.run([url])
+        self.sleep(str(self.executable.navigation_sleep_duration))
         self.click_position("100", "50%")   # focus the browser window
 
     def new_tab(self, url: str):
@@ -63,7 +64,7 @@ class Simulation:
         self.sleep("0.5")
         self.write(url)
         self.press("enter")
-        self.sleep(str(self.executable.get_navigation_sleep_duration()))
+        self.sleep(str(self.executable.navigation_sleep_duration))
 
     def click_position(self, x: str, y: str):
         max_x, max_y = gui.size()
@@ -91,16 +92,15 @@ class Simulation:
     def hotkey(self, *keys: str):
         gui.hotkey(*keys)
 
-    def sleep(self, duration: str):
-        sleep(float(duration))
-
     def screenshot(self, filename: str):
-        filename = f'{self.params.evaluation_configuration.project}-{self.params.experiment}-{filename}-{type(self.executable).__name__}-{self.executable.version}.jpg'
-        filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../logs/screenshots', filename)
-        gui.screenshot(filepath)
+        project_name = self.params.evaluation_configuration.project
+        experiment_name = self.params.evaluation_range.experiment_name
+        executable_name = f'{self.executable.executable_name}-{self.executable.version}'
+        file_path = os.path.join('/app/logs/screenshots/', f'{project_name}-{experiment_name}-{self.executable.state.name}-{executable_name}.jpg')
+        gui.screenshot(file_path)
 
     def report_leak(self):
-        self.navigate(f'https://a.test/report/?leak={self.params.experiment}')
+        self.navigate('https://a.test/report/?bughog_reproduced=ok')
 
     def assert_file_contains(self, filename: str, content: str):
         filepath = os.path.join('/root/Downloads', filename)
@@ -118,3 +118,10 @@ class Simulation:
     def open_console(self):
         self.hotkey(*self.executable.get_open_console_hotkey())
         self.sleep("1.5")
+
+
+class SimulationException(Exception):
+    """
+    Common class for exceptions thrown upon failed experiment assertions defined by script.cmd.
+    """
+    pass

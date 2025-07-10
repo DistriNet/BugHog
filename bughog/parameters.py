@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import base64
 import logging
-from dataclasses import asdict, dataclass
 import pickle
+from dataclasses import asdict, dataclass
 from typing import Optional
-
-from werkzeug.datastructures import ImmutableMultiDict
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +32,7 @@ class EvaluationParameters:
 
     def serialize(self) -> str:
         pickled_bytes = pickle.dumps(self, pickle.HIGHEST_PROTOCOL)
-        return base64.b64encode(pickled_bytes).decode('ascii')
+        return base64.b64encode(pickled_bytes).decode("ascii")
 
     @staticmethod
     def deserialize(pickled_str: str) -> EvaluationParameters:
@@ -67,9 +64,7 @@ class SubjectConfiguration:
 
     @staticmethod
     def from_dict(data: dict) -> SubjectConfiguration:
-        return SubjectConfiguration(
-            data['subject_type'], data['subject_name'], data['subject_setting'], data['cli_options'], data['extensions']
-        )
+        return SubjectConfiguration(data["subject_type"], data["subject_name"], data["subject_setting"], data["cli_options"], data["extensions"])
 
 
 @dataclass(frozen=True)
@@ -83,23 +78,23 @@ class EvaluationConfiguration:
 
     @staticmethod
     def from_dict(data: dict) -> EvaluationConfiguration:
-        return EvaluationConfiguration(data['project'], data['automation'], data['seconds_per_visit'])
+        return EvaluationConfiguration(data["project"], data["automation"], data["seconds_per_visit"])
 
 
 @dataclass(frozen=True)
 class EvaluationRange:
     experiment_name: str
     major_version_range: tuple[int, int] | None = None
-    revision_number_range: tuple[int, int] | None = None
-    only_release_revisions: bool = False
+    commit_nb_range: tuple[int, int] | None = None
+    only_release_commits: bool = False
 
     def __post_init__(self):
         if self.major_version_range:
             assert self.major_version_range[0] <= self.major_version_range[1]
-        elif self.revision_number_range:
-            assert self.revision_number_range[0] <= self.revision_number_range[1]
+        elif self.commit_nb_range:
+            assert self.commit_nb_range[0] <= self.commit_nb_range[1]
         else:
-            raise AttributeError('Evaluation ranges require either major versions or revision numbers')
+            raise AttributeError("Evaluation ranges require either major versions or commit numbers")
 
 
 @dataclass(frozen=True)
@@ -123,15 +118,15 @@ class DatabaseParameters:
     @staticmethod
     def from_dict(data: dict) -> DatabaseParameters:
         return DatabaseParameters(
-            data['host'],
-            data['username'],
-            data['password'],
-            data['database_name'],
-            data['binary_cache_limit'],
+            data["host"],
+            data["username"],
+            data["password"],
+            data["database_name"],
+            data["binary_cache_limit"],
         )
 
     def __str__(self) -> str:
-        return f'{self.username}@{self.host}:27017/{self.database_name}'
+        return f"{self.username}@{self.host}:27017/{self.database_name}"
 
 
 # @dataclass(frozen=True)
@@ -276,29 +271,27 @@ class PlotParameters(EvaluationParameters):
 
 
 @staticmethod
-def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]:
-    experiments = kwargs.get('tests')
+def evaluation_factory(kwargs: ImmutableMultiDict | dict) -> list[EvaluationParameters]:
+    experiments = kwargs.get("tests")
     if experiments is None:
         raise MissingParametersException()
 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
-    evaluation_configuration = EvaluationConfiguration(
-        kwargs['project'], kwargs['automation'], int(kwargs.get('seconds_per_visit', 5))
-    )
+    evaluation_configuration = EvaluationConfiguration(kwargs["project"], kwargs["automation"], int(kwargs.get("seconds_per_visit", 5)))
     sequence_configuration = SequenceConfiguration(
-        int(kwargs.get('nb_of_containers')),
-        int(kwargs.get('sequence_limit')),
-        kwargs.get('search_strategy'),
+        int(kwargs.get("nb_of_containers")),
+        int(kwargs.get("sequence_limit")),
+        kwargs.get("search_strategy"),
     )
     evaluation_params_list = []
     for experiment in experiments:
         evaluation_range = EvaluationRange(
             experiment,
             __get_version_range(kwargs),
-            __get_revision_number_range(kwargs),
-            kwargs.get('only_release_revisions', False),
+            __get_commit_nb_range(kwargs),
+            kwargs.get("only_release_commits", False),
         )
-        database_collection = kwargs.get('db_collection')
+        database_collection = kwargs.get("db_collection")
         evaluation_params = EvaluationParameters(
             subject_configuration,
             evaluation_configuration,
@@ -312,17 +305,17 @@ def evaluation_factory(kwargs: ImmutableMultiDict) -> list[EvaluationParameters]
 
 @staticmethod
 def __get_cookie_name(form_data: dict[str, str]) -> str | None:
-    if form_data['check_for'] == 'request':
+    if form_data["check_for"] == "request":
         return None
-    if 'cookie_name' in form_data:
-        return form_data['cookie_name']
-    return 'generic'
+    if "cookie_name" in form_data:
+        return form_data["cookie_name"]
+    return "generic"
 
 
 @staticmethod
 def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
-    lower_version = form_data.get('lower_version', None)
-    upper_version = form_data.get('upper_version', None)
+    lower_version = form_data.get("lower_version", None)
+    upper_version = form_data.get("upper_version", None)
     lower_version = int(lower_version) if lower_version else None
     upper_version = int(upper_version) if upper_version else None
     assert (lower_version is None) == (upper_version is None)
@@ -330,9 +323,9 @@ def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
 
 
 @staticmethod
-def __get_revision_number_range(form_data: dict[str, str]) -> tuple[int, int] | None:
-    lower_rev_number = form_data.get('lower_revision_nb', None)
-    upper_rev_number = form_data.get('upper_revision_nb', None)
+def __get_commit_nb_range(form_data: dict[str, str]) -> tuple[int, int] | None:
+    lower_rev_number = form_data.get("lower_commit_nb", None)
+    upper_rev_number = form_data.get("upper_commit_nb", None)
     lower_rev_number = int(lower_rev_number) if lower_rev_number else None
     upper_rev_number = int(upper_rev_number) if upper_rev_number else None
     assert (lower_rev_number is None) == (upper_rev_number is None)

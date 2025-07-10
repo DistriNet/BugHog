@@ -1,14 +1,8 @@
 import logging
-from enum import Enum
 
 from bughog.evaluation.collectors.base import BaseCollector
 
 logger = logging.getLogger(__name__)
-
-
-class Type(Enum):
-    REQUESTS = 1
-    LOGS = 2
 
 
 class Collector:
@@ -24,11 +18,11 @@ class Collector:
         for collector in self.subcollectors:
             collector.stop()
 
-    def collect_results(self) -> tuple[dict,dict[str,str]]:
+    def collect_results(self) -> tuple[dict,set[tuple[str,str]]]:
         raw_results = {}
-        result_variables = {}
+        result_variables = set()
         for collector in self.subcollectors:
             collector.parse_data()
-            raw_results.update(collector.data)
+            raw_results.update(collector.raw_data)
             result_variables.update(collector.result_variables)
         return raw_results, result_variables

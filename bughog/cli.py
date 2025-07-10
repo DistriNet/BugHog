@@ -5,25 +5,23 @@ import shlex
 logger = logging.getLogger("cli")
 
 
-def execute(command, cwd=None, timeout=None, max_tries=None):
-    if timeout is None and max_tries is None:
-        subprocess.check_output(command.split(" "), cwd=cwd)
-        return True
+def execute(command, cwd=None, timeout=60, max_tries=1, ignore_error=False):
+    cmd_list = command.split()
 
-    if timeout is None:
-        timeout = 60
-    if max_tries is None:
-        max_tries = 1
-    tries = 0
-    while tries < max_tries:
-        tries += 1
+    for attempt in range(1, max_tries + 1):
         try:
-            subprocess.check_output(command.split(" "), cwd=cwd, timeout=timeout * 60)
+            subprocess.check_output(cmd_list, cwd=cwd, timeout=timeout)
             return True
         except subprocess.TimeoutExpired:
-            if logger:
-                logger.error("Timeout of %i minutes expired: starting try %i" % (timeout, tries + 1))
-            continue
+            logger.error(f"Timeout of {timeout} minutes expired: starting try {attempt + 1}")
+            if attempt == max_tries:
+                return False
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Command failed with error: {e}")
+            return ignore_error
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return False
     return False
 
 

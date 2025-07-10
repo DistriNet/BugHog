@@ -1,8 +1,9 @@
 from abc import abstractmethod
+
 from bughog import util
 from bughog.parameters import SubjectConfiguration
 from bughog.subject.executable import Executable
-from bughog.version_control.states.base import State
+from bughog.version_control.state.base import State
 
 
 class BrowserExecutable(Executable):
@@ -12,20 +13,43 @@ class BrowserExecutable(Executable):
     def __init__(self, config: SubjectConfiguration, state: State) -> None:
         super().__init__(config, state)
 
+    @property
     @abstractmethod
-    def get_navigation_sleep_duration(self) -> int:
+    def navigation_sleep_duration(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def open_console_hotkey(self) -> list[str]:
         pass
 
     @abstractmethod
-    def get_open_console_hotkey(self) -> list[str]:
+    def _prepare_profile_folder(self):
         pass
 
-    def __fetch_binary(self):
-        self.binary.fetch_binary()
+    @abstractmethod
+    def _remove_profile_folder(self):
+        pass
 
-    def __remove_binary(self):
-        self.binary.remove_bin_folder()
+    def __empty_downloads_folder(self):
+        download_folder = '/root/Downloads'
+        util.remove_all_in_folder(download_folder)
 
-    def __prepare_execution_folder(self):
-        path = self.__get_execution_folder_path()
-        util.copy_folder(self.binary.get_bin_folder_path(), path)
+    def pre_evaluation_setup(self):
+        self.fetch()
+
+    def post_evaluation_cleanup(self):
+        self.remove()
+
+    def pre_experiment_setup(self):
+        self.stage()
+
+    def post_experiment_cleanup(self):
+        self.unstage()
+
+    def pre_try_setup(self):
+        self._prepare_profile_folder()
+
+    def post_try_cleanup(self):
+        self._remove_profile_folder()
+        self.__empty_downloads_folder()

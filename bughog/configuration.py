@@ -121,7 +121,7 @@ class Loggers:
         hostname = os.getenv('HOSTNAME')
 
         # Configure bci_logger
-        bci_logger = logging.getLogger('bci')
+        bci_logger = logging.getLogger('bughog')
         bci_logger.setLevel(logging.DEBUG)
 
         # Configure stream handler

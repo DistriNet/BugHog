@@ -8,16 +8,21 @@ class ExperimentResult:
     executable_origin: Optional[str]
     state: dict
     raw_results: dict
-    result_variables: dict[str, str]
+    result_variables: set[tuple[str, str]]
     is_dirty: bool
 
     @property
-    def poc_is_reproduced(self) -> bool:
-        for key, value in self.result_variables.items():
+    def is_reproduced(self) -> bool:
+        return self.poc_is_reproduced(self.result_variables)
+
+    @staticmethod
+    def poc_is_reproduced(result_variables: set[tuple[str,str]]) -> bool:
+        for key, value in result_variables:
             if key.lower() == 'reproduced' and value.lower() == 'ok':
                 return True
         return False
 
+    @property
     def padded_subject_version(self) -> Optional[str]:
         """
         Pads the executable's version.

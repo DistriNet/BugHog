@@ -24,5 +24,5 @@ class BaseCollector:
 
     @property
     @abstractmethod
-    def result_variables(self) -> dict[str,str]:
+    def result_variables(self) -> set[tuple[str,str]]:
         pass

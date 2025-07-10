@@ -1,11 +1,9 @@
 from functools import lru_cache
 
-from bughog.evaluation.collectors.requests import RequestCollector
 from bughog.evaluation.experiment import Experiments
 from bughog.parameters import EvaluationParameters
-from bughog.subject.base import Subject
+from bughog.subject.subject import Subject
 from bughog.subject.evaluation_framework import EvaluationFramework
-from bughog.subject.state_oracle import StateOracle
 from bughog.subject.webbrowser.chromium.subject import Chromium
 from bughog.subject.webbrowser.evaluation import BrowserEvaluationFramework
 from bughog.subject.webbrowser.firefox.subject import Firefox
@@ -13,13 +11,10 @@ from bughog.version_control.state.release.base import ReleaseState
 
 subjects = {
     'js_engine': {
-        'collectors': [],
+        'evaluation_framework': None,
         'subjects': []
     },
     'web_browser': {
-        'collectors': [
-            RequestCollector
-        ],
         'evaluation_framework': BrowserEvaluationFramework,
         'subjects': [
             Chromium,
@@ -43,7 +38,7 @@ def get_all_subjects_for(subject_type: str) -> list[type[Subject]]:
 
 @staticmethod
 def get_all_subject_names_for(subject_type: str) -> list[str]:
-    return [subject.name() for subject in get_all_subjects_for(subject_type)]
+    return [subject().name for subject in get_all_subjects_for(subject_type)]
 
 
 @staticmethod
@@ -62,7 +57,7 @@ def create_experiments(subject_type: str) -> Experiments:
 def create_subject(params: EvaluationParameters) -> Subject:
     type = params.subject_configuration.subject_type
     name = params.subject_configuration.subject_name
-    return get_subject_class(type)(name)
+    return get_subject_class(type, name)()
 
 
 @staticmethod
@@ -83,17 +78,13 @@ def get_subject_availability_for(type: str, name: str) -> dict:
 
 @staticmethod
 def get_subject_class(subject_type: str, subject_name: str) -> type[Subject]:
-    if available_subjects := subjects.get(subject_type):
-        if subject_class := available_subjects.get(subject_name):
-            return subject_class
-    raise AttributeError(f"Subject '{subject_type} {subject_name}' is not supported.")
+    subject_classes = get_all_subjects_for(subject_type)
+    matched_subjects = [subject_class for subject_class in subject_classes if subject_class().name == subject_name]
+    if len(matched_subjects) > 0:
+        return matched_subjects[0]
+    raise AttributeError(f"Subject '{subject_type}, {subject_name}' is not supported.")
 
 
 @staticmethod
 def get_release_state_class(subject_type: str, subject_name: str) -> type[ReleaseState]:
-    return get_subject_class(subject_type, subject_name).release_state_class()
-
-
-@staticmethod
-def get_state_oracle(subject_type: str, subject_name: str) -> type[StateOracle]:
-    return get_subject_class(subject_type, subject_name).state_oracle()
+    return get_subject_class(subject_type, subject_name)().release_state_class

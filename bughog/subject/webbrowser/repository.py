@@ -12,13 +12,13 @@ class Repository:
         pass
 
     @abstractmethod
-    def get_revision_id(self, revision_number: int) -> str:
+    def get_commit_id(self, commit_nb: int) -> str:
         pass
 
     @abstractmethod
-    def get_revision_number(self, revision_id: str) -> int:
+    def get_commit_nb(self, commit_id: str) -> int:
         pass
 
     @abstractmethod
-    def get_release_revision_number(self, major_release_version: int) -> int:
+    def get_release_commit_nb(self, major_release_version: int) -> int:
         pass

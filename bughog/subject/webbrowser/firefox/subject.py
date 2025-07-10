@@ -1,17 +1,23 @@
+from bughog.parameters import SubjectConfiguration
 from bughog.subject.state_oracle import StateOracle
-from bughog.subject.webbrowser.base import Browser
+from bughog.subject.webbrowser.subject import Browser
 from bughog.subject.webbrowser.firefox import repo
+from bughog.subject.webbrowser.firefox.executable import FirefoxExecutable
 from bughog.subject.webbrowser.firefox.state_oracle import FirefoxStateOracle
+from bughog.version_control.state.base import State
 
 
 class Firefox(Browser):
-    @staticmethod
-    def name() -> str:
+    @property
+    def name(self) -> str:
         return 'firefox'
 
-    @staticmethod
-    def state_oracle() -> type[StateOracle]:
+    @property
+    def _state_oracle_class(self) -> type[StateOracle]:
         return FirefoxStateOracle
+
+    def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> FirefoxExecutable:
+        return FirefoxExecutable(subject_configuration, state)
 
     @staticmethod
     def get_availability() -> dict:
