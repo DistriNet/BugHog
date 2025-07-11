@@ -7,7 +7,7 @@ from bughog.version_control.state.base import State
 
 
 class BrowserExecutable(Executable):
-    PROFILE_STORAGE_FOLDER = '/app/subject/webbrowser/profiles'
+    PROFILE_STORAGE_FOLDER = '/app/subject/web_browser/profiles'
     PROFILE_EXECUTION_FOLDER = '/tmp/profiles'
 
     def __init__(self, config: SubjectConfiguration, state: State) -> None:

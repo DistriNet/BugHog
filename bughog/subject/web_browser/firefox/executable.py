@@ -3,8 +3,8 @@ import re
 
 from bughog import cli
 from bughog.parameters import SubjectConfiguration
-from bughog.subject.webbrowser.executable import BrowserExecutable
-from bughog.subject.webbrowser.profile import prepare_firefox_profile, remove_profile_execution_folder
+from bughog.subject.web_browser.executable import BrowserExecutable
+from bughog.subject.web_browser.profile import prepare_firefox_profile, remove_profile_execution_folder
 from bughog.version_control.state.base import State
 
 SELENIUM_USED_FLAGS = [

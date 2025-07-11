@@ -4,7 +4,7 @@ from urllib.parse import quote_plus
 
 from bughog.parameters import EvaluationParameters
 from bughog.subject.simulation import Simulation
-from bughog.subject.webbrowser.interaction.simulation import SimulationException
+from bughog.subject.web_browser.interaction.simulation import SimulationException
 
 logger = logging.getLogger(__name__)
 

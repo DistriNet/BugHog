@@ -24,10 +24,6 @@ services:
       - BUGHOG_VERSION=${BUGHOG_VERSION}
     volumes:
       - ./config:/app/config:ro
-      - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
-      - ./browser/binaries/firefox/artisanal:/app/browser/binaries/firefox/artisanal:rw
-      - ./experiments:/app/experiments:rw
-      - ./browser/extensions:/app/browser/extensions:ro
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw

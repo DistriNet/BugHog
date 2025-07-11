@@ -3,8 +3,8 @@ import re
 
 from bughog import cli, util
 from bughog.parameters import SubjectConfiguration
-from bughog.subject.webbrowser.executable import BrowserExecutable
-from bughog.subject.webbrowser.profile import prepare_chromium_profile, remove_profile_execution_folder
+from bughog.subject.web_browser.executable import BrowserExecutable
+from bughog.subject.web_browser.profile import prepare_chromium_profile, remove_profile_execution_folder
 from bughog.version_control.state.base import State
 
 DEFAULT_FLAGS = [
@@ -44,7 +44,7 @@ class ChromiumExecutable(BrowserExecutable):
         match = re.match(r'Chromium (?P<version>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', output)
         if match:
             return match.group('version')
-        raise AttributeError(f"Could not determine version of binary at '{self.executable_name}'.")
+        raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")
 
     def _configure_executable(self):
         # Remove unneccessary files

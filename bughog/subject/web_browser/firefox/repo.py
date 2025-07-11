@@ -1,4 +1,4 @@
-from bughog.subject.webbrowser.state_cache import PublicBrowserStateCache
+from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 
 
 def is_tag(tag: str) -> bool:

@@ -56,12 +56,12 @@ class Subject(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_result_collector() -> Collector:
+    def create_simulation(executable: Executable, params: EvaluationParameters) -> Simulation:
         pass
 
     @staticmethod
     @abstractmethod
-    def create_simulation(executable: Executable, params: EvaluationParameters) -> Simulation:
+    def create_result_collector() -> Collector:
         pass
 
     @property

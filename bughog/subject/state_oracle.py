@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import os
 import re
+from typing import Optional
 
 
 class StateOracle(ABC):
@@ -68,3 +69,16 @@ class StateOracle(ABC):
     @abstractmethod
     def get_commit_executable_download_urls(self, commit_nb: int) -> list[str]:
         pass
+
+
+    # Helper functions
+
+    @staticmethod
+    def _parse_commit_nb_from_googlesource(html: str) -> Optional[str]:
+        matches = re.findall(r"refs\/heads\/(?:master|main)\@\{\#([0-9]{1,7})\}", html)
+        if matches:
+            return matches[0]
+        matches = re.findall(r"svn.chromium.org\/chrome\/trunk\/src\@([0-9]{1,7}) ", html)
+        if matches:
+            return matches[0]
+        return None

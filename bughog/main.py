@@ -14,7 +14,7 @@ from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bughog.subject.factory import create_subject
-from bughog.subject.webbrowser.state_cache import PublicBrowserStateCache
+from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 from bughog.version_control.state.base import State
 from bughog.version_control.state_factory import StateFactory
 from bughog.web.clients import Clients

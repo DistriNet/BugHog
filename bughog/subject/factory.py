@@ -2,17 +2,21 @@ from functools import lru_cache
 
 from bughog.evaluation.experiment import Experiments
 from bughog.parameters import EvaluationParameters
-from bughog.subject.subject import Subject
 from bughog.subject.evaluation_framework import EvaluationFramework
-from bughog.subject.webbrowser.chromium.subject import Chromium
-from bughog.subject.webbrowser.evaluation import BrowserEvaluationFramework
-from bughog.subject.webbrowser.firefox.subject import Firefox
+from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework
+from bughog.subject.js_engine.v8.subject import V8Subject
+from bughog.subject.subject import Subject
+from bughog.subject.web_browser.chromium.subject import Chromium
+from bughog.subject.web_browser.evaluation import BrowserEvaluationFramework
+from bughog.subject.web_browser.firefox.subject import Firefox
 from bughog.version_control.state.release.base import ReleaseState
 
 subjects = {
     'js_engine': {
-        'evaluation_framework': None,
-        'subjects': []
+        'evaluation_framework': JSEngineEvaluationFramework,
+        'subjects': [
+            V8Subject
+        ]
     },
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,

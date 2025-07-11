@@ -7,7 +7,7 @@
 # from bughog.evaluation.file_structure import Folder, parse_folder
 # from bughog.parameters import ExperimentParameters, ExperimentResult
 # from bughog.subject.executable import Executable
-# from bughog.subject.webbrowser.interaction.interaction import BrowserInteraction
+# from bughog.subject.web_browser.interaction.interaction import BrowserInteraction
 # from bughog.version_control.state_result_factory import StateResultFactory
 # from bughog.web.clients import Clients
 

@@ -11,10 +11,6 @@ class EvaluationFramework(ABC):
         if not os.path.isdir(self.experiment_root_folder):
             raise AttributeError(f"Could not open '{self.experiment_root_folder}'.")
 
-    # @abstractmethod
-    # def get_collector(self) -> Collector:
-    #     pass
-
     @abstractmethod
     def experiment_sanity_check_succeeded(self, result_variables) -> bool:
         pass

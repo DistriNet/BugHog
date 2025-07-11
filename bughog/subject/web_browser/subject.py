@@ -5,7 +5,7 @@ from bughog.evaluation.collectors.requests import RequestCollector
 from bughog.parameters import EvaluationParameters
 from bughog.subject.subject import Subject
 from bughog.subject.executable import Executable
-from bughog.subject.webbrowser.interaction.simulation import BrowserSimulation
+from bughog.subject.web_browser.interaction.simulation import BrowserSimulation
 
 
 class Browser(Subject, ABC):
@@ -14,7 +14,7 @@ class Browser(Subject, ABC):
 
     @property
     def type(self):
-        return 'webbrowser'
+        return 'web_browser'
 
     @staticmethod
     def create_simulation(executable: Executable, params: EvaluationParameters) -> BrowserSimulation:

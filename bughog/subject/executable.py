@@ -30,6 +30,10 @@ class Executable(ABC):
         self.error_message = None
         self.__process: Optional[subprocess.Popen] = None
 
+    # #
+    # TO BE IMPLEMENT BY EVERY EVALUATION SUBJECT EXECUTABLE
+    # #
+
     @property
     @abstractmethod
     def executable_name(self) -> str:
@@ -45,82 +49,13 @@ class Executable(ABC):
     def open_console_hotkey(self) -> list[str]:
         pass
 
-    @property
-    def log_path(self) -> str:
-        path = os.path.join('/tmp/bh_logs/', f'{self.config.subject_type}-{self.config.subject_name}-{self.state.name}.log')
-        if not os.path.isdir(os.path.dirname(path)):
-            os.mkdir(os.path.dirname(path))
-        return path
-
-    @property
-    @util.ensure_folder_exists
-    def storage_folder(self) -> str:
-        if self.state.has_local_executable():
-            return self.state.get_local_executable_folder_path()
-        else:
-            return self.temporary_storage_folder
-
-    @property
-    @util.ensure_folder_exists
-    def temporary_storage_folder(self) -> str:
-        return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{str(self.state.index)}')
-
-    @property
-    @util.ensure_folder_exists
-    def staging_folder(self) -> str:
-        return os.path.join('/tmp/staging/', f'{self.config.subject_name}-{str(self.state.index)}')
-
-    @property
-    def executable_path(self) -> str:
-        return os.path.join(self.staging_folder, self.executable_name)
-
-    @property
-    def is_ready_for_use(self) -> bool:
-        return os.path.isfile(self.executable_path) and self.version is not None
-
-    @property
-    def version(self) -> str:
-        if self.__version is None:
-            self.__version = self._get_version()
-        return self.__version
-
     @abstractmethod
-    def _configure_executable(self):
+    def _configure_executable(self) -> None:
         """
         Configures the downloaded executable folder after download and extraction, but before it is cached or used.
         This function should be idempotent.
         """
         pass
-
-    def fetch(self):
-        from bughog.database.mongo.executable_cache import ExecutableCache
-
-        if self.state.has_local_executable():
-            logger.info(f'Executable for {self.state.name} was found locally.')
-        elif ExecutableCache.fetch_executable_files(self.config, self.state.name, self.temporary_storage_folder):
-            logger.info(f'Executable for {self.state.name} was fetched from cache.')
-        elif not self.state.has_publicly_available_executable():
-            raise Exception(f'Executable for {self.state.name} is not available online.')
-        else:
-            start = time.time()
-            executable_urls = self.state.get_executable_source_urls()
-            util.download_and_extract(executable_urls, self.staging_folder)
-            elapsed_time = time.time() - start
-            logger.info(f'Executable for {self.state.name} was downloaded in {elapsed_time:.2f}s')
-            self._configure_executable()
-            ExecutableCache.store_executable_files(self.config, self.state.name, self.staging_folder)
-
-    def remove(self):
-        if not self.state.has_local_executable():
-            shutil.rmtree(self.temporary_storage_folder)
-
-    def stage(self):
-        if not self.is_ready_for_use:
-            util.copy_folder(self.temporary_storage_folder, self.staging_folder)
-
-    def unstage(self):
-        if self.is_ready_for_use:
-            shutil.rmtree(self.staging_folder)
 
     @property
     @abstractmethod
@@ -179,6 +114,79 @@ class Executable(ABC):
     @abstractmethod
     def _get_cli_command(self) -> list[str]:
         pass
+
+    # #
+    # HELPER FUNCTIONS
+    # #
+
+    @property
+    def log_path(self) -> str:
+        path = os.path.join('/tmp/bh_logs/', f'{self.config.subject_type}-{self.config.subject_name}-{self.state.name}.log')
+        if not os.path.isdir(os.path.dirname(path)):
+            os.mkdir(os.path.dirname(path))
+        return path
+
+    @property
+    @util.ensure_folder_exists
+    def storage_folder(self) -> str:
+        if self.state.has_local_executable():
+            return self.state.get_local_executable_folder_path()
+        else:
+            return self.temporary_storage_folder
+
+    @property
+    @util.ensure_folder_exists
+    def temporary_storage_folder(self) -> str:
+        return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{str(self.state.index)}')
+
+    @property
+    @util.ensure_folder_exists
+    def staging_folder(self) -> str:
+        return os.path.join('/tmp/staging/', f'{self.config.subject_name}-{str(self.state.index)}')
+
+    @property
+    def executable_path(self) -> str:
+        return os.path.join(self.staging_folder, self.executable_name)
+
+    @property
+    def is_ready_for_use(self) -> bool:
+        return os.path.isfile(self.executable_path) and self.version is not None
+
+    @property
+    def version(self) -> str:
+        if self.__version is None:
+            self.__version = self._get_version()
+        return self.__version
+
+    def fetch(self):
+        from bughog.database.mongo.executable_cache import ExecutableCache
+
+        if self.state.has_local_executable():
+            logger.info(f'Executable for {self.state.name} was found locally.')
+        elif ExecutableCache.fetch_executable_files(self.config, self.state.name, self.temporary_storage_folder):
+            logger.info(f'Executable for {self.state.name} was fetched from cache.')
+        elif not self.state.has_publicly_available_executable():
+            raise Exception(f'Executable for {self.state.name} is not available online.')
+        else:
+            start = time.time()
+            executable_urls = self.state.get_executable_source_urls()
+            util.download_and_extract(executable_urls, self.staging_folder)
+            elapsed_time = time.time() - start
+            logger.info(f'Executable for {self.state.name} was downloaded in {elapsed_time:.2f}s')
+            self._configure_executable()
+            ExecutableCache.store_executable_files(self.config, self.state.name, self.staging_folder)
+
+    def remove(self):
+        if not self.state.has_local_executable():
+            shutil.rmtree(self.temporary_storage_folder)
+
+    def stage(self):
+        if not self.is_ready_for_use:
+            util.copy_folder(self.temporary_storage_folder, self.staging_folder)
+
+    def unstage(self):
+        if self.is_ready_for_use:
+            shutil.rmtree(self.staging_folder)
 
     def run(self, experiment_specific_params: list[str], timeout: int = 5):
         """

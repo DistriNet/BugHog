@@ -2,10 +2,10 @@ import logging
 
 from bughog.parameters import SubjectConfiguration
 from bughog.subject.state_oracle import StateOracle
-from bughog.subject.webbrowser.chromium import repo
-from bughog.subject.webbrowser.chromium.executable import ChromiumExecutable
-from bughog.subject.webbrowser.chromium.state_oracle import ChromiumStateOracle
-from bughog.subject.webbrowser.subject import Browser
+from bughog.subject.web_browser.chromium import repo
+from bughog.subject.web_browser.chromium.executable import ChromiumExecutable
+from bughog.subject.web_browser.chromium.state_oracle import ChromiumStateOracle
+from bughog.subject.web_browser.subject import Browser
 from bughog.version_control.state.base import State
 
 logger = logging.getLogger(__name__)

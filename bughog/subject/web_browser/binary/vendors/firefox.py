@@ -3,8 +3,8 @@ import os
 import re
 
 from bughog import cli
-from bughog.subject.webbrowser.binary.artisanal_manager import ArtisanalBuildManager
-from bughog.subject.webbrowser.binary.binary import BrowserBinary
+from bughog.subject.web_browser.binary.artisanal_manager import ArtisanalBuildManager
+from bughog.subject.web_browser.binary.binary import BrowserBinary
 from bughog.version_control.states.base import State
 
 logger = logging.getLogger('bci')
