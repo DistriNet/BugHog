@@ -46,11 +46,10 @@ class Subject(ABC):
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> Executable:
         pass
 
-    @staticmethod
     @abstractmethod
-    def get_availability() -> dict:
+    def get_availability(self) -> dict:
         """
-        Returns availability data (minimum and maximu, release versions, and configuration options) of the subject.
+        Returns availability data (minimum and maximum, release versions, and configuration options) of the subject.
         """
         pass
 

@@ -12,7 +12,7 @@ from bughog.subject.state_oracle import StateOracle
 class State(ABC):
     def __init__(self, oracle: StateOracle):
         self.oracle = oracle
-        self.result_variables: Optional[set[tuple[str,str]]]
+        self.result_variables: Optional[set[tuple[str, str]]]
 
     # def has_dirty_result(self) -> bool:
     #     """
@@ -90,8 +90,8 @@ class State(ABC):
         from bughog.version_control.state.commit.base import CommitState
         from bughog.version_control.state.release.base import ReleaseState
 
-        subject_class = factory.get_subject_class(subject_type, subject_name)
-        oracle = subject_class().state_oracle
+        subject_class = factory.get_subject(subject_type, subject_name)
+        oracle = subject_class.state_oracle
         match data["type"]:
             case "commit":
                 return CommitState(oracle, commit_nb=data.get("commit_nb"), commit_id=data.get("commit_id"))

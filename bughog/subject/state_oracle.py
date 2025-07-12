@@ -59,6 +59,10 @@ class StateOracle(ABC):
     def get_release_executable_download_urls(self, major_version: int) -> list[str]:
         pass
 
+    @abstractmethod
+    def get_most_recent_major_release_version(self) -> int:
+        pass
+
 
     # Public commits
 

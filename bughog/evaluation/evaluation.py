@@ -7,8 +7,8 @@ from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.evaluation.interaction import Interaction
 from bughog.parameters import EvaluationParameters
 from bughog.subject import factory
-from bughog.subject.subject import Subject
 from bughog.subject.executable import Executable, ExecutableStatus
+from bughog.subject.subject import Subject
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
 
@@ -23,12 +23,10 @@ class Evaluation:
 
     def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
         if MongoDB().has_result(params, state):
-            logger.warning(
-                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
-            )
+            logger.warning(f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping.")
             return
 
-        subject = factory.create_subject(params)
+        subject = factory.get_subject_from_params(params)
         executable = subject.create_executable(params.subject_configuration, state)
         executable.pre_evaluation_setup()
 

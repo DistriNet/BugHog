@@ -80,6 +80,7 @@ export default {
       selected: {
         experiment: null,
         project: null,
+        subject: null,
       },
       dialog: {
         new_experiment_name: null,
@@ -194,9 +195,15 @@ export default {
       },
       immediate: true
     },
-    "eval_params.subject_name": function (val) {
+    "selected.subject": function (subject) {
+      console.log(subject)
       // db_collection gets updated too late, so updating manually.
+      this.eval_params.subject_name = subject["name"];
       this.eval_params.db_collection = this.db_collection;
+      this.curr_options.min_subject_version = subject["min_version"];
+      this.curr_options.max_subject_version = subject["max_version"];
+      this.slider.state = [subject["min_version"], subject["max_version"]];
+      this.slider.disabled = false;
       this.propagate_new_params();
     },
     "cli_options_str": function (val) {
@@ -439,16 +446,6 @@ export default {
     unset_curr_project() {
       this.set_curr_project(null);
     },
-    set_curr_subject(subject) {
-      console.log(subject)
-      this.eval_params.subject_name = subject.name;
-      console.log(this.eval_params.subject_name)
-      this.curr_options.min_subject_version = subject["min_version"];
-      this.curr_options.max_subject_version = subject["max_version"];
-      this.slider.state = [subject["min_version"], subject["max_version"]];
-      this.slider.disabled = false;
-      this.subject_settings = subject['options'];
-    },
     submit_form() {
       const path = `/api/evaluation/start/`;
       axios.post(path, this.eval_params)
@@ -552,16 +549,15 @@ export default {
       <div class="form-section">
         <section-header section="eval_range"></section-header>
 
-        <!-- Subject -->
-        <div class="form-subsection">
-          <h2 class="form-subsection-title">Subject</h2>
-          <div class="flex flex-row justify-center mx-5">
-            <div v-for="subject in available_subjects" class="radio-item flex-auto">
-              <input type="radio" name="subject.name" @click="set_curr_subject(subject)">
-              <label>{{ subject["name"] }}</label>
-            </div>
-          </div>
-        </div>
+        <!-- Subject --><div class="form-subsection">
+    <h2 class="form-subsection-title">Subject</h2>
+    <div class="flex flex-row justify-center mx-5">
+      <div v-for="subject in available_subjects" :key="subject.name" class="radio-item flex-auto">
+        <input type="radio" :id="subject.name" name="subject" :value="subject" v-model="selected.subject" />
+        <label :for="subject.name">{{ subject.name }}</label>
+      </div>
+    </div>
+  </div>
 
         <div class="form-subsection">
           <h2 class="form-subsection-title">Subject version range</h2>

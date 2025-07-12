@@ -9,22 +9,16 @@ from bughog.subject.subject import Subject
 from bughog.subject.web_browser.chromium.subject import Chromium
 from bughog.subject.web_browser.evaluation import BrowserEvaluationFramework
 from bughog.subject.web_browser.firefox.subject import Firefox
-from bughog.version_control.state.release.base import ReleaseState
 
 subjects = {
-    'js_engine': {
-        'evaluation_framework': JSEngineEvaluationFramework,
-        'subjects': [
-            V8Subject
-        ]
-    },
+    'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject()]},
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,
         'subjects': [
-            Chromium,
-            Firefox,
-        ]
-    }
+            Chromium(),
+            Firefox(),
+        ],
+    },
 }
 
 
@@ -34,15 +28,15 @@ def get_all_subject_types() -> list[str]:
 
 
 @staticmethod
-def get_all_subjects_for(subject_type: str) -> list[type[Subject]]:
-    if subject_classes := subjects.get(subject_type):
-        return subject_classes['subjects']
+def get_all_subjects_for(subject_type: str) -> list[Subject]:
+    if subject_objects := subjects.get(subject_type):
+        return subject_objects['subjects']
     raise AttributeError(f"Subject type '{subject_type}' is not supported.")
 
 
 @staticmethod
 def get_all_subject_names_for(subject_type: str) -> list[str]:
-    return [subject().name for subject in get_all_subjects_for(subject_type)]
+    return [subject.name for subject in get_all_subjects_for(subject_type)]
 
 
 @staticmethod
@@ -58,13 +52,6 @@ def create_experiments(subject_type: str) -> Experiments:
 
 
 @staticmethod
-def create_subject(params: EvaluationParameters) -> Subject:
-    type = params.subject_configuration.subject_type
-    name = params.subject_configuration.subject_name
-    return get_subject_class(type, name)()
-
-
-@staticmethod
 def get_subject_availability() -> list[dict]:
     subject_availability = []
     for subject_type in get_all_subject_types():
@@ -76,19 +63,21 @@ def get_subject_availability() -> list[dict]:
 
 
 @staticmethod
-def get_subject_availability_for(type: str, name: str) -> dict:
-    return get_subject_class(type, name).get_availability()
+def get_subject_from_params(params: EvaluationParameters) -> Subject:
+    subject_type = params.subject_configuration.subject_type
+    subject_name = params.subject_configuration.subject_name
+    return get_subject(subject_type, subject_name)
 
 
 @staticmethod
-def get_subject_class(subject_type: str, subject_name: str) -> type[Subject]:
-    subject_classes = get_all_subjects_for(subject_type)
-    matched_subjects = [subject_class for subject_class in subject_classes if subject_class().name == subject_name]
+def get_subject(subject_type: str, subject_name: str) -> Subject:
+    subjects = get_all_subjects_for(subject_type)
+    matched_subjects = [subject for subject in subjects if subject.name == subject_name]
     if len(matched_subjects) > 0:
         return matched_subjects[0]
     raise AttributeError(f"Subject '{subject_type}, {subject_name}' is not supported.")
 
 
-@staticmethod
-def get_release_state_class(subject_type: str, subject_name: str) -> type[ReleaseState]:
-    return get_subject_class(subject_type, subject_name)().release_state_class
+# @staticmethod
+# def get_release_state_class(subject_type: str, subject_name: str) -> type[ReleaseState]:
+#     return get_subject(subject_type, subject_name).release_state_class

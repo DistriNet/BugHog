@@ -44,7 +44,7 @@ class Experiments:
             project.tags.append('project')
             for experiment in project.subfolders:
                 experiment.tags.append('experiment')
-                if 'script.cmd' in [file.name for file in experiment.files]:
+                if self.framework.experiment_is_runnable(experiment):
                     experiment.tags.append('runnable')
         return root_folder
 
@@ -160,9 +160,6 @@ class Experiments:
         else:
             raise Exception(f"Could not find experiment script at '{script_path}'")
 
-    def experiment_is_valid(self, project: str, experiment: str) -> bool:
-        return self.framework.experiment_is_valid(project, experiment)
-
     def create_empty_poc(self, project: str, experiment: str):
         return self.framework.create_empty_experiment(project, experiment)
 
@@ -184,10 +181,7 @@ class Experiments:
         if name is None or name == '':
             raise AttributeError('The given name cannot be empty.')
         if re.match(r'^[A-Za-z0-9_\-.]+$', name) is None:
-            raise AttributeError(
-                f"The given name '{name}' is invalid. Only letters, numbers, "
-                "'.', '-' and '_' can be used, and the name should not be empty."
-            )
+            raise AttributeError(f"The given name '{name}' is invalid. Only letters, numbers, '.', '-' and '_' can be used, and the name should not be empty.")
 
 
 def verify() -> None:

@@ -1,3 +1,4 @@
+from bughog.evaluation.file_structure import Folder
 from bughog.subject.evaluation_framework import EvaluationFramework
 
 
@@ -8,21 +9,8 @@ class BrowserEvaluationFramework(EvaluationFramework):
                 return True
         return False
 
-    def experiment_is_valid(self, project: str, experiment: str) -> bool:
-        dir_tree = self.evaluation_framework.dir_tree
-        # Always runnable if there is either an interaction script or url_queue present
-        if 'script' in data or 'url_queue' in data:
-            return True
-
-        # Should have exactly one main folder otherwise
-        domains = dir_tree[project][experiment]
-        main_paths = [paths for paths in domains.values() if paths is not None and 'main' in paths.keys()]
-        if len(main_paths) != 1:
-            return False
-        # Main should have index.html
-        if 'index.html' not in main_paths[0]['main'].keys():
-            return False
-        return True
+    def experiment_is_runnable(self, experiment_folder: Folder) -> bool:
+        return 'script.cmd' in [file.name for file in experiment_folder.files]
 
     def create_empty_experiment(self, project: str, experiment: str):
         pass

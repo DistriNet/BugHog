@@ -23,6 +23,5 @@ class Chromium(Browser):
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> ChromiumExecutable:
         return ChromiumExecutable(subject_configuration, state)
 
-    @staticmethod
-    def get_availability() -> dict:
+    def get_availability(self) -> dict:
         return {'name': 'chromium', 'min_version': 20, 'max_version': repo.get_most_recent_major_version()}

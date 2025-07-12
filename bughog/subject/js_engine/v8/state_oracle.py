@@ -41,7 +41,7 @@ class V8StateOracle(StateOracle):
 
     def get_most_recent_major_release_version(self) -> int:
         all_release_tags = self.__get_all_release_tags()
-        major_versions = [int(tag.split('.')[0]) for tag in all_release_tags]
+        major_versions = set(int(tag.split('.')[0]) for tag in all_release_tags)
         return max(major_versions)
 
 
@@ -78,16 +78,7 @@ class V8StateOracle(StateOracle):
     def __get_all_release_tags() -> list[str]:
         url = "https://chromium.googlesource.com/v8/v8.git/+refs"
         html = util.request_html(url).decode()
-
-        tags_section = html.split("<h3>Tags</h3>", 1)
-        if len(tags_section) < 2:
-            return []
-        ul_start = tags_section[1].find("<ul>")
-        ul_end = tags_section[1].find("</ul>", ul_start)
-        if ul_start == -1 or ul_end == -1:
-            return []
-        ul_html = tags_section[1][ul_start:ul_end]
-        all_tags = re.findall(r'<li><a href="[^"]+">([^<]+)</a></li>', ul_html)
+        all_tags = re.findall(r'/refs/tags/(\d+(?:\.\d+)+)', html)
         pattern = re.compile(r"^\d+\.\d+\.\d+$")
         return [tag for tag in all_tags if pattern.match(tag)]
 

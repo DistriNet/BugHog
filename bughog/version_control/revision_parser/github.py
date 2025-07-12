@@ -30,11 +30,15 @@ def find_commit_id(owner: str, repo: str, commit_nb: int) -> str:
 
 def find_commit_nb(owner: str, repo: str, commit_id: str) -> int:
     url = f"https://api.github.com/repos/{owner}/{repo}/commits/{commit_id}"
-    resp = util.request_json(url)
+    intermediary_resp = util.request_json(url)
+    if not intermediary_resp or not isinstance(intermediary_resp, dict):
+        raise Exception(f"Could not find commit nb for {url}.")
+    # Get parent, where we can find the commit number
+    resp = util.request_json(intermediary_resp['parents'][0]['sha'])
     if not resp or not isinstance(resp, dict):
         raise Exception(f"Could not find commit nb for {url}.")
     commit_message = resp.get("commit", {}).get("message", "")
-    match = re.search(r"Cr-Commit-Position: refs/heads/main@\{#(\d+)\}", commit_message)
+    match = re.search(r"Cr-Commit-Position: refs/heads/(?:master|main)@\{#(\d+)\}", commit_message)
     if match:
         return int(match.group(1))
     raise Exception(f"Could not find commit nb for {url}.")

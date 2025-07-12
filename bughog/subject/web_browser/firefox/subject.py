@@ -19,8 +19,7 @@ class Firefox(Browser):
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> FirefoxExecutable:
         return FirefoxExecutable(subject_configuration, state)
 
-    @staticmethod
-    def get_availability() -> dict:
+    def get_availability(self) -> dict:
         return {
             'name': 'firefox',
             'min_version': 20,

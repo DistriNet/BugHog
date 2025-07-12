@@ -2,6 +2,8 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
+from bughog.evaluation.file_structure import Folder
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,7 +18,7 @@ class EvaluationFramework(ABC):
         pass
 
     @abstractmethod
-    def experiment_is_valid(self, project: str, experiment: str) -> bool:
+    def experiment_is_runnable(self, experiment_folder: Folder) -> bool:
         pass
 
     @abstractmethod
