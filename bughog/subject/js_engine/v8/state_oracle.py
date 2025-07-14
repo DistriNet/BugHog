@@ -63,6 +63,9 @@ class V8StateOracle(StateOracle):
 
     # Public commits
 
+    def get_commit_url(self, _: int, commit_id: str) -> str:
+        return f'https://chromium.googlesource.com/v8/v8/+/{commit_id}'
+
     def has_publicly_available_commit_executable(self, commit_nb: int) -> bool:
         for url in self.get_commit_executable_download_urls(commit_nb):
             resp = requests.head(url)
@@ -71,8 +74,13 @@ class V8StateOracle(StateOracle):
         return False
 
     def get_commit_executable_download_urls(self, commit_nb: int) -> list[str]:
-        return [f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-release%2Fd8-linux-release-v8-component-{commit_nb}.zip?alt=media']
-
+        # Debug:
+        return [
+            f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-debug%2Fasan-linux-debug-v8-component-{commit_nb}.zip?alt=media',
+            f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-debug%2Fd8-asan-linux-debug-v8-component-{commit_nb}.zip?alt=media'
+        ]
+        # Release
+        # return [f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-release%2Fd8-linux-release-v8-component-{commit_nb}.zip?alt=media']
 
     @staticmethod
     def __get_all_release_tags() -> list[str]:

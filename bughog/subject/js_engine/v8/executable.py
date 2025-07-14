@@ -22,7 +22,7 @@ class V8Executable(Executable):
         Configures the downloaded executable folder after download and extraction, but before it is cached or used.
         This function should be idempotent.
         """
-        pass
+        cli.execute('chmod u+x d8', cwd=self.temporary_storage_folder, ignore_error=False)
 
     @property
     def supported_options(self) -> list[str]:
@@ -37,7 +37,7 @@ class V8Executable(Executable):
         raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")
 
     def _get_cli_command(self) -> list[str]:
-        return [self.executable_path]
+        return [self.executable_path, '--allow-natives-syntax']
 
     def pre_evaluation_setup(self):
         self.fetch()

@@ -2,6 +2,7 @@ from abc import ABC
 
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.requests import RequestCollector
+from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters
 from bughog.subject.subject import Subject
 from bughog.subject.executable import Executable
@@ -17,8 +18,8 @@ class Browser(Subject, ABC):
         return 'web_browser'
 
     @staticmethod
-    def create_simulation(executable: Executable, params: EvaluationParameters) -> BrowserSimulation:
-        return BrowserSimulation(executable, params)
+    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> BrowserSimulation:
+        return BrowserSimulation(executable, context, params)
 
     @staticmethod
     def create_result_collector() -> Collector:

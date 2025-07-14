@@ -10,6 +10,8 @@ from enum import Enum, auto, unique
 from typing import Optional
 
 from bughog import util
+from bughog.evaluation.collectors.logs import LogCollector
+from bughog.evaluation.file_structure import Folder
 from bughog.parameters import SubjectConfiguration
 from bughog.version_control.state.base import State
 
@@ -121,10 +123,7 @@ class Executable(ABC):
 
     @property
     def log_path(self) -> str:
-        path = os.path.join('/tmp/bh_logs/', f'{self.config.subject_type}-{self.config.subject_name}-{self.state.name}.log')
-        if not os.path.isdir(os.path.dirname(path)):
-            os.mkdir(os.path.dirname(path))
-        return path
+        return LogCollector.log_path
 
     @property
     @util.ensure_folder_exists
@@ -170,11 +169,12 @@ class Executable(ABC):
         else:
             start = time.time()
             executable_urls = self.state.get_executable_source_urls()
-            util.download_and_extract(executable_urls, self.staging_folder)
+            util.download_and_extract(executable_urls, self.temporary_storage_folder)
             elapsed_time = time.time() - start
             logger.info(f'Executable for {self.state.name} was downloaded in {elapsed_time:.2f}s')
             self._configure_executable()
-            ExecutableCache.store_executable_files(self.config, self.state.name, self.staging_folder)
+            ExecutableCache.store_executable_files(self.config, self.state.name, self.temporary_storage_folder)
+
 
     def remove(self):
         if not self.state.has_local_executable():
@@ -188,14 +188,17 @@ class Executable(ABC):
         if self.is_ready_for_use:
             shutil.rmtree(self.staging_folder)
 
-    def run(self, experiment_specific_params: list[str], timeout: int = 5):
+    def run(self, experiment_specific_params: list[str], cwd: Optional[Folder] = None, timeout: int = 5):
         """
         Runs the executable with the given arguments, and kills it after the given timeout.
         """
         cli_command = self._get_cli_command() + experiment_specific_params
-        logger.debug(f'Executing: {self.executable_path} {" ".join(cli_command)}')
+        logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
-            proc = subprocess.Popen(cli_command, stdout=file, stderr=file)
+            if cwd:
+                proc = subprocess.Popen(cli_command, stdout=file, stderr=file, cwd=cwd.path)
+            else:
+                proc = subprocess.Popen(cli_command, stdout=file, stderr=file)
             self.__process = proc
             time.sleep(timeout)
 

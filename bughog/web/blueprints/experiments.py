@@ -5,7 +5,7 @@ import sys
 import threading
 
 import requests
-from bughog.evaluation.experiment import SUPPORTED_DOMAINS
+from bughog.evaluation.experiments import SUPPORTED_DOMAINS
 from flask import Blueprint, Request, make_response, render_template, request, url_for
 
 logger = logging.getLogger(__name__)

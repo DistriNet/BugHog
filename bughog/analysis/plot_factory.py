@@ -5,14 +5,14 @@ from bughog.parameters import EvaluationParameters
 
 class PlotFactory:
     @staticmethod
-    def get_plot_commit_data(params: EvaluationParameters, target_variable: str = 'reproduced') -> dict:
+    def get_plot_commit_data(params: EvaluationParameters) -> dict:
         commit_docs = MongoDB().get_documents_for_plotting(params)
-        return PlotFactory.__add_outcome_info(params, commit_docs, target_variable)
+        return PlotFactory.__add_outcome_info(commit_docs)
 
     @staticmethod
-    def get_plot_release_data(params: EvaluationParameters, target_variable: str = 'reproduced') -> dict:
+    def get_plot_release_data(params: EvaluationParameters) -> dict:
         release_docs = MongoDB().get_documents_for_plotting(params, releases=True)
-        return PlotFactory.__add_outcome_info(params, release_docs, target_variable)
+        return PlotFactory.__add_outcome_info(release_docs)
 
     @staticmethod
     def validate_params(params: EvaluationParameters) -> list[str]:
@@ -36,15 +36,16 @@ class PlotFactory:
         return new_docs
 
     @staticmethod
-    def __add_outcome_info(params: EvaluationParameters, docs: list, target_variable: str):
+    def __add_outcome_info(docs: list):
         if not docs:
             return {'commit_nb': [], 'subject_version': [], 'subject_version_str': [], 'outcome': []}
         docs_with_outcome = []
 
         for doc in docs:
-            result_variables = set((variables[0], variables[1]) for variables in doc['result_variables'])
+            result_variables = set((variables[0], variables[1]) for variables in doc['result']['variables'])
             new_doc = {
                 'commit_nb': doc['state']['commit_nb'],
+                'commit_url': doc['state']['commit_url'] if 'commit_url' in doc['state'] else None,
                 'subject_version': int(doc['subject_version'].split('.')[0]),
                 'subject_version_str': doc['subject_version'].split('.')[0],
             }

@@ -3,6 +3,7 @@ Helper module to find commit information for Google repos hosted on GitHub.
 """
 
 import re
+from typing import Optional
 
 from bughog import util
 
@@ -22,25 +23,29 @@ def find_commit_id(owner: str, repo: str, commit_nb: int) -> str:
 
     for commit in resp:
         commit_message = commit.get("commit", {}).get("message", "")
-        match = re.search(r"Cr-Commit-Position: refs/heads/main@\{#(\d+)\}", commit_message)
-        if match and int(match.group(1)) == commit_nb:
+        if commit_nb:= __parse_commit_nb(commit_message):
             return commit.get("sha")
     raise Exception(f"Could not find commit id for {url}.")
 
 
 def find_commit_nb(owner: str, repo: str, commit_id: str) -> int:
     url = f"https://api.github.com/repos/{owner}/{repo}/commits/{commit_id}"
-    intermediary_resp = util.request_json(url)
-    if not intermediary_resp or not isinstance(intermediary_resp, dict):
-        raise Exception(f"Could not find commit nb for {url}.")
-    # Get parent, where we can find the commit number
-    resp = util.request_json(intermediary_resp['parents'][0]['sha'])
+    resp = util.request_json(url)
     if not resp or not isinstance(resp, dict):
         raise Exception(f"Could not find commit nb for {url}.")
     commit_message = resp.get("commit", {}).get("message", "")
-    match = re.search(r"Cr-Commit-Position: refs/heads/(?:master|main)@\{#(\d+)\}", commit_message)
-    if match:
-        return int(match.group(1))
+    if commit_nb:= __parse_commit_nb(commit_message):
+        return commit_nb
+
+    # Get parent, where we should find the commit number
+    parent_commit_id = resp['parents'][0]['sha']
+    parent_commit_url = f"https://api.github.com/repos/{owner}/{repo}/commits/{parent_commit_id}"
+    resp = util.request_json(parent_commit_url)
+    if not resp or not isinstance(resp, dict):
+        raise Exception(f"Could not find commit nb for {url}.")
+    commit_message = resp.get("commit", {}).get("message", "")
+    if commit_nb:= __parse_commit_nb(commit_message):
+        return commit_nb
     raise Exception(f"Could not find commit nb for {url}.")
 
 
@@ -62,3 +67,11 @@ def __get_reference_commit_nb(owner: str, repo: str) -> int:
         if match:
             return int(match.group(1))
     raise Exception(f"Could not fetch reference commit from {url}.")
+
+
+def __parse_commit_nb(commit_message: str) -> Optional[int]:
+    if match := re.search(r"Cr-Commit-Position: refs/heads/(?:master|main|candidates)@\{#(\d+)\}", commit_message):
+        return int(match.group(1))
+    if match := re.search(r"git-svn-id: http://v8.googlecode.com/svn/trunk@(\d+)", commit_message):
+        return int(match.group(1))
+    return None

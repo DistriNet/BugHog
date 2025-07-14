@@ -66,10 +66,6 @@ class Experiments:
         experiments = [(folder.name, 'runnable' in folder.tags) for folder in experiment_folders]
         return sorted(experiments, key=lambda x: x[0])
 
-    def get_poc_structure(self, project, poc) -> dict:
-        # TODO
-        pass
-
     def _get_poc_file_path(self, project: str, poc: str, domain: str, path: str, file_name: str) -> str:
         # Top-level config file
         if domain == 'Config' and path == '_':
@@ -141,24 +137,23 @@ class Experiments:
                 return project
         raise Exception(f"Could not find project '{project_name}'")
 
-    def __get_experiment_folder(self, project_name: str, experiment_name: str) -> Folder:
+    def get_experiment_folder(self, params: EvaluationParameters) -> Folder:
+        project_name = params.evaluation_configuration.project
+        experiment_name = params.evaluation_range.experiment_name
         project = self.__get_project_folder(project_name)
         for experiment in project.subfolders:
             if experiment.name == experiment_name:
                 return experiment
         raise Exception(f"Could not find experiment '{experiment_name}'")
 
-    def get_interaction_script(self, params: EvaluationParameters) -> list[str]:
-        project_name = params.evaluation_configuration.project
-        experiment_name = params.evaluation_range.experiment_name
-        experiment = self.__get_experiment_folder(project_name, experiment_name)
-        script_path = os.path.join(experiment.path, 'script.cmd')
+    def get_interaction_script(self, experiment_folder: Folder) -> list[str]:
+        script_path = os.path.join(experiment_folder.path, 'script.cmd')
         if os.path.isfile(script_path):
             # If an interaction script is specified, it is parsed and used
             with open(script_path) as file:
                 return file.readlines()
         else:
-            raise Exception(f"Could not find experiment script at '{script_path}'")
+            return self.framework.get_default_experiment_script()
 
     def create_empty_poc(self, project: str, experiment: str):
         return self.framework.create_empty_experiment(project, experiment)

@@ -1,3 +1,4 @@
+from typing import Optional
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.state.base import State
 from bughog.version_control.state.commit.base import CommitState
@@ -31,13 +32,18 @@ class ReleaseState(State):
     def commit_nb(self) -> int:
         return self._commit_nb
 
+    @property
+    def commit_url(self) -> Optional[str]:
+        return None
+
     def to_dict(self) -> dict:
-        return {
+        fields = {
             'type': self.type,
             'major_version': self.index,
             'commit_nb': self.commit_nb,
             'commit_id': self._commit_id,
         }
+        return {k: v for k, v in fields.items() if v is not None}
 
     # @staticmethod
     # def from_dict(data: dict) -> State:

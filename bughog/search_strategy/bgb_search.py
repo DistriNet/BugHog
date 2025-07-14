@@ -84,9 +84,9 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         if not pairs:
             return None
         # Remove the first and last pair if they have a first and last state without a result, respectively
-        if pairs[0][0].result is None:
+        if pairs[0][0].result_variables is None:
             pairs = pairs[1:]
-        if pairs[-1][1].result is None:
+        if pairs[-1][1].result_variables is None:
             pairs = pairs[:-1]
         # Remove all pairs that have already been identified as unavailability gaps
         pairs = [pair for pair in pairs if pair not in self._unavailability_gap_pairs]

@@ -2,7 +2,6 @@ import logging
 from inspect import signature
 from urllib.parse import quote_plus
 
-from bughog.parameters import EvaluationParameters
 from bughog.subject.simulation import Simulation
 from bughog.subject.web_browser.interaction.simulation import SimulationException
 
@@ -11,9 +10,8 @@ logger = logging.getLogger(__name__)
 
 class Interaction:
 
-    def __init__(self, script: list[str], params: EvaluationParameters) -> None:
+    def __init__(self, script: list[str]) -> None:
         self.script = script
-        self.params = params
 
     def execute(self, simulation: Simulation) -> None:
         if self._interpret(simulation):

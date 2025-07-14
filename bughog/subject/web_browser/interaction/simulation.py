@@ -4,6 +4,7 @@ import pyautogui as gui
 import Xlib.display
 from pyvirtualdisplay.display import Display
 
+from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters
 from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
@@ -11,9 +12,8 @@ from bughog.subject.simulation import Simulation
 
 
 class BrowserSimulation(Simulation):
-    def __init__(self, executable: Executable, params: EvaluationParameters):
-        self.executable = executable
-        self.params = params
+    def __init__(self, executable: Executable, folder: Folder, params: EvaluationParameters):
+        super().__init__(executable, folder, params)
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
         disp.start()
         gui._pyautogui_x11._display = Xlib.display.Display(os.environ['DISPLAY'])

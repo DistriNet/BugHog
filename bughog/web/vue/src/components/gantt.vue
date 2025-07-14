@@ -36,7 +36,7 @@ export default {
     },
     methods: {
         init_plot() {
-            console.log("Initializing Gantt chart...");
+            console.log(`Initializing Gantt chart for ${this.subject_name}...`);
 
             if (this.revision_source.length === 0 || this.version_source.length === 0) {
                 this.x_min = 1;
@@ -103,45 +103,47 @@ export default {
                 )
             }
 
-            const urlTemplate = this.subject_name === 'chromium' ? 'https://crrev.com/' :
-            this.subject_name === 'firefox' ? 'https://hg.mozilla.org/mozilla-central/rev/' :
-            null;
+            // TODO: add functionality server-side for browsers
+            // const urlTemplate = this.subject_name === 'chromium' ? 'https://crrev.com/' :
+            // this.subject_name === 'firefox' ? 'https://hg.mozilla.org/mozilla-central/rev/' :
+            // this.subject_name === 'v8' ? 'https:/' :
+            // 'place_holder (TODO)';
 
-            if (urlTemplate) {
-                const tapTool = new Bokeh.TapTool({
-                    behavior: 'select',
-                    callback: (e) => {
-                        var index;
-                        if ((index = this.revision_source.selected.indices[0]) !== undefined) {
-                            var commit_nb = this.revision_source.data.commit_nb[index];
-                            var subject_version = this.revision_source.data.subject_version[index];
-                            var type = "revision";
-                        } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
-                            var commit_nb = this.version_source.data.commit_nb[index];
-                            var subject_version = this.version_source.data.subject_version[index];
-                            var type = "version";
-                        } else {
-                            console.log("Nothing interesting was selected...");
-                            return;
-                        }
+            const tapTool = new Bokeh.TapTool({
+                behavior: 'select',
+                callback: (e) => {
+                    var index;
+                    if ((index = this.revision_source.selected.indices[0]) !== undefined) {
+                        var commit_nb = this.revision_source.data.commit_nb[index];
+                        var subject_version = this.revision_source.data.subject_version[index];
+                        var commit_url = this.revision_source.data.commit_url[index];
+                        var type = "revision";
+                    } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
+                        var commit_nb = this.version_source.data.commit_nb[index];
+                        var subject_version = this.version_source.data.subject_version[index];
+                        var type = "version";
+                    } else {
+                        console.log("Nothing interesting was selected...");
+                        return;
+                    }
 
-                        if (this.shift_down === true) {
-                            // Ask to remove datapoint
-                            this.remove_datapoint(commit_nb, subject_version, type);
-                        } else {
-                            // Open revision page
-                            if (this.revision_source.selected.indices.length > 0) {
-                                window.open(urlTemplate + commit_nb);
+                    if (this.shift_down === true) {
+                        // Ask to remove datapoint
+                        this.remove_datapoint(commit_nb, subject_version, type);
+                    } else {
+                        // Open revision page
+                        if (this.revision_source.selected.indices.length > 0) {
+                            if (commit_url !== null) {
+                                console.log(this.revision_source.data)
+                                window.open(commit_url);
                             }
                         }
-                        this.revision_source.selected.indices = [];
-                        this.version_source.selected.indices = [];
                     }
-                });
-                this.plot.add_tools(tapTool);
-            } else {
-                throw new Error(`Unknown subject name: ${subject_name}`);
-            }
+                    this.revision_source.selected.indices = [];
+                    this.version_source.selected.indices = [];
+                }
+            });
+            this.plot.add_tools(tapTool);
 
             this.plot.below[0].formatter = new Bokeh.BasicTickFormatter({ use_scientific: false });
 
@@ -160,6 +162,7 @@ export default {
             console.log("Gantt chart initialized!");
         },
         update_plot(subject_name, revision_data, version_data, project, poc) {
+            console.log(subject_name)
             if (revision_data === null && version_data === null) {
                 return;
             }

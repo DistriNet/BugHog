@@ -67,6 +67,10 @@ class StateOracle(ABC):
     # Public commits
 
     @abstractmethod
+    def get_commit_url(self, commit_nb, commit_id) -> str:
+        pass
+
+    @abstractmethod
     def has_publicly_available_commit_executable(self, commit_nb: int) -> bool:
         pass
 

@@ -13,17 +13,17 @@ class CommitState(State):
     def __init__(self, oracle: StateOracle, commit_id: Optional[str] = None, commit_nb: Optional[int] = None):
         super().__init__(oracle)
         if commit_id is None and commit_nb is None:
-            raise AttributeError('A state must be initiliazed with either a revision id or revision number')
+            raise AttributeError('A state must be initiliazed with either a commit id or commit number.')
 
         self._commit_id = commit_id
         self._commit_nb = commit_nb
         self._fetch_missing_data()
 
         if self._commit_id is not None and not self.oracle.is_valid_commit_id(self._commit_id):
-            raise AttributeError(f"Invalid revision id '{self._commit_id}' for state '{self}'")
+            raise AttributeError(f"Invalid commit id '{self._commit_id}'.")
 
         if self._commit_nb is not None and not self.oracle.is_valid_commit_nb(self._commit_nb):
-            raise AttributeError(f"Invalid revision number '{self._commit_nb}' for state '{self}'")
+            raise AttributeError(f"Invalid commit number '{self._commit_nb}'.")
 
     @staticmethod
     def get_name(index: int) -> str:
@@ -41,12 +41,18 @@ class CommitState(State):
     def commit_nb(self) -> int:
         return self._commit_nb
 
+    @property
+    def commit_url(self) -> Optional[str]:
+        return self.oracle.get_commit_url(self.commit_nb, self._commit_id)
+
     def to_dict(self) -> dict:
-        return {
+        fields = {
             'type': self.type,
-            'commit_nb': self._commit_nb,
+            'commit_nb': self.commit_nb,
             'commit_id': self._commit_id,
+            'commit_url': self.commit_url,
         }
+        return {k: v for k, v in fields.items() if v is not None}
 
     def _has_commit_id(self) -> bool:
         return self._commit_id is not None
@@ -60,6 +66,11 @@ class CommitState(State):
         This method attempts to fetch other data to complete this state object.
         """
         # TODO: solve with oracle
+        # TODO: check if no performance loss for browsers
+        if self._commit_id is None:
+            self._commit_id = self.oracle.find_commit_id(self.commit_nb)
+        if self._commit_nb is None:
+            self._commit_nb = self.oracle.find_commit_nb(self._commit_id)
         # # First check if the missing data is available in the cache
         # if self._commit_id and self._commit_nb:
         #     return
@@ -69,10 +80,6 @@ class CommitState(State):
         #     if self._commit_nb is None:
         #         self._commit_nb = state.get('revision_number', None)
         # # If not, fetch the missing data from the parser
-        # if self._commit_id is None:
-        #     self._commit_id = self.oracle.find_commit_id(self.commit_nb)
-        # if self._commit_nb is None:
-        #     self._commit_nb = self.oracle.find_commit_nb(self._commit_id)
 
     def has_publicly_available_executable(self) -> bool:
         return self.oracle.has_publicly_available_commit_executable(self.commit_nb)

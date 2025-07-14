@@ -22,6 +22,13 @@ class ExperimentResult:
                 return True
         return False
 
+    @staticmethod
+    def poc_is_dirty(result_variables: set[tuple[str,str]]) -> bool:
+        for key, value in result_variables:
+            if key.lower() == 'sanity_check' and value.lower() == 'ok':
+                return False
+        return True
+
     @property
     def padded_subject_version(self) -> Optional[str]:
         """

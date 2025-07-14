@@ -11,6 +11,7 @@ import os
 from abc import ABC, abstractmethod
 
 from bughog.evaluation.collectors.collector import Collector
+from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters, SubjectConfiguration
 from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
@@ -55,7 +56,7 @@ class Subject(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_simulation(executable: Executable, params: EvaluationParameters) -> Simulation:
+    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> Simulation:
         pass
 
     @staticmethod

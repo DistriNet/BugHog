@@ -65,6 +65,9 @@ class ChromiumStateOracle(StateOracle):
 
     # Commit state functions
 
+    def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
+        return 'TODO'
+
     @Cache.cache_in_db("web_browser", "chromium")
     def has_publicly_available_commit_executable(self, commit_nb: int) -> bool:
         url = f"https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{commit_nb}%2Fchrome-linux.zip"
@@ -74,4 +77,4 @@ class ChromiumStateOracle(StateOracle):
         return has_binary_online
 
     def get_commit_executable_download_urls(self, commit_nb: int) -> list[str]:
-        return [("https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/%s%%2F%s%%2Fchrome-%s.zip?alt=media" % ("Linux_x64", commit_nb, "linux"))]
+        return [f"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F{commit_nb}%2Fchrome-linux.zip?alt=media"]

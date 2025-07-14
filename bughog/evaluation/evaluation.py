@@ -58,15 +58,16 @@ class Evaluation:
 
         is_dirty = False
         tries_left = 3
-        script = self.experiments.get_interaction_script(params)
+        experiment_folder = self.experiments.get_experiment_folder(params)
+        script = self.experiments.get_interaction_script(experiment_folder)
         try:
             sanity_check_successful = True
             poc_was_reproduced = False
             while not poc_was_reproduced and tries_left > 0:
                 tries_left -= 1
                 executable.pre_try_setup()
-                simulation = subject.create_simulation(executable, params)
-                Interaction(script, params).execute(simulation)
+                simulation = subject.create_simulation(executable, experiment_folder, params)
+                Interaction(script).execute(simulation)
                 executable.post_try_cleanup()
                 _, intermediary_variables = collector.collect_results()
                 sanity_check_successful &= self.experiments.framework.experiment_sanity_check_succeeded(intermediary_variables)

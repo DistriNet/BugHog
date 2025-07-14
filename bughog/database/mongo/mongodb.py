@@ -139,7 +139,7 @@ class MongoDB:
         collection = self.__get_data_collection(eval_params)
         query = {
             "subject_version": result.executable_version,
-            "binary_origin": result.executable_origin,
+            "executable_origin": result.executable_origin,
             "padded_subject_version": result.padded_subject_version,
             "subject_config": subject_config.subject_setting,
             "cli_options": subject_config.cli_options,
@@ -157,8 +157,8 @@ class MongoDB:
         #         query['build_id'] = build_id
         update = {
             "$set": {
-                "raw_results": result.raw_results,
-                "result_variables": [list(item) for item in result.result_variables],
+                "result.raw": result.raw_results,
+                "result.variables": [list(item) for item in result.result_variables],
                 "dirty": result.is_dirty,
                 "ts": str(datetime.now(timezone.utc).replace(microsecond=0)),
             }
@@ -174,8 +174,8 @@ class MongoDB:
                 doc["executable_version"],
                 doc["executable_origin"],
                 doc["state"],
-                doc["raw_results"],
-                set(tuple(item) for item in doc["result_variables"]),
+                doc["result"]["raw"],
+                set(tuple(item) for item in doc["result"]["variables"]),
                 doc["dirty"],
             )
         else:
@@ -198,8 +198,7 @@ class MongoDB:
         query = {
             "subject_config": params.subject_configuration.subject_setting,
             "experiment": params.evaluation_range.experiment_name,
-            "state.subject_name": params.subject_configuration.subject_name,
-            "results": {"$exists": True},
+            "result": {"$exists": True},
             "state.type": "version" if params.evaluation_range.only_release_commits else "commit",
         }
         if boundary_states is not None:
@@ -229,17 +228,18 @@ class MongoDB:
             subject_type = params.subject_configuration.subject_type
             subject_name = params.subject_configuration.subject_name
             state = State.from_dict(subject_type, subject_name, doc["state"])
-            state.result_variables = set(tuple(item) for item in doc["result_variables"])
+            state.result_variables = set(tuple(item) for item in doc["result"]["variables"])
             states.append(state)
         return states
 
     def __to_experiment_query(self, params: EvaluationParameters, state: State) -> dict:
+        state_dict = state.to_dict()
+        state_query = {'state.' + k: v for k, v in state_dict.items()}
         query = {
-            "state": state.to_dict(),
-            "subject_automation": params.evaluation_configuration.automation,
             "subject_config": params.subject_configuration.subject_setting,
             "experiment": params.evaluation_range.experiment_name,
         }
+        query.update(state_query)
         if len(params.subject_configuration.extensions) > 0:
             query["extensions"] = {
                 "$size": len(params.subject_configuration.extensions),
@@ -356,7 +356,7 @@ class MongoDB:
         docs = collection.aggregate(
             [
                 {"$match": query},
-                {"$project": {"_id": False, "state": True, "subject_version": True, "dirty": True, "result_variables": True}},
+                {"$project": {"_id": False, "state": True, "subject_version": True, "dirty": True, "result.variables": True}},
                 {"$sort": {"state.commit_nb": 1}},
             ]
         )

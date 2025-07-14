@@ -5,7 +5,13 @@ class JSEngineSimulation(Simulation):
 
     @property
     def supported_commands(self) -> list[str]:
-        return ['RUN']
+        return ['run']
 
     def do_sanity_check(self):
-        pass
+        self.executable.run(['-e', "print('bughog_sanity_check=ok')"])
+
+
+    # Script commands
+
+    def run(self, file_name: str):
+        self.executable.run([file_name], cwd=self.context)

@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from bughog.evaluation.experiment import Experiments
+from bughog.evaluation.experiments import Experiments
 from bughog.parameters import EvaluationParameters
 from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework

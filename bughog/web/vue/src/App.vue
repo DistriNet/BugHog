@@ -196,7 +196,11 @@ export default {
       immediate: true
     },
     "selected.subject": function (subject) {
-      console.log(subject)
+      if (subject === null) {
+        console.log("Unset subject")
+        return
+      }
+      console.log("Set subject: " + subject["name"])
       // db_collection gets updated too late, so updating manually.
       this.eval_params.subject_name = subject["name"];
       this.eval_params.db_collection = this.db_collection;
@@ -342,7 +346,7 @@ export default {
     update_subject_type(event) {
       const selected_type = event.target.value;
       this.eval_params.subject_type = selected_type;
-      this.eval_params.subject_name = null;
+      this.selected.subject = null;
       this.eval_params.project == null;
       this.unset_curr_project();
       this.selected.experiment == null;
@@ -573,7 +577,7 @@ export default {
             </div>
             <div class="pt-5 checkbox-item">
               <input
-                v-model="eval_params.only_release_revisions"
+                v-model="eval_params.only_release_commits"
                 :true-value="false"
                 :false-value="true"
                 type="checkbox">
