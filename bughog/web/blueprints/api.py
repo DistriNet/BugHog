@@ -13,6 +13,7 @@ from bughog.main import Main
 from bughog.parameters import MissingParametersException
 from bughog.subject import factory
 from bughog.subject.factory import get_subject_availability
+from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,8 @@ def start_evaluation():
 
     data = request.json.copy()
     try:
-        params = application_logic.evaluation_factory(data)
+        database_params = Global.get_database_params()
+        params = application_logic.evaluation_factory(data, database_params)
         __start_thread(__get_main().run, args=[params])
         return {'status': 'OK'}
     except MissingParametersException:
@@ -255,12 +257,21 @@ def create_experiment(subject_type: str, project: str):
         return {'status': 'NOK', 'msg': str(e)}
 
 
-# @api.route('/data/remove/', methods=['POST'])
-# def remove_datapoint():
-#     if (params := application_logic.TestParameters.from_dict(request.json)) is None:
-#         return {'status': 'NOK', 'msg': 'No parameters found'}
-#     __get_main().remove_datapoint(params)
-#     return {'status': 'OK'}
+@api.route('/data/remove/', methods=['POST'])
+def remove_datapoint():
+    if request.json is None:
+        return {'status': 'NOK', 'msg': 'No evaluation parameters found'}
+
+    data = request.json.copy()
+    database_params = Global.get_database_params()
+    params_list = application_logic.evaluation_factory(data, database_params)
+    if len(params_list) < 1:
+        return {'status': 'NOK', 'msg': 'Could not construct removal parameters'}
+    subject_type = params_list[0].subject_configuration.subject_type
+    subject_name = params_list[0].subject_configuration.subject_name
+    state = State.from_dict(subject_type, subject_name, data)
+    __get_main().remove_datapoint(params_list[0], state)
+    return {'status': 'OK'}
 
 
 # @api.route('/test/start/', methods=['POST'])

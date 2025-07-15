@@ -95,6 +95,7 @@ class RequestCollector(BaseCollector):
                 if key.startswith('bughog_')
             )
         self.data['req_vars'] = set((pair[0], pair[1]) for pair in request_variables)
+        self._parse_for_expected_output(parsed_queries)
 
     @property
     def raw_data(self) -> dict[str,list]:

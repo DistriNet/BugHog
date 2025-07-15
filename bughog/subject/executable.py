@@ -1,4 +1,3 @@
-from genericpath import isdir
 import logging
 import os
 import shutil
@@ -26,10 +25,12 @@ class Executable(ABC):
     def __init__(self, config: SubjectConfiguration, state: State) -> None:
         self.config = config
         self.state = state
-        self.__version = None
         self.origin = None
         self.status = ExecutableStatus.NEW
         self.error_message = None
+        self._runtime_flags = []
+        self._runtime_env_vars = {}
+        self.__version = None
         self.__process: Optional[subprocess.Popen] = None
 
     # #
@@ -157,6 +158,19 @@ class Executable(ABC):
             self.__version = self._get_version()
         return self.__version
 
+    def add_runtime_flags(self, flags: list[str]) -> None:
+        self._runtime_flags.extend(flags)
+
+    def add_runtime_env_vars(self, vars: list[str]) -> None:
+            for var in vars:
+                if '=' in var:
+                    key, value = var.split('=', 1)
+                    # Concatenate duplicated ASAN_OPTIONS values with a colon
+                    if key == 'ASAN_OPTIONS' and key in self._runtime_env_vars:
+                        self._runtime_env_vars[key] += ':' + value
+                    else:
+                        self._runtime_env_vars[key] = value
+
     def fetch(self):
         from bughog.database.mongo.executable_cache import ExecutableCache
 
@@ -195,11 +209,16 @@ class Executable(ABC):
         cli_command = self._get_cli_command() + experiment_specific_params
         logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
+            popen_args = {
+                'args': cli_command,
+                'stdout': file,
+                'stderr': file
+            }
             if cwd:
-                proc = subprocess.Popen(cli_command, stdout=file, stderr=file, cwd=cwd.path)
-            else:
-                proc = subprocess.Popen(cli_command, stdout=file, stderr=file)
-            self.__process = proc
+                popen_args['cwd'] = cwd.path
+            if self._runtime_env_vars:
+                popen_args['env'] = self._runtime_env_vars
+            self.__process = subprocess.Popen(**popen_args)
             time.sleep(timeout)
 
     def terminate(self):

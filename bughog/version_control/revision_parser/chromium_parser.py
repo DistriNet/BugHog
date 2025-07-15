@@ -27,7 +27,7 @@ class ChromiumRevisionParser(RevisionParser):
         html = request_html(url).decode()
         rev_number = self.__parse_revision_number(html)
         if rev_number is None:
-            logging.getLogger('bci').error(f"Could not parse revision number on '{url}'")
+            logger.error(f"Could not parse revision number on '{url}'")
             raise AttributeError(f"Could not parse revision number on '{url}'")
         assert re.match(r'[0-9]{1,7}', rev_number)
         return int(rev_number)

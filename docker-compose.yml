@@ -24,6 +24,7 @@ services:
       - BUGHOG_VERSION=${BUGHOG_VERSION}
     volumes:
       - ./config:/app/config:ro
+      - ./subject:/app/subject:rw
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw

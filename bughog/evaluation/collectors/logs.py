@@ -30,6 +30,8 @@ class LogCollector(BaseCollector):
             var = match[0]
             val = match[1]
             data.add((var, val))
+
+        self._parse_for_expected_output(data)
         self.data['log_vars'] = data
 
     @property

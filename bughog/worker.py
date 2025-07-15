@@ -9,7 +9,7 @@ from bughog.parameters import EvaluationParameters
 from bughog.version_control.state.base import State
 
 # This logger argument is set explicitly so when this file is ran as a script, it will still use the logger configuration
-logger = logging.getLogger('bci.worker')
+logger = logging.getLogger('bughog.worker')
 
 
 def __run_by_worker() -> None:
@@ -24,6 +24,9 @@ def __run_by_worker() -> None:
 
     params = EvaluationParameters.deserialize(sys.argv[1])
     state = State.deserialize(sys.argv[2])
+
+    logger.critical(params)
+    logger.critical(state)
     MongoDB().connect(params.database_params)
 
     logger.info('Worker started')

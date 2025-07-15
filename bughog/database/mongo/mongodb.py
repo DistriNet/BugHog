@@ -199,7 +199,7 @@ class MongoDB:
             "subject_config": params.subject_configuration.subject_setting,
             "experiment": params.evaluation_range.experiment_name,
             "result": {"$exists": True},
-            "state.type": "version" if params.evaluation_range.only_release_commits else "commit",
+            "state.type": "release" if params.evaluation_range.only_release_commits else "commit",
         }
         if boundary_states is not None:
             query["state.commit_nb"] = {
@@ -335,7 +335,7 @@ class MongoDB:
         query = {
             "experiment": evaluation_range.experiment_name,
             "subject_config": subject_config.subject_setting,
-            "state.type": "version" if releases else "commit",
+            "state.type": "release" if releases else "commit",
             "extensions": {"$size": len(subject_config.extensions) if subject_config.extensions else 0},
             "cli_options": {"$size": len(subject_config.cli_options) if subject_config.cli_options else 0},
         }

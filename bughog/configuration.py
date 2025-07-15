@@ -3,13 +3,14 @@ import logging.handlers
 import os
 import sys
 
-import bughog.database.mongo.container as container
+from bughog.database.mongo import container
 from bughog.parameters import DatabaseParameters
 
 logger = logging.getLogger(__name__)
 
 
 class Global:
+    __database_params = None
     custom_page_folder = '/app/experiments/pages'
 
     @staticmethod
@@ -62,28 +63,31 @@ class Global:
     @staticmethod
     def initialize_folders():
         for browser in ['chromium', 'firefox']:
-            if not os.path.isfile(f'/app/browser/binaries/{browser}/artisanal/meta.json'):
-                with open(f'/app/browser/binaries/{browser}/artisanal/meta.json', 'w') as file:
+            if not os.path.isfile(f'/app/subject/web_browser/executable/{browser}/artisanal/meta.json'):
+                with open(f'/app/subject/web_browser/executable/{browser}/artisanal/meta.json', 'w') as file:
                     file.write('{}')
 
     @staticmethod
     def get_database_params() -> DatabaseParameters:
+        if Global.__database_params:
+            return Global.__database_params
+
         required_database_params = ['BCI_MONGO_HOST', 'BCI_MONGO_USERNAME', 'BCI_MONGO_DATABASE', 'BCI_MONGO_PASSWORD']
         missing_database_params = [param for param in required_database_params if os.getenv(param) in ['', None]]
         binary_cache_limit = int(os.getenv('BCI_BINARY_CACHE_LIMIT', 0))
         if missing_database_params:
             logger.info(f'Could not find database parameters {missing_database_params}, using database container...')
-            return container.run(binary_cache_limit)
+            Global.__database_params = container.run(binary_cache_limit)
         else:
-            database_params = DatabaseParameters(
+            Global.__database_params = DatabaseParameters(
                 os.getenv('BCI_MONGO_HOST'),
                 os.getenv('BCI_MONGO_USERNAME'),
                 os.getenv('BCI_MONGO_PASSWORD'),
                 os.getenv('BCI_MONGO_DATABASE'),
                 binary_cache_limit,
             )
-            logger.info(f"Found database environment variables '{database_params}'")
-            return database_params
+            logger.info(f"Found database environment variables '{Global.__database_params}'")
+        return Global.__database_params
 
     @staticmethod
     def get_tag() -> str:

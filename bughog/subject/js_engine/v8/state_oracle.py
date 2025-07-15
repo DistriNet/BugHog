@@ -63,7 +63,7 @@ class V8StateOracle(StateOracle):
 
     # Public commits
 
-    def get_commit_url(self, _: int, commit_id: str) -> str:
+    def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
         return f'https://chromium.googlesource.com/v8/v8/+/{commit_id}'
 
     def has_publicly_available_commit_executable(self, commit_nb: int) -> bool:
@@ -96,7 +96,7 @@ class V8StateOracle(StateOracle):
         # Filter tags matching x.y.z format and starting with the given major
         filtered_tags = [tag for tag in all_release_tags if pattern.match(tag) and tag.startswith(f"{major_release}.")]
         if not filtered_tags:
-            return None
+            Exception(f'Could not find earliest tag for {major_release}.')
 
         def version_tuple(tag):
             return tuple(int(x) for x in tag.split("."))

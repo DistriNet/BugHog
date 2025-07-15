@@ -2,6 +2,7 @@ from typing import Optional
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.state.base import State
 from bughog.version_control.state.commit.base import CommitState
+from bughog.version_control.state_not_found import StateNotFound
 
 
 class ReleaseState(State):
@@ -20,9 +21,10 @@ class ReleaseState(State):
     @staticmethod
     def get_name(index: int) -> str:
         return f'v_{index}'
+
     @property
     def type(self) -> str:
-        return 'version'
+        return 'release'
 
     @property
     def index(self) -> int:
@@ -45,20 +47,6 @@ class ReleaseState(State):
         }
         return {k: v for k, v in fields.items() if v is not None}
 
-    # @staticmethod
-    # def from_dict(data: dict) -> State:
-    #     from bughog.version_control.state.release.chromium import ChromiumVersion
-    #     from bughog.version_control.state.release.firefox import FirefoxVersion
-
-    #     match data['browser_name']:
-    #         case 'chromium':
-    #             state = ChromiumVersion(major_version=data['major_version'])
-    #         case 'firefox':
-    #             state = FirefoxVersion(major_version=data['major_version'])
-    #         case _:
-    #             raise Exception(f'Unknown browser: {data["browser_name"]}')
-    #     return state
-
     def has_publicly_available_executable(self) -> bool:
         return self.oracle.has_publicly_available_release_executable(self.release_version)
 
@@ -66,7 +54,17 @@ class ReleaseState(State):
         return self.oracle.get_release_executable_download_urls(self.release_version)
 
     def convert_to_commit_state(self) -> CommitState:
-        return CommitState(self.oracle, commit_nb=self.commit_nb)
+        try:
+            return CommitState(self.oracle, commit_nb=self.commit_nb)
+        except StateNotFound:
+            offset = 1
+            while True:
+                for neighbor in (self.commit_nb - offset, self.commit_nb + offset):
+                    try:
+                        return CommitState(self.oracle, commit_nb=neighbor)
+                    except StateNotFound:
+                        continue
+                offset += 1
 
     def __str__(self):
         return f'VersionState(version: {self.release_version}, rev: {self._commit_nb})'

@@ -271,16 +271,18 @@ class PlotParameters(EvaluationParameters):
 
 
 @staticmethod
-def evaluation_factory(kwargs: ImmutableMultiDict | dict) -> list[EvaluationParameters]:
+def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> list[EvaluationParameters]:
     experiments = kwargs.get("tests")
-    if experiments is None:
-        raise MissingParametersException()
+    if not experiments:
+        experiments = [kwargs.get("experiment_to_plot")]
+        if not experiments:
+            raise MissingParametersException()
 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     evaluation_configuration = EvaluationConfiguration(kwargs["project"], kwargs["automation"], int(kwargs.get("seconds_per_visit", 5)))
     sequence_configuration = SequenceConfiguration(
-        int(kwargs.get("nb_of_containers")),
-        int(kwargs.get("sequence_limit")),
+        int(kwargs.get("nb_of_containers", 1)),
+        int(kwargs.get("sequence_limit", 50)),
         kwargs.get("search_strategy"),
     )
     evaluation_params_list = []
@@ -291,13 +293,12 @@ def evaluation_factory(kwargs: ImmutableMultiDict | dict) -> list[EvaluationPara
             __get_commit_nb_range(kwargs),
             kwargs.get("only_release_commits", False),
         )
-        database_collection = kwargs.get("db_collection")
         evaluation_params = EvaluationParameters(
             subject_configuration,
             evaluation_configuration,
             evaluation_range,
             sequence_configuration,
-            database_collection,
+            database_params,
         )
         evaluation_params_list.append(evaluation_params)
     return evaluation_params_list

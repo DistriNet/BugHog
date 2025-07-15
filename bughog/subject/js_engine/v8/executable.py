@@ -37,7 +37,7 @@ class V8Executable(Executable):
         raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")
 
     def _get_cli_command(self) -> list[str]:
-        return [self.executable_path, '--allow-natives-syntax']
+        return [self.executable_path] + self._runtime_flags
 
     def pre_evaluation_setup(self):
         self.fetch()

@@ -3,12 +3,13 @@ import os
 
 from bughog.configuration import Global
 from bughog.database.mongo.mongodb import MongoDB
+from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.evaluation.interaction import Interaction
 from bughog.parameters import EvaluationParameters
 from bughog.subject import factory
 from bughog.subject.executable import Executable, ExecutableStatus
-from bughog.subject.subject import Subject
+from bughog.subject.simulation import Simulation
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
 
@@ -27,15 +28,30 @@ class Evaluation:
             return
 
         subject = factory.get_subject_from_params(params)
+
+        experiment_folder = self.experiments.get_experiment_folder(params)
         executable = subject.create_executable(params.subject_configuration, state)
+        runtime_flags = self.experiments.framework.get_runtime_flags(experiment_folder)
+        runtime_env_vars = self.experiments.framework.get_runtime_env_vars(experiment_folder)
+        expected_output_regex = self.experiments.framework.get_expected_output_regex(experiment_folder)
+
+        collector = subject.create_result_collector()
+        collector.set_expected_output_regex(expected_output_regex)
+
+        executable.add_runtime_flags(runtime_flags)
+        executable.add_runtime_env_vars(runtime_env_vars)
         executable.pre_evaluation_setup()
+
+        simulation = subject.create_simulation(executable, experiment_folder, params)
+        script = self.experiments.get_interaction_script(experiment_folder)
 
         if self.should_stop:
             self.should_stop = False
             return
         try:
             executable.pre_experiment_setup()
-            result = self.conduct_experiment(subject, executable, params)
+            logger.info(f'Starting test for {params}')
+            result = self.conduct_experiment(executable, simulation, collector, script)
             MongoDB().store_result(params, result)
             logger.info(f'Experiment finalized: {params}')
         except Exception as e:
@@ -50,23 +66,16 @@ class Evaluation:
         executable.post_evaluation_cleanup()
         logger.debug('Evaluation finished')
 
-    def conduct_experiment(self, subject: Subject, executable: Executable, params: EvaluationParameters) -> ExperimentResult:
-        logger.info(f'Starting test for {params}')
-
-        collector = subject.create_result_collector()
-        collector.start()
-
+    def conduct_experiment(self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]) -> ExperimentResult:
         is_dirty = False
         tries_left = 3
-        experiment_folder = self.experiments.get_experiment_folder(params)
-        script = self.experiments.get_interaction_script(experiment_folder)
+        collector.start()
         try:
             sanity_check_successful = True
             poc_was_reproduced = False
             while not poc_was_reproduced and tries_left > 0:
                 tries_left -= 1
                 executable.pre_try_setup()
-                simulation = subject.create_simulation(executable, experiment_folder, params)
                 Interaction(script).execute(simulation)
                 executable.post_try_cleanup()
                 _, intermediary_variables = collector.collect_results()

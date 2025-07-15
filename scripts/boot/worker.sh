@@ -7,4 +7,5 @@ source /app/scripts/boot/setup_environment.sh
 rm -f /tmp/Xvfb.pid
 service xvfb start
 
-exec python3 /app/bci/worker.py "$@"
+uv sync
+exec python3 /app/bughog/worker.py "$@"

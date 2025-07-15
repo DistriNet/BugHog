@@ -107,7 +107,7 @@ class State(ABC):
             case 'commit':
                 return CommitState(oracle, commit_nb=data.get('commit_nb'), commit_id=data.get('commit_id'))
             case 'release':
-                return ReleaseState(oracle, release_version=data['release_version'])
+                return ReleaseState(oracle, release_version=data['major_version'])
             case _:
                 raise Exception(f'Unknown state type: {data["type"]}')
 

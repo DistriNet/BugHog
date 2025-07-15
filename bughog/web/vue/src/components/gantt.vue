@@ -117,7 +117,7 @@ export default {
                         var commit_nb = this.revision_source.data.commit_nb[index];
                         var subject_version = this.revision_source.data.subject_version[index];
                         var commit_url = this.revision_source.data.commit_url[index];
-                        var type = "revision";
+                        var type = "commit";
                     } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
                         var commit_nb = this.version_source.data.commit_nb[index];
                         var subject_version = this.version_source.data.subject_version[index];
@@ -149,8 +149,8 @@ export default {
 
             const hover = new Bokeh.HoverTool({
                 tooltips: [
-                ['Revision Number', '@commit_nb'],
-                ['Subject Version', '@subject_version']
+                ['Commit number', '@commit_nb'],
+                ['Subject version', '@subject_version']
                 ]
             });
             this.plot.add_tools(hover);

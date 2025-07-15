@@ -1,6 +1,5 @@
 import logging
 import re
-from typing import Optional
 
 import requests
 
@@ -24,7 +23,7 @@ class ChromiumStateOracle(StateOracle):
         html = util.request_html(url).decode()
         commit_nb = self._parse_commit_nb_from_googlesource(html)
         if commit_nb is None:
-            logging.getLogger("bci").error(f"Could not parse commit number on '{url}'")
+            logger.error(f"Could not parse commit number on '{url}'")
             raise AttributeError(f"Could not parse commit number on '{url}'")
         assert re.match(r"[0-9]{1,7}", commit_nb)
         return int(commit_nb)

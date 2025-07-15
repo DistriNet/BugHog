@@ -17,7 +17,7 @@ class V8Subject(JsEngine):
         """
         return {
             'name': 'v8',
-            'min_version': 1,
+            'min_version': 6,
             'max_version': self.state_oracle.get_most_recent_major_release_version()
         }
 

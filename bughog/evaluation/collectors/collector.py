@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from bughog.evaluation.collectors.base import BaseCollector
 
@@ -17,6 +18,10 @@ class Collector:
     def stop(self):
         for collector in self.subcollectors:
             collector.stop()
+
+    def set_expected_output_regex(self, regex: Optional[str]):
+        for collector in self.subcollectors:
+            collector.set_expected_output_regex(regex)
 
     def collect_results(self) -> tuple[dict,set[tuple[str,str]]]:
         raw_results = {}

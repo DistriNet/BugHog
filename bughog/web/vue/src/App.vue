@@ -81,6 +81,7 @@ export default {
         experiment: null,
         project: null,
         subject: null,
+        subject_type: null,
       },
       dialog: {
         new_experiment_name: null,
@@ -194,6 +195,13 @@ export default {
         this.set_curr_subject_type(val)
       },
       immediate: true
+    },
+    "selected.subject_type": function (subject_type) {
+      this.eval_params.subject_type = subject_type;
+      this.selected.subject = null;
+      this.eval_params.project == null;
+      this.unset_curr_project();
+      this.selected.experiment == null;
     },
     "selected.subject": function (subject) {
       if (subject === null) {
@@ -342,14 +350,6 @@ export default {
       } else {
         localStorage.setItem('theme', 'light');
       }
-    },
-    update_subject_type(event) {
-      const selected_type = event.target.value;
-      this.eval_params.subject_type = selected_type;
-      this.selected.subject = null;
-      this.eval_params.project == null;
-      this.unset_curr_project();
-      this.selected.experiment == null;
     },
     get_projects(cb) {
       if (this.eval_params.subject_type === null) {
@@ -531,8 +531,9 @@ export default {
       <!-- <p>[FRAMEWORK NAME + LOGO]</p> -->
       <p :class="{ '!font-bold !text-red-600' : fatal_error }">{{ banner_message }}</p>
 
-      <select class="w-64" @change="update_subject_type($event)">
-        <option v-for="subject_type in subject_availability" :key="subject_type.subject_type" :value="subject_type.subject_type">
+      <select id="subject-type-select" class="w-64 block p-2 border border-gray-300 rounded" v-model="selected.subject_type" :disabled="!subject_availability.length" >
+        <option value="" disabled>Select subject type</option>
+        <option v-for="subject_type in subject_availability" :key="subject_type.subject_type" :value="subject_type.subject_type" >
           {{ subject_type.subject_type }}
         </option>
       </select>

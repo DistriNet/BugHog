@@ -3,9 +3,9 @@ import logging
 import os
 
 from bughog import cli
-from bughog.version_control.states.base import State
+from bughog.version_control.state.base import State
 
-logger = logging.getLogger('bci')
+logger = logging.getLogger(__name__)
 
 META_FILE_NAME = 'meta.json'
 

@@ -67,6 +67,7 @@ RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
 # Install python packages
 COPY pyproject.toml /app/
 RUN uv sync
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Initiate PyAutoGUI
 RUN touch /root/.Xauthority && \

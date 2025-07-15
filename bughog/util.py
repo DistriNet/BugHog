@@ -101,8 +101,9 @@ def request_html(url: str):
         raise ResourceNotFound from e
 
 
-def request_json(url: str):
-    session = __get_session()
+@functools.lru_cache(maxsize=128)
+def request_json(url: str, token: Optional[str] = None) -> list | dict:
+    session = __get_session(token=token)
     logger.debug(f'Requesting {url}')
     try:
         with session.get(url, timeout=60, stream=True) as resp:
@@ -125,8 +126,13 @@ def request_final_url(url: str) -> str:
         raise ResourceNotFound from e
 
 
-def __get_session(max_retries: int = 3, backoff_factor: float = 2.0) -> Session:
+def __get_session(token: Optional[str] = None, max_retries: int = 3, backoff_factor: float = 2.0) -> Session:
     session = Session()
+    if token:
+        session.headers.update({
+            'Authorization': f'Bearer {token}'
+        })
+
     retries = Retry(
         total=max_retries,
         backoff_factor=backoff_factor,

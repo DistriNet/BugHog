@@ -1,6 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from bughog.evaluation.file_structure import Folder
 
@@ -27,6 +28,15 @@ class EvaluationFramework(ABC):
     @abstractmethod
     def create_empty_experiment(self, project: str, experiment: str):
         pass
+
+    def get_runtime_flags(self, experiment_folder: Folder) -> list[str]:
+        return []
+
+    def get_runtime_env_vars(self, experiment_folder: Folder) -> list[str]:
+        return []
+
+    def get_expected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
+        return None
 
     def experiment_sanity_check_succeeded(self, result_variables: set[tuple[str, str]]) -> bool:
         for variable, value in result_variables:

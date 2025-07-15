@@ -104,7 +104,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=bci --cov-report=xml --cov-report=term --junitxml=junit.xml"
+addopts = "--cov=bughog --cov-report=xml --cov-report=term --junitxml=junit.xml"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
