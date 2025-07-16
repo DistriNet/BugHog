@@ -9,7 +9,7 @@ from bughog import util
 from bughog.browser.automation.terminal import TerminalAutomation
 from bughog.browser.binary.binary import Binary
 from bughog.browser.configuration.profile import remove_profile_execution_folder
-from bughog.parameters import EvaluationConfiguration, SubjectConfiguration
+from bughog.parameters import SubjectConfiguration
 from bughog.version_control.states.base import State
 
 EXECUTION_PARENT_FOLDER = '/tmp'
@@ -88,7 +88,7 @@ class Browser:
 
     @staticmethod
     def get_browser(
-        browser_config: SubjectConfiguration, eval_config: EvaluationConfiguration, state: State
+        browser_config: SubjectConfiguration, state: State
     ) -> Browser:
         from bughog.browser.configuration.chromium import Chromium
         from bughog.browser.configuration.firefox import Firefox

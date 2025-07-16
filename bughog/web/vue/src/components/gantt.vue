@@ -121,7 +121,7 @@ export default {
                     } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
                         var commit_nb = this.version_source.data.commit_nb[index];
                         var subject_version = this.version_source.data.subject_version[index];
-                        var type = "version";
+                        var type = "release";
                     } else {
                         console.log("Nothing interesting was selected...");
                         return;

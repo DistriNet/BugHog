@@ -1,5 +1,4 @@
 from bughog.parameters import (
-    EvaluationConfiguration,
     EvaluationParameters,
     EvaluationRange,
     SequenceConfiguration,
@@ -16,15 +15,9 @@ def get_default_browser_configuration(browser_name: str) -> SubjectConfiguration
     )
 
 
-def get_default_evaluation_configuration() -> EvaluationConfiguration:
-    return EvaluationConfiguration(
-        'IntegrationTests',
-        'terminal',
-    )
-
-
 def get_default_evaluation_range(mech_group: str, only_releases: bool) -> EvaluationRange:
     return EvaluationRange(
+        'IntegrationTests',
         mech_group,
         (20, 136),
         None,
@@ -45,7 +38,6 @@ def get_default_evaluation_parameters(
 ) -> EvaluationParameters:
     return EvaluationParameters(
         get_default_browser_configuration(browser_name),
-        get_default_evaluation_configuration(),
         get_default_evaluation_range(mech_group, only_releases),
         get_default_sequence_config(sequence_limit),
         'integrationtests_' + browser_name,

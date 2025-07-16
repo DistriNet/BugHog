@@ -16,19 +16,9 @@ class EvaluationParameters:
     """
 
     subject_configuration: SubjectConfiguration
-    evaluation_configuration: EvaluationConfiguration
     evaluation_range: EvaluationRange
     sequence_configuration: SequenceConfiguration
     database_params: DatabaseParameters
-
-    # def create_experiment_params(self, state_params: StateParameters) -> ExperimentParameters:
-    #     return ExperimentParameters(
-    #         self.subject_configuration,
-    #         self.evaluation_configuration,
-    #         state_params,
-    #         self.evaluation_range.experiment_name,
-    #         self.database_params,
-    #     )
 
     def serialize(self) -> str:
         pickled_bytes = pickle.dumps(self, pickle.HIGHEST_PROTOCOL)
@@ -42,7 +32,6 @@ class EvaluationParameters:
     def to_plot_parameters(self, experiment_name: str, dirty_results_allowed: bool = True) -> PlotParameters:
         return PlotParameters(
             self.subject_configuration,
-            self.evaluation_configuration,
             self.evaluation_range,
             self.sequence_configuration,
             self.database_params,
@@ -68,21 +57,8 @@ class SubjectConfiguration:
 
 
 @dataclass(frozen=True)
-class EvaluationConfiguration:
-    project: str
-    automation: str
-    seconds_per_visit: int = 5
-
-    def to_dict(self) -> dict:
-        return asdict(self)
-
-    @staticmethod
-    def from_dict(data: dict) -> EvaluationConfiguration:
-        return EvaluationConfiguration(data["project"], data["automation"], data["seconds_per_visit"])
-
-
-@dataclass(frozen=True)
 class EvaluationRange:
+    project_name: str
     experiment_name: str
     major_version_range: tuple[int, int] | None = None
     commit_nb_range: tuple[int, int] | None = None
@@ -129,92 +105,6 @@ class DatabaseParameters:
         return f"{self.username}@{self.host}:27017/{self.database_name}"
 
 
-# @dataclass(frozen=True)
-# class ExperimentParameters:
-#     """
-#     Parameters that define a single experiment.
-#     """
-#     subject_configuration: SubjectConfiguration
-#     evaluation_configuration: EvaluationConfiguration
-#     state_params: StateParameters
-#     experiment: str
-#     database_params: DatabaseParameters
-
-#     def _to_dict(self):
-#         return {
-#             'subject_configuration': self.subject_configuration.to_dict(),
-#             'evaluation_configuration': self.evaluation_configuration.to_dict(),
-#             'state': self.state_params,
-#             'experiment': self.experiment,
-#             'database_params': self.database_params,
-#         }
-
-#     def create_test_result_with(
-#         self, subject_version: str, binary_origin: str, data: dict, dirty: bool
-#     ) -> ExperimentResult:
-#         return ExperimentResult(self, subject_version, binary_origin, data, dirty)
-
-#     @staticmethod
-#     def from_dict(data) -> Optional[ExperimentParameters]:
-#         if data is None:
-#             return None
-#         subject_configuration = SubjectConfiguration.from_dict(data)
-#         evaluation_configuration = EvaluationConfiguration.from_dict(data)
-#         state = StateParameters.from_dict(data)
-#         experiment = data['experiment']
-#         database_collection = data['db_collection']
-#         return ExperimentParameters(
-#             subject_configuration, evaluation_configuration, state, experiment, database_collection
-#         )
-
-#     def serialize(self) -> str:
-#         return json.dumps(self._to_dict())
-
-#     def __repr__(self) -> str:
-#         param_dict = self._to_dict()
-#         # Mask password
-#         param_dict['database_connection_params']['password'] = '*'
-#         return json.dumps(param_dict)
-
-#     @staticmethod
-#     def get_database_params(string: str) -> DatabaseParameters:
-#         data = json.loads(string)
-#         return DatabaseParameters.from_dict(data['database_connection_params'])
-
-#     @staticmethod
-#     def deserialize(string: str) -> ExperimentParameters:
-#         data = json.loads(string)
-#         subject_config = SubjectConfiguration.from_dict(data['subject_configuration'])
-#         eval_config = EvaluationConfiguration.from_dict(data['evaluation_configuration'])
-#         state = StateParameters.from_dict(data['state'])
-#         experiment = data['experiment']
-#         database_params = DatabaseParameters.from_dict(data['database_params'])
-#         return ExperimentParameters(subject_config, eval_config, state, experiment, database_params)
-
-#     def __str__(self) -> str:
-#         return f'Eval({self.state_params}: [{", ".join(self.experiment)}])'
-
-
-# @dataclass(frozen=True)
-# class ExperimentResult:
-#     params: ExperimentParameters
-#     subject_version: str
-#     binary_origin: str
-#     data: dict
-#     is_dirty: bool = False
-#     driver_version: str | None = None
-
-#     @property
-#     def padded_subject_version(self):
-#         padding_target = 4
-#         padded_version = []
-#         for sub in self.subject_version.split('.'):
-#             if len(sub) > padding_target:
-#                 raise AttributeError(f"Version '{self.subject_version}' is too big to be padded")
-#             padded_version.append('0' * (padding_target - len(sub)) + sub)
-#         return '.'.join(padded_version)
-
-
 @dataclass(frozen=True)
 class PlotParameters(EvaluationParameters):
     experiment: Optional[str]
@@ -253,41 +143,23 @@ class PlotParameters(EvaluationParameters):
     #    )
 
 
-# @dataclass(frozen=True)
-# class StateParameters:
-#     type: Literal['release', 'commit']
-#     version_or_commit: int
-
-#     def __post_init__(self):
-#         if self.type not in ('release', 'commit'):
-#             raise AttributeError("Type should be either 'release' or 'commit'")
-
-#     def to_dict(self) -> dict:
-#         return asdict(self)
-
-#     @staticmethod
-#     def from_dict(data) -> StateParameters:
-#         return StateParameters(data['type'], data['version_or_commit'])
-
 
 @staticmethod
 def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> list[EvaluationParameters]:
-    experiments = kwargs.get("tests")
-    if not experiments:
-        experiments = [kwargs.get("experiment_to_plot")]
-        if not experiments:
-            raise MissingParametersException()
+    experiments = set(x for x in kwargs.get("tests", []) + [kwargs.get("experiment_to_plot")] if x is not None)
+    if len(experiments) == 0:
+        raise MissingParametersException()
 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
-    evaluation_configuration = EvaluationConfiguration(kwargs["project"], kwargs["automation"], int(kwargs.get("seconds_per_visit", 5)))
     sequence_configuration = SequenceConfiguration(
         int(kwargs.get("nb_of_containers", 1)),
         int(kwargs.get("sequence_limit", 50)),
         kwargs.get("search_strategy"),
     )
     evaluation_params_list = []
-    for experiment in experiments:
+    for experiment in sorted(experiments):
         evaluation_range = EvaluationRange(
+            kwargs["project"],
             experiment,
             __get_version_range(kwargs),
             __get_commit_nb_range(kwargs),
@@ -295,7 +167,6 @@ def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> lis
         )
         evaluation_params = EvaluationParameters(
             subject_configuration,
-            evaluation_configuration,
             evaluation_range,
             sequence_configuration,
             database_params,

@@ -10,7 +10,6 @@ from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
 
 
-
 class BrowserSimulation(Simulation):
     def __init__(self, executable: Executable, folder: Folder, params: EvaluationParameters):
         super().__init__(executable, folder, params)

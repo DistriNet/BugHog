@@ -103,6 +103,7 @@ Requesting information
 def init_websocket(ws):
     logger.info('Client connected')
     Clients.add_client(ws)
+    ws.send(json.dumps({'status': 'OK', 'msg': 'Connected to BugHog backend.'}))
     while True:
         message = ws.receive()
         if message is None:
@@ -121,7 +122,6 @@ def init_websocket(ws):
                 __get_main().push_info(ws, *requested_variables)
         except ValueError:
             logger.warning('Ignoring invalid message from client.')
-    ws.send('Connected to BugHog')
 
 
 @api.route('/subject/', methods=['GET'])
@@ -138,22 +138,6 @@ def get_system_info():
 def log():
     # TODO: emit logs of workers in central log
     return {'status': 'OK'}
-
-
-@api.route('/data/', methods=['PUT'])
-def data_source():
-    if request.json is None:
-        return {'status': 'NOK', 'msg': 'No data parameters found'}
-
-    params = request.json.copy()
-    plot_params = PlotParameters.from_dict(params)
-    if missing_params := PlotFactory.validate_params(plot_params):
-        return {'status': 'NOK', 'msg': f'Missing plot parameters: {missing_params}'}
-    return {
-        'status': 'OK',
-        'revision': PlotFactory.get_plot_commit_data(params),
-        'version': PlotFactory.get_plot_release_data(params),
-    }
 
 
 @api.route('/poc/<string:subject_type>/', methods=['GET'])
