@@ -159,7 +159,7 @@ def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> lis
     evaluation_params_list = []
     for experiment in sorted(experiments):
         evaluation_range = EvaluationRange(
-            kwargs["project"],
+            kwargs["project_name"],
             experiment,
             __get_version_range(kwargs),
             __get_commit_nb_range(kwargs),

@@ -145,7 +145,7 @@ class MongoDB:
             "cli_options": subject_config.cli_options,
             "extensions": subject_config.extensions,
             "state": result.state,
-            "project": eval_params.evaluation_configuration.project,
+            "project": eval_params.evaluation_range.project_name,
             "experiment": eval_params.evaluation_range.experiment_name,
         }
         # if browser_config.subject_name == 'firefox':

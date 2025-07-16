@@ -39,6 +39,15 @@ class JSEngineEvaluationFramework(EvaluationFramework):
                     return match.group(1).strip()
         return None
 
+    def get_unexpected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
+        poc_path = os.path.join(experiment_folder.path, 'poc.js')
+        with open(poc_path, 'r') as poc:
+            for line in poc:
+                match = re.search(r'^//\s*bughog_unexpected_output:\s*(.*)$', line)
+                if match:
+                    return match.group(1).strip()
+        return None
+
     def get_default_experiment_script(self) -> list[str]:
         return ['run poc.js']
 

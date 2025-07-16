@@ -6,7 +6,6 @@ import threading
 from flask import Blueprint, current_app, request
 
 import bughog.parameters as application_logic
-from bughog.analysis.plot_factory import PlotFactory
 from bughog.app import sock
 from bughog.configuration import Global, Loggers
 from bughog.main import Main

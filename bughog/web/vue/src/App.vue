@@ -145,8 +145,9 @@ export default {
     },
     "selected.subject": function (subject) {
       if (subject === null) {
-        console.log("Unset subject")
-        return
+        console.log("Unset subject");
+        this.reset_slider();
+        return;
       }
       console.log("Set subject: " + subject["name"])
       this.evalParams.subject_name = subject["name"];
@@ -316,7 +317,7 @@ export default {
         });
     },
     propagate_new_params() {
-      debugger;
+      console.log(this.evalParams)
       if (this.missing_plot_params.length === 0) {
         console.log('Propagating parameter change');
         this.send_with_socket(
@@ -350,12 +351,8 @@ export default {
     },
     set_curr_subject_type(subject_type) {
       this.set_curr_project(null);
-      this.reset_slider();
+      this.selected.subject = null;
       this.selected.experiment == null;
-      this.send_with_socket({
-        "select_subject_type": subject_type
-      })
-      this.evalParams.subject_name = null;
       this.get_projects();
     },
     set_curr_project(project) {

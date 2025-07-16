@@ -38,6 +38,9 @@ class EvaluationFramework(ABC):
     def get_expected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
         return None
 
+    def get_unexpected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
+        return None
+
     def experiment_sanity_check_succeeded(self, result_variables: set[tuple[str, str]]) -> bool:
         for variable, value in result_variables:
             if variable.lower() == 'sanity_check' and value.lower() == 'ok':

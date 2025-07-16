@@ -138,7 +138,7 @@ class Experiments:
         raise Exception(f"Could not find project '{project_name}'")
 
     def get_experiment_folder(self, params: EvaluationParameters) -> Folder:
-        project_name = params.evaluation_configuration.project
+        project_name = params.evaluation_range.project_name
         experiment_name = params.evaluation_range.experiment_name
         project = self.__get_project_folder(project_name)
         for experiment in project.subfolders:

@@ -33,10 +33,13 @@ class Evaluation:
         executable = subject.create_executable(params.subject_configuration, state)
         runtime_flags = self.experiments.framework.get_runtime_flags(experiment_folder)
         runtime_env_vars = self.experiments.framework.get_runtime_env_vars(experiment_folder)
-        expected_output_regex = self.experiments.framework.get_expected_output_regex(experiment_folder)
 
         collector = subject.create_result_collector()
-        collector.set_expected_output_regex(expected_output_regex)
+
+        if regex := self.experiments.framework.get_expected_output_regex(experiment_folder):
+            collector.set_expected_output_regex(regex)
+        if regex := self.experiments.framework.get_unexpected_output_regex(experiment_folder):
+            collector.set_unexpected_output_regex(regex)
 
         executable.add_runtime_flags(runtime_flags)
         executable.add_runtime_env_vars(runtime_env_vars)

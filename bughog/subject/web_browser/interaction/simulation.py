@@ -92,7 +92,7 @@ class BrowserSimulation(Simulation):
         gui.hotkey(*keys)
 
     def screenshot(self, filename: str):
-        project_name = self.params.evaluation_configuration.project
+        project_name = self.params.evaluation_range.project_name
         experiment_name = self.params.evaluation_range.experiment_name
         executable_name = f'{self.executable.executable_name}-{self.executable.version}'
         file_path = os.path.join('/app/logs/screenshots/', f'{project_name}-{experiment_name}-{self.executable.state.name}-{executable_name}.jpg')

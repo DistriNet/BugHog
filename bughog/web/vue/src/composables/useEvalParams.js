@@ -32,7 +32,7 @@ export function useEvalParams() {
     const persist = {
       subject_type: val.subject_type,
       subject_name: val.subject_name,
-      project: val.project_name,
+      project_name: val.project_name,
       // Add more fields as needed
     }
     localStorage.setItem('eval_params_persisted', JSON.stringify(persist))
