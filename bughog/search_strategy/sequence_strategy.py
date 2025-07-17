@@ -1,27 +1,28 @@
 import logging
+import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
-from bughog.version_control.state_factory import StateFactory
 from bughog.version_control.state.base import State
+from bughog.version_control.state_factory import StateFactory
 
 logger = logging.getLogger(__name__)
 
 
 class SequenceStrategy:
-    def __init__(self, state_factory: StateFactory, limit: int, completed_states: Optional[list[State]] = None) -> None:
+    def __init__(self, state_factory: StateFactory, limit: int, considered_states: Optional[list[State]] = None) -> None:
         """
         Initializes the sequence strategy.
 
         :param state_factory: The factory to create new states.
         :param limit: The maximum number of states to evaluate. 0 means no limit.
-        :param completed_states: States that have already been returned.
+        :param considered_states: States that have already been returned.
         """
         self._state_factory = state_factory
         self._limit = limit
         self._lower_state, self._upper_state = self.__create_available_boundary_states()
-        self._completed_states = completed_states if completed_states else []
+        self._considered_states = considered_states if considered_states else []
 
     @abstractmethod
     def next(self) -> State:
@@ -32,31 +33,40 @@ class SequenceStrategy:
 
     def _add_state(self, elem: State) -> None:
         """
-        Adds an element to the list of evaluated states if not already a member, and sorts the list.
+        Adds an element to the list of considered states if not already a member, and sorts the list.
         """
-        if elem not in self._completed_states:
-            self._completed_states.append(elem)
-            self._completed_states.sort(key=lambda x: x.index)
+        if elem not in self._considered_states:
+            self._considered_states.append(elem)
+            self._considered_states.sort(key=lambda x: x.index)
 
-    def _fetch_evaluated_states(self) -> None:
+    def _fetch_evaluated_states(self, wait=True) -> None:
         """
-        Fetches all evaluated states from the database and stores them in the list of evaluated states.
+        Fetches all evaluated states from the database and stores them in the list of considered states.
+        If wait is True, it retries until all considered states have non-None result_variables (e.i., all ongoing experiments have finished.).
+        It will resume anyway after 10 retries.
         """
-        fetched_states = self._state_factory.create_evaluated_states()
-        for state in self._completed_states:
+        fetched_states = []
+        if wait:
+            for _ in range(10):
+                fetched_states = self._state_factory.create_evaluated_states()
+                if all(state in fetched_states for state in self._considered_states):
+                    break
+                time.sleep(3)
+        else:
+            fetched_states = self._state_factory.create_evaluated_states()
+
+        for state in self._considered_states:
             if state not in fetched_states:
                 fetched_states.append(state)
         fetched_states.sort(key=lambda x: x.index)
-        self._completed_states = fetched_states
+        self._considered_states = fetched_states
 
     def __create_available_boundary_states(self) -> tuple[State, State]:
         first_state, last_state = self._state_factory.boundary_states
         available_first_state = self._find_closest_state_with_available_binary(first_state, (first_state, last_state))
         available_last_state = self._find_closest_state_with_available_binary(last_state, (first_state, last_state))
         if available_first_state is None or available_last_state is None:
-            raise AttributeError(
-                f"Could not find boundary states for '{self._lower_state.index}' and '{self._upper_state.index}'"
-            )
+            raise AttributeError(f"Could not find boundary states for '{self._lower_state.index}' and '{self._upper_state.index}'")
         return available_first_state, available_last_state
 
     def _find_closest_state_with_available_binary(self, target: State, boundaries: tuple[State, State]) -> State | None:

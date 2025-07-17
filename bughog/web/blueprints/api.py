@@ -247,13 +247,16 @@ def remove_datapoint():
 
     data = request.json.copy()
     database_params = Global.get_database_params()
-    params_list = application_logic.evaluation_factory(data, database_params)
-    if len(params_list) < 1:
-        return {'status': 'NOK', 'msg': 'Could not construct removal parameters'}
-    subject_type = params_list[0].subject_configuration.subject_type
-    subject_name = params_list[0].subject_configuration.subject_name
-    state = State.from_dict(subject_type, subject_name, data)
-    __get_main().remove_datapoint(params_list[0], state)
+    try:
+        params_list = application_logic.evaluation_factory(data, database_params)
+        if len(params_list) < 1:
+            return {'status': 'NOK', 'msg': 'Could not construct removal parameters'}
+        subject_type = params_list[0].subject_configuration.subject_type
+        subject_name = params_list[0].subject_configuration.subject_name
+        state = State.from_dict(subject_type, subject_name, data)
+        __get_main().remove_datapoint(params_list[0], state)
+    except MissingParametersException:
+        return {'status': 'NOK', 'msg': 'Could not remove datapoint due to missing parameters'}
     return {'status': 'OK'}
 
 

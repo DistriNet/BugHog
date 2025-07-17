@@ -73,29 +73,36 @@ class Evaluation:
         is_dirty = False
         tries_left = 3
         collector.start()
-        try:
-            sanity_check_successful = True
-            poc_was_reproduced = False
-            while not poc_was_reproduced and tries_left > 0:
-                tries_left -= 1
-                executable.pre_try_setup()
-                Interaction(script).execute(simulation)
-                executable.post_try_cleanup()
-                _, intermediary_variables = collector.collect_results()
-                sanity_check_successful &= self.experiments.framework.experiment_sanity_check_succeeded(intermediary_variables)
-                poc_was_reproduced = ExperimentResult.poc_is_reproduced(intermediary_variables)
-            if not poc_was_reproduced and not sanity_check_successful:
-                raise FailedSanityCheck()
-        except FailedSanityCheck:
-            logger.error('Evaluation sanity check has failed', exc_info=True)
-            is_dirty = True
-        except Exception as e:
-            logger.error(f'An error during evaluation: {e}', exc_info=True)
-            is_dirty = True
-        finally:
-            logger.debug(f'Evaluation finished with {tries_left} tries left')
+        poc_was_reproduced = False
+
+        # Perform experiment with retries
+        while not poc_was_reproduced and tries_left > 0:
+            tries_left -= 1
+            executable.pre_try_setup()
+            try:
+                Interaction(script).do_experiment(simulation)
+            except Exception as e:
+                logger.error(f'An error during the experiment: {e}', exc_info=True)
+                is_dirty = True
+            executable.post_try_cleanup()
+            _, intermediary_variables = collector.collect_results()
+            poc_was_reproduced = ExperimentResult.poc_is_reproduced(intermediary_variables)
+        collector.stop()
+        raw_results, result_variables = collector.collect_results()
+
+        # Perform sanity check if not reproduced
+        if not poc_was_reproduced:
+            collector.start()
+            try:
+                Interaction(script).do_sanity_check(simulation)
+            except Exception as e:
+                logger.error(f'An error during the sanity check: {e}', exc_info=True)
             collector.stop()
-            raw_results, result_variables = collector.collect_results()
+            _, sanity_check_variables = collector.collect_results()
+            if ExperimentResult.poc_is_dirty(sanity_check_variables):
+                is_dirty = True
+
+        logger.debug(f'Evaluation finished with {tries_left} tries left')
         return ExperimentResult(executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty)
 
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:

@@ -41,12 +41,6 @@ class EvaluationFramework(ABC):
     def get_unexpected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
         return None
 
-    def experiment_sanity_check_succeeded(self, result_variables: set[tuple[str, str]]) -> bool:
-        for variable, value in result_variables:
-            if variable.lower() == 'sanity_check' and value.lower() == 'ok':
-                return True
-        return False
-
     def get_default_file_content(self, file_type: str) -> bytes:
         default_file_content_file = os.path.join(self.experiment_root_folder, '_default_files', file_type)
         if not os.path.isdir(default_file_content_file):

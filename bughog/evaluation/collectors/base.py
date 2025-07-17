@@ -1,12 +1,12 @@
 import logging
 import re
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
-class BaseCollector:
+class BaseCollector(ABC):
     def __init__(self) -> None:
         self.data = {}
         self.expected_output_regex = None

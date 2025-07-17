@@ -5,8 +5,8 @@ from typing import Optional
 
 from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.sequence_strategy import SequenceFinished
-from bughog.version_control.state_factory import StateFactory
 from bughog.version_control.state.base import State
+from bughog.version_control.state_factory import StateFactory
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +18,14 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
     It stops when there are no more states to evaluate between two states with different outcomes.
     """
 
-    def __init__(self, state_factory: StateFactory, completed_states: Optional[list[State]] = None) -> None:
+    def __init__(self, state_factory: StateFactory, considered_states: Optional[list[State]] = None) -> None:
         """
         Initializes the search strategy.
 
         :param state_factory: The factory to create new states.
-        :param completed_states: States that have already been returned.
+        :param considered_states: States that have already been returned.
         """
-        super().__init__(state_factory, 0, completed_states=completed_states)
+        super().__init__(state_factory, 0, considered_states=considered_states)
 
     def next(self) -> State:
         """
@@ -34,13 +34,13 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         # Fetch all evaluated states
         self._fetch_evaluated_states()
 
-        if self._limit and self._limit <= len(self._completed_states):
+        if self._limit and self._limit <= len(self._considered_states):
             raise SequenceFinished()
 
-        if self._lower_state not in self._completed_states:
+        if self._lower_state not in self._considered_states:
             self._add_state(self._lower_state)
             return self._lower_state
-        if self._upper_state not in self._completed_states:
+        if self._upper_state not in self._considered_states:
             self._add_state(self._upper_state)
             return self._upper_state
 
@@ -58,7 +58,7 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         """
         Returns the next pair of states to split.
         """
-        states = self._completed_states
+        states = self._considered_states
         # Remove all states that are confined by states with the same result, ignoring resultless and dirty states.
         states_to_remove = []
         for i, state in enumerate(states):
@@ -69,12 +69,12 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
             if not state.has_dirty_or_no_result():
                 continue
             preceding_states = [state for state in states[:i] if not state.has_dirty_or_no_result()]
-            succeeding_states = [state for state in states[i+1:] if not state.has_dirty_or_no_result()]
+            succeeding_states = [state for state in states[i + 1 :] if not state.has_dirty_or_no_result()]
             # Normally, there should always be at least one preceding and one succeeding state, because we evaluate
             # border states first. However, we never want this function to fail and thus double check this.
             if len(preceding_states) == 0 or len(succeeding_states) == 0:
                 continue
-            if preceding_states[-1].has_same_outcome(succeeding_states[0]):
+            if state.has_same_outcome(preceding_states[-1]) and state.has_same_outcome(succeeding_states[0]):
                 states_to_remove.append(state)
         for state in states_to_remove:
             states.remove(state)
@@ -107,4 +107,4 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
 
         :param bgb_sequence: The BGB sequence object from which the state will be used to create the BGB search object.
         """
-        return BiggestGapBisectionSearch(bgb_sequence._state_factory, completed_states=bgb_sequence._completed_states)
+        return BiggestGapBisectionSearch(bgb_sequence._state_factory, considered_states=bgb_sequence._considered_states)

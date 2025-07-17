@@ -13,10 +13,12 @@ class Interaction:
     def __init__(self, script: list[str]) -> None:
         self.script = script
 
-    def execute(self, simulation: Simulation) -> None:
+    def do_experiment(self, simulation: Simulation) -> None:
         if self._interpret(simulation):
             simulation.sleep(str(simulation.executable.navigation_sleep_duration))
-            simulation.do_sanity_check()
+
+    def do_sanity_check(self, simulation: Simulation) -> None:
+        simulation.do_sanity_check()
 
     def _interpret(self, simulation: Simulation) -> bool:
         try:

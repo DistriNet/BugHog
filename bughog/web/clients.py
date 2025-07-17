@@ -6,7 +6,7 @@ from simple_websocket import Server
 
 from bughog.analysis.plot_factory import PlotFactory
 from bughog.configuration import Global
-from bughog.parameters import evaluation_factory
+from bughog.parameters import MissingParametersException, evaluation_factory
 from bughog.subject import factory
 
 logger = logging.getLogger(__name__)
@@ -65,31 +65,36 @@ class Clients:
     @staticmethod
     def push_results(ws_client: Server):
         if params := Clients.__clients.get(ws_client, None):
-            params['experiments'] = [params['experiment_to_plot']]
-            eval_params = evaluation_factory(params, Global.get_database_params())
-            if len(eval_params) < 1:
+            if params.get('experiment_to_plot') is None:
                 return
-            plot_params = eval_params[0].to_plot_parameters(params['experiment_to_plot'])
+            params['experiments'] = [params['experiment_to_plot']]
+            try:
+                eval_params = evaluation_factory(params, Global.get_database_params())
+                if len(eval_params) < 1:
+                    return
+                plot_params = eval_params[0].to_plot_parameters(params['experiment_to_plot'])
 
-            if PlotFactory.validate_params(plot_params):
-                revision_data = None
-                version_data = None
-            else:
-                revision_data = PlotFactory.get_plot_commit_data(plot_params)
-                version_data = PlotFactory.get_plot_release_data(plot_params)
+                if PlotFactory.validate_params(plot_params):
+                    revision_data = None
+                    version_data = None
+                else:
+                    revision_data = PlotFactory.get_plot_commit_data(plot_params)
+                    version_data = PlotFactory.get_plot_release_data(plot_params)
 
-            ws_client.send(
-                json.dumps(
-                    {
-                        'update': {
-                            'plot_data': {
-                                'revision_data': revision_data,
-                                'version_data': version_data,
+                ws_client.send(
+                    json.dumps(
+                        {
+                            'update': {
+                                'plot_data': {
+                                    'revision_data': revision_data,
+                                    'version_data': version_data,
+                                }
                             }
                         }
-                    }
+                    )
                 )
-            )
+            except MissingParametersException:
+                logger.error('Could not update plot due to missing parameters.')
 
     @staticmethod
     def push_results_to_all():

@@ -24,6 +24,8 @@ class ExperimentResult:
 
     @staticmethod
     def poc_is_dirty(result_variables: set[tuple[str,str]]) -> bool:
+        if ExperimentResult.poc_is_reproduced(result_variables):
+            return False
         for key, value in result_variables:
             if key.lower() == 'sanity_check' and value.lower() == 'ok':
                 return False
