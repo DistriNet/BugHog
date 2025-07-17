@@ -65,7 +65,7 @@ class Clients:
     @staticmethod
     def push_results(ws_client: Server):
         if params := Clients.__clients.get(ws_client, None):
-            params['tests'] = [params['experiment_to_plot']]
+            params['experiments'] = [params['experiment_to_plot']]
             eval_params = evaluation_factory(params, Global.get_database_params())
             if len(eval_params) < 1:
                 return

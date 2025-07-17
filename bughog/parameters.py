@@ -146,7 +146,7 @@ class PlotParameters(EvaluationParameters):
 
 @staticmethod
 def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> list[EvaluationParameters]:
-    experiments = set(x for x in kwargs.get("tests", []) + [kwargs.get("experiment_to_plot")] if x is not None)
+    experiments = set(x for x in kwargs.get("experiments", []) + [kwargs.get("experiment_to_plot")] if x is not None)
     if len(experiments) == 0:
         raise MissingParametersException()
 
