@@ -115,7 +115,7 @@ class SequenceStrategy:
         Return the closest state with an available binary.
         """
         try:
-            states = target.get_previous_and_next_state_with_binary()
+            states = target.get_previous_and_next_state_with_executable()
             states = [state for state in states if state is not None]
             ordered_states = sorted(states, key=lambda x: abs(target.commit_nb - x.commit_nb))
 

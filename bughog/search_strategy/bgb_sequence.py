@@ -25,13 +25,13 @@ class BiggestGapBisectionSequence(SequenceStrategy):
         self._unavailability_gap_pairs: set[tuple[State, State]] = set()
         """Tuples in this list are **strict** boundaries of ranges without any available binaries."""
 
-    def next(self) -> State:
+    def next(self, wait=True) -> State:
         """
         Returns the next state to evaluate.
         """
         # Fetch all evaluated states on the first call
         if not self._considered_states:
-            self._fetch_evaluated_states()
+            self._fetch_evaluated_states(wait=wait)
 
         if self._limit and self._limit <= len(self._considered_states):
             raise SequenceFinished()

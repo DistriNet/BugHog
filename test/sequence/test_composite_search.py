@@ -14,7 +14,7 @@ class TestCompositeSearch(unittest.TestCase):
         sequence = CompositeSearch(state_factory, 10)
 
         # Sequence
-        index_sequence = [sequence.next().index for _ in range(10)]
+        index_sequence = [sequence.next(wait=False).index for _ in range(10)]
         assert index_sequence == [0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
 
         # Simulate that the previous part of the evaluation has been completed
@@ -25,10 +25,10 @@ class TestCompositeSearch(unittest.TestCase):
         )
 
         # Sequence
-        index_sequence = [sequence.next().index for _ in range(3)]
+        index_sequence = [sequence.next(wait=False).index for _ in range(3)]
         assert index_sequence == [55, 52, 50]
 
-        self.assertRaises(SequenceFinished, sequence.next)
+        self.assertRaises(SequenceFinished, lambda: sequence.next(wait=False))
 
     def test_binary_sequence_always_available_composite_two_shifts(self):
         state_factory = helper.create_state_factory(
@@ -37,7 +37,7 @@ class TestCompositeSearch(unittest.TestCase):
         sequence = CompositeSearch(state_factory, 10)
 
         # Sequence
-        index_sequence = [sequence.next().index for _ in range(10)]
+        index_sequence = [sequence.next(wait=False).index for _ in range(10)]
         assert index_sequence == [0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
 
         # Simulate that the previous part of the evaluation has been completed
@@ -49,12 +49,12 @@ class TestCompositeSearch(unittest.TestCase):
 
         while True:
             try:
-                print(sequence.next())
+                print(sequence.next(wait=False))
             except SequenceFinished:
                 break
 
         assert sequence.search_strategy is not None
-        evaluated_indexes = [state.index for state in sequence.search_strategy._completed_states]
+        evaluated_indexes = [state.index for state in sequence.search_strategy._considered_states]
 
         assert sequence.search_strategy is not None
         assert 32 in evaluated_indexes

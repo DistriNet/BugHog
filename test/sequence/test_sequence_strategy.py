@@ -2,28 +2,24 @@ import unittest
 from typing import Callable, Optional
 from unittest.mock import MagicMock
 
-from bughog.parameters import EvaluationRange
+from bughog.parameters import EvaluationParameters, EvaluationRange
 from bughog.search_strategy.sequence_strategy import SequenceStrategy
+from bughog.version_control.state.base import State
 from bughog.version_control.state_factory import StateFactory
-from bughog.version_control.state.base import State, StateResult
 
 
 class TestSequenceStrategy(unittest.TestCase):
-
-    '''
+    """
     Helper functions to create states and state factories for testing.
-    '''
+    """
 
     @staticmethod
     def get_states(indexes: list[int], is_available, outcome_func) -> list[State]:
         return [TestSequenceStrategy.create_state(index, is_available, outcome_func) for index in indexes]
 
     @staticmethod
-    def create_state_factory(
-        is_available: Callable,
-        evaluated_indexes: Optional[list[int]] = None,
-        outcome_func: Optional[Callable] = None) -> StateFactory:
-        eval_params = MagicMock(spec=EvaluationConfiguration)
+    def create_state_factory(is_available: Callable, evaluated_indexes: Optional[list[int]] = None, outcome_func: Optional[Callable] = None) -> StateFactory:
+        eval_params = MagicMock(spec=EvaluationParameters)
         eval_params.evaluation_range = MagicMock(spec=EvaluationRange)
         eval_params.evaluation_range.major_version_range = [0, 99]
 
@@ -44,13 +40,16 @@ class TestSequenceStrategy(unittest.TestCase):
     def create_state(index, is_available: Callable, outcome_func: Optional[Callable]) -> State:
         state = MagicMock(spec=State)
         state.index = index
-        state.has_available_binary = lambda: is_available(index)
+        state.has_available_executable = lambda: is_available(index)
         state.has_same_outcome = lambda x: State.has_same_outcome(state, x)
         state.has_dirty_or_no_result = lambda: State.has_dirty_or_no_result(state)
-        state.result = StateResult([], [], [], False, outcome_func(index) if outcome_func else False)
+        if outcome_func:
+            state.result_variables = {('reproduced', 'ok')} if outcome_func(index) else set()
+        else:
+            state.result_variables = None
         state.__eq__ = State.__eq__
         state.__repr__ = State.__repr__
-        state.get_previous_and_next_state_with_binary = lambda: State.get_previous_and_next_state_with_binary(state)
+        state.get_previous_and_next_state_with_executable = lambda: State.get_previous_and_next_state_with_executable(state)
         return state
 
     @staticmethod
@@ -71,9 +70,9 @@ class TestSequenceStrategy(unittest.TestCase):
             return index % 22 == 0
         return True
 
-    '''
+    """
     Actual tests
-    '''
+    """
 
     def test_find_closest_state_with_available_binary_1(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.always_has_binary)

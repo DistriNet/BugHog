@@ -40,12 +40,7 @@ class State(ABC):
         if self.result_variables is None or other.result_variables is None:
             return False
         else:
-            return (
-                ExperimentResult.poc_is_reproduced(self.result_variables) ==
-                ExperimentResult.poc_is_reproduced(other.result_variables) and
-                ExperimentResult.poc_is_dirty(self.result_variables) ==
-                ExperimentResult.poc_is_dirty(other.result_variables)
-            )
+            return ExperimentResult.poc_is_reproduced(self.result_variables) == ExperimentResult.poc_is_reproduced(other.result_variables) and ExperimentResult.poc_is_dirty(self.result_variables) == ExperimentResult.poc_is_dirty(other.result_variables)
 
     @property
     def name(self) -> str:
@@ -131,7 +126,7 @@ class State(ABC):
         """
         pass
 
-    def get_previous_and_next_state_with_binary(self) -> tuple[State, State]:
+    def get_previous_and_next_state_with_executable(self) -> tuple[State, State]:
         raise NotImplementedError(f'This function is not implemented for {self}')
 
     def __repr__(self) -> str:

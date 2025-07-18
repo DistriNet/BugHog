@@ -27,12 +27,12 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         """
         super().__init__(state_factory, 0, considered_states=considered_states)
 
-    def next(self) -> State:
+    def next(self, wait=True) -> State:
         """
         Returns the next state to evaluate.
         """
         # Fetch all evaluated states
-        self._fetch_evaluated_states()
+        self._fetch_evaluated_states(wait=wait)
 
         if self._limit and self._limit <= len(self._considered_states):
             raise SequenceFinished()

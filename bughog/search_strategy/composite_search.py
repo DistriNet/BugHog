@@ -11,7 +11,7 @@ class CompositeSearch():
         self.sequence_strategy = BiggestGapBisectionSequence(state_factory, limit=sequence_limit)
         self.search_strategy: Optional[BiggestGapBisectionSearch] = None
 
-    def next(self) -> State:
+    def next(self, wait=True) -> State:
         """
         Returns the next state, based on a sequence strategy and search strategy.
         First, the sequence strategy decides which state to return until it returns the SequenceFinished exception.
@@ -19,9 +19,9 @@ class CompositeSearch():
         """
         if self.search_strategy is None:
             try:
-                return self.sequence_strategy.next()
+                return self.sequence_strategy.next(wait=wait)
             except SequenceFinished:
                 self.search_strategy = BiggestGapBisectionSearch.create_from_bgb_sequence(self.sequence_strategy)
-                return self.search_strategy.next()
+                return self.search_strategy.next(wait=wait)
         else:
-            return self.search_strategy.next()
+            return self.search_strategy.next(wait=wait)
