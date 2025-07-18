@@ -15,7 +15,7 @@ class BrowserExecutable(Executable):
 
     @property
     @abstractmethod
-    def navigation_sleep_duration(self) -> int:
+    def post_experiment_sleep_duration(self) -> int:
         pass
 
     @property
@@ -35,17 +35,13 @@ class BrowserExecutable(Executable):
         download_folder = '/root/Downloads'
         util.remove_all_in_folder(download_folder)
 
-    def pre_evaluation_setup(self):
-        self.fetch()
-
-    def post_evaluation_cleanup(self):
-        self.remove()
-
     def pre_experiment_setup(self):
+        self.fetch()
         self.stage()
 
     def post_experiment_cleanup(self):
         self.unstage()
+        self.remove()
 
     def pre_try_setup(self):
         self._prepare_profile_folder()

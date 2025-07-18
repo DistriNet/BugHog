@@ -1,6 +1,5 @@
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
-from bughog.subject.web_browser.firefox.repo import get_release_revision_id, get_release_revision_number
 from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 
 
@@ -19,7 +18,7 @@ class FirefoxStateOracle(StateOracle):
 
     @Cache.cache_in_db("web_browser", "firefox")
     def find_commit_id_of_release(self, release_version: int) -> str:
-        return get_release_revision_id(release_version)
+        return PublicBrowserStateCache.get_release_commit_id("firefox", release_version)
 
     @Cache.cache_in_db("web_browser", "firefox")
     def has_publicly_available_release_executable(self, major_version: int) -> bool:

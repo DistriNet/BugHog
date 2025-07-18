@@ -46,15 +46,17 @@ class ChromiumExecutable(BrowserExecutable):
             return match.group('version')
         raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")
 
-    def _configure_executable(self):
+    def _optimize_for_storage(self):
         # Remove unneccessary files
         locales_folder_path = os.path.join(self.staging_folder, 'locales')
         if os.path.isdir(locales_folder_path):
             util.remove_all_in_folder(locales_folder_path, except_files=['en-GB.pak', 'en-US.pak'])
+
+    def _configure_executable(self):
         cli.execute_and_return_status(f'chmod -R a+x {self.staging_folder}')
 
     @property
-    def navigation_sleep_duration(self) -> int:
+    def post_experiment_sleep_duration(self) -> int:
         return 1
 
     @property

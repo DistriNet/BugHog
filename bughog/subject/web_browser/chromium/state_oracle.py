@@ -6,7 +6,6 @@ import requests
 from bughog import util
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
-from bughog.subject.web_browser.chromium.repo import get_release_commit_id, get_release_commit_nb
 from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 
 logger = logging.getLogger(__name__)
@@ -41,12 +40,14 @@ class ChromiumStateOracle(StateOracle):
 
     @Cache.cache_in_db("web_browser", "chromium")
     def find_commit_nb_of_release(self, release_version: int) -> int:
-        return get_release_commit_nb(release_version)
+        return PublicBrowserStateCache.get_release_commit_nb("chromium", release_version)
 
     @Cache.cache_in_db("web_browser", "chromium")
     def find_commit_id_of_release(self, release_version: int) -> str:
-        return get_release_commit_id(release_version)
+        return PublicBrowserStateCache.get_release_commit_id("chromium", release_version)
 
+    def get_most_recent_major_release_version(self) -> int:
+        return PublicBrowserStateCache.get_most_recent_major_version("chromium")
 
     # Release state functions
 

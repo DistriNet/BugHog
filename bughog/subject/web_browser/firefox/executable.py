@@ -7,10 +7,7 @@ from bughog.subject.web_browser.executable import BrowserExecutable
 from bughog.subject.web_browser.profile import prepare_firefox_profile, remove_profile_execution_folder
 from bughog.version_control.state.base import State
 
-SELENIUM_USED_FLAGS = [
-    '--no-remote',
-    '--new-instance'
-]
+SELENIUM_USED_FLAGS = ['--no-remote', '--new-instance']
 
 
 class FirefoxExecutable(BrowserExecutable):
@@ -30,26 +27,28 @@ class FirefoxExecutable(BrowserExecutable):
             return match.group('version')
         raise AttributeError(f"Could not determine version of binary at '{self.executable_name}'.")
 
+    def _optimize_for_storage(self) -> None:
+        pass
+
     def _configure_executable(self):
-        binary_folder = self.staging_folder
-        cli.execute_and_return_status(f'chmod -R a+x {binary_folder}')
-        cli.execute_and_return_status(f'chmod -R a+w {binary_folder}')
+        cli.execute_and_return_status(f'chmod -R a+x {self.staging_folder}')
+        cli.execute_and_return_status(f'chmod -R a+w {self.staging_folder}')
         # Add policy.json to prevent updating. (this measure is effective from version 60)
         # https://github.com/mozilla/policy-templates/blob/master/README.md
         # (For earlier versions, the prefs.js file is used)
-        distributions_path = os.path.join(binary_folder, 'distribution')
+        distributions_path = os.path.join(self.staging_folder, 'distribution')
         os.makedirs(distributions_path, exist_ok=True)
         policies_path = os.path.join(distributions_path, 'policies.json')
         with open(policies_path, 'a') as file:
             file.write('{ "policies": { "DisableAppUpdate": true } }')
 
     @property
-    def navigation_sleep_duration(self) -> int:
+    def post_experiment_sleep_duration(self) -> int:
         return 2
 
     @property
     def open_console_hotkey(self) -> list[str]:
-        return ["ctrl", "shift", "k"]
+        return ['ctrl', 'shift', 'k']
 
     @property
     def supported_options(self) -> list[str]:
@@ -102,7 +101,7 @@ class FirefoxExecutable(BrowserExecutable):
             raise NotImplementedError()
 
         if self.config.extensions:
-            raise AttributeError("Not implemented")
+            raise AttributeError('Not implemented')
 
         args.extend(self.config.cli_options)
         args.extend(SELENIUM_USED_FLAGS)
@@ -125,14 +124,10 @@ class FirefoxExecutable(BrowserExecutable):
 
         # For newer Firefox versions (> 57):
         # Generate SQLite database: cert9.db  key4.db  pkcs11.txt
-        cli.execute(
-            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}'
-            )
+        cli.execute(f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}')
         # For older Firefox versions (<= 57):
         # Generate in Berkeley DB database: cert8.db, key3.db, secmod.db
-        cli.execute(
-            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}'
-            )
+        cli.execute(f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}')
 
         # More info:
         # - https://support.mozilla.org/en-US/questions/1207165

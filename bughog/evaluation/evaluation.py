@@ -43,7 +43,6 @@ class Evaluation:
 
         executable.add_runtime_flags(runtime_flags)
         executable.add_runtime_env_vars(runtime_env_vars)
-        executable.pre_evaluation_setup()
 
         simulation = subject.create_simulation(executable, experiment_folder, params)
         script = self.experiments.get_interaction_script(experiment_folder)
@@ -65,8 +64,6 @@ class Evaluation:
                 logger.error('An error occurred during evaluation', exc_info=True)
         finally:
             executable.post_experiment_cleanup()
-
-        executable.post_evaluation_cleanup()
         logger.debug('Evaluation finished')
 
     def conduct_experiment(self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]) -> ExperimentResult:

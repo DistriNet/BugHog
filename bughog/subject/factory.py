@@ -11,7 +11,12 @@ from bughog.subject.web_browser.evaluation import BrowserEvaluationFramework
 from bughog.subject.web_browser.firefox.subject import Firefox
 
 subjects = {
-    'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject()]},
+    'js_engine': {
+        'evaluation_framework': JSEngineEvaluationFramework,
+        'subjects': [
+            V8Subject()
+        ]
+    },
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,
         'subjects': [
@@ -76,8 +81,3 @@ def get_subject(subject_type: str, subject_name: str) -> Subject:
     if len(matched_subjects) > 0:
         return matched_subjects[0]
     raise AttributeError(f"Subject '{subject_type}, {subject_name}' is not supported.")
-
-
-# @staticmethod
-# def get_release_state_class(subject_type: str, subject_name: str) -> type[ReleaseState]:
-#     return get_subject(subject_type, subject_name).release_state_class

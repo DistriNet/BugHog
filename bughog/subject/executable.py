@@ -40,23 +40,30 @@ class Executable(ABC):
     @property
     @abstractmethod
     def executable_name(self) -> str:
+        """
+        Returns the executable name, required to call it in the CLI.
+        """
         pass
 
     @property
     @abstractmethod
-    def navigation_sleep_duration(self) -> int:
+    def post_experiment_sleep_duration(self) -> int:
+        """
+        Returns the number of seconds should be waited between experiments.
+        """
         pass
 
-    @property
     @abstractmethod
-    def open_console_hotkey(self) -> list[str]:
+    def _optimize_for_storage(self) -> None:
+        """
+        Optimizes executable files right before storage.
+        """
         pass
 
     @abstractmethod
     def _configure_executable(self) -> None:
         """
-        Configures the downloaded executable folder after download and extraction, but before it is cached or used.
-        This function should be idempotent.
+        Configures the executable folder after staging.
         """
         pass
 
@@ -69,13 +76,6 @@ class Executable(ABC):
     def _get_version(self) -> str:
         """
         Runs the executable to retrieve its version string.
-        """
-        pass
-
-    @abstractmethod
-    def pre_evaluation_setup(self):
-        """
-        Executes the setup required for an evaluation.
         """
         pass
 
@@ -104,13 +104,6 @@ class Executable(ABC):
     def post_experiment_cleanup(self):
         """
         Executes the cleanup required after an experiment.
-        """
-        pass
-
-    @abstractmethod
-    def post_evaluation_cleanup(self):
-        """
-        Executes the cleanup required after an evaluation.
         """
         pass
 
@@ -162,14 +155,14 @@ class Executable(ABC):
         self._runtime_flags.extend(flags)
 
     def add_runtime_env_vars(self, vars: list[str]) -> None:
-            for var in vars:
-                if '=' in var:
-                    key, value = var.split('=', 1)
-                    # Concatenate duplicated ASAN_OPTIONS values with a colon
-                    if key == 'ASAN_OPTIONS' and key in self._runtime_env_vars:
-                        self._runtime_env_vars[key] += ':' + value
-                    else:
-                        self._runtime_env_vars[key] = value
+        for var in vars:
+            if '=' in var:
+                key, value = var.split('=', 1)
+                # Concatenate duplicated ASAN_OPTIONS values with a colon
+                if key == 'ASAN_OPTIONS' and key in self._runtime_env_vars:
+                    self._runtime_env_vars[key] += ':' + value
+                else:
+                    self._runtime_env_vars[key] = value
 
     def fetch(self):
         from bughog.database.mongo.executable_cache import ExecutableCache
@@ -186,20 +179,22 @@ class Executable(ABC):
             util.download_and_extract(executable_urls, self.temporary_storage_folder)
             elapsed_time = time.time() - start
             logger.info(f'Executable for {self.state.name} was downloaded in {elapsed_time:.2f}s')
-            self._configure_executable()
+            self._optimize_for_storage()
             ExecutableCache.store_executable_files(self.config, self.state.name, self.temporary_storage_folder)
-
 
     def remove(self):
         if not self.state.has_local_executable():
             shutil.rmtree(self.temporary_storage_folder)
 
     def stage(self):
-        if not self.is_ready_for_use:
-            util.copy_folder(self.temporary_storage_folder, self.staging_folder)
+        self.unstage()
+        util.copy_folder(self.temporary_storage_folder, self.staging_folder)
+        self._configure_executable()
 
     def unstage(self):
-        if self.is_ready_for_use:
+        if os.path.isfile(self.staging_folder):
+            os.remove(self.staging_folder)
+        elif os.path.isdir(self.staging_folder):
             shutil.rmtree(self.staging_folder)
 
     def run(self, experiment_specific_params: list[str], cwd: Optional[Folder] = None, timeout: int = 5):
@@ -209,11 +204,7 @@ class Executable(ABC):
         cli_command = self._get_cli_command() + experiment_specific_params
         logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
-            popen_args = {
-                'args': cli_command,
-                'stdout': file,
-                'stderr': file
-            }
+            popen_args = {'args': cli_command, 'stdout': file, 'stderr': file}
             if cwd:
                 popen_args['cwd'] = cwd.path
             if self._runtime_env_vars:

@@ -31,43 +31,67 @@ class Subject(ABC):
     @property
     @abstractmethod
     def type(self) -> str:
+        """
+        Returns the evaluation subject type.
+        """
         pass
 
     @property
     @abstractmethod
     def name(self) -> str:
+        """
+        Returns the evaluation subject name.
+        """
         pass
 
     @property
     @abstractmethod
     def _state_oracle_class(self) -> type[StateOracle]:
+        """
+        Returns the state oracle class associated with this subject.
+        """
         pass
 
     @abstractmethod
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> Executable:
+        """
+        Creates and returns an executable object based on the given subject configuration and state.
+        """
         pass
 
     @abstractmethod
     def get_availability(self) -> dict:
         """
-        Returns availability data (minimum and maximum, release versions, and configuration options) of the subject.
+        Returns availability data (supported minimum and maximum release version) of this subject.
         """
         pass
 
     @staticmethod
     @abstractmethod
     def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> Simulation:
+        """
+        Creates and returns the simulation object based on the given executable, experiment context and eval params.
+        """
         pass
 
     @staticmethod
     @abstractmethod
     def create_result_collector() -> Collector:
+        """
+        Creates and returns the result collector.
+        """
         pass
 
     @property
     def state_oracle(self) -> StateOracle:
+        """
+        Creates and returns the state oracle associated with this subject.
+        """
         return self._state_oracle_class(self.type, self.name)
 
     @property
     def assets_folder_path(self) -> str:
+        """
+        Returns the paths of the assets folder associated with this subject.
+        """
         return os.path.join('/app/subject', self.type, self.name)

@@ -4,12 +4,12 @@ from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.requests import RequestCollector
 from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters
-from bughog.subject.subject import Subject
 from bughog.subject.executable import Executable
+from bughog.subject.subject import Subject
 from bughog.subject.web_browser.interaction.simulation import BrowserSimulation
 
 
-class Browser(Subject, ABC):
+class WebBrowser(Subject, ABC):
     def __init__(self) -> None:
         super().__init__()
 

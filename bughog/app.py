@@ -46,7 +46,6 @@ def create_app():
         raise e
 
 
-
 if __name__ == '__main__':
     # Used when running in devcontainer
     app = create_app()

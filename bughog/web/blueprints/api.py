@@ -3,8 +3,10 @@ import logging
 import os
 import threading
 
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, redirect, request
 
+from bughog.database.mongo.mongodb import MongoDB
+from bughog.integration_tests import evaluation_configurations
 import bughog.parameters as application_logic
 from bughog.app import sock
 from bughog.configuration import Global, Loggers
@@ -260,17 +262,18 @@ def remove_datapoint():
     return {'status': 'OK'}
 
 
-# @api.route('/test/start/', methods=['POST'])
-# def integration_tests_start():
-#     # Remove all previous data
-#     MongoDB().remove_all_data_from_collection('integrationtests_chromium')
-#     MongoDB().remove_all_data_from_collection('integrationtests_firefox')
-#     # Start integration tests
-#     all_experiments = __get_main().evaluation_framework.get_experiments('IntegrationTests')
-#     elegible_experiments = [experiment[0] for experiment in all_experiments if experiment[1]]
-#     eval_parameters_list = get_eval_parameters_list(elegible_experiments)
-#     __start_thread(__get_main().run, args=[eval_parameters_list])
-#     return redirect('/test/')
+@api.route('/test/start/', methods=['POST'])
+def integration_tests_start():
+    # Remove all previous data
+    MongoDB().remove_all_data_from_collection('integrationtests_chromium')
+    MongoDB().remove_all_data_from_collection('integrationtests_firefox')
+    # Start integration tests
+    all_experiments = factory.create_experiments('web_browser')
+    experiments = all_experiments.get_experiments('IntegrationTests')
+    elegible_experiments = [experiment[0] for experiment in experiments if experiment[1]]
+    eval_parameters_list = evaluation_configurations.get_eval_parameters_list(elegible_experiments)
+    __start_thread(__get_main().run, args=[eval_parameters_list])
+    return redirect('/test/')
 
 
 # @api.route('/test/continue/', methods=['POST'])

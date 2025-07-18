@@ -55,15 +55,15 @@ class BrowserSimulation(Simulation):
     def navigate(self, url: str):
         self.executable.terminate()
         self.executable.run([url])
-        self.sleep(str(self.executable.navigation_sleep_duration))
-        self.click_position("100", "50%")   # focus the browser window
+        self.sleep(str(self.executable.post_experiment_sleep_duration))
+        self.click_position('100', '50%')  # focus the browser window
 
     def new_tab(self, url: str):
-        self.hotkey("ctrl", "t")
-        self.sleep("0.5")
+        self.hotkey('ctrl', 't')
+        self.sleep('0.5')
         self.write(url)
-        self.press("enter")
-        self.sleep(str(self.executable.navigation_sleep_duration))
+        self.press('enter')
+        self.sleep(str(self.executable.post_experiment_sleep_duration))
 
     def click_position(self, x: str, y: str):
         max_x, max_y = gui.size()
@@ -116,11 +116,12 @@ class BrowserSimulation(Simulation):
 
     def open_console(self):
         self.hotkey(*self.executable.get_open_console_hotkey())
-        self.sleep("1.5")
+        self.sleep('1.5')
 
 
 class SimulationException(Exception):
     """
     Common class for exceptions thrown upon failed experiment assertions defined by script.cmd.
     """
+
     pass
