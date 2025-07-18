@@ -1,4 +1,4 @@
-FROM node:22.14-alpine as ui-build-stage
+FROM node:22.14-alpine AS ui-build-stage
 WORKDIR /app
 COPY /bughog/web/vue/package*.json ./
 RUN npm install
@@ -34,14 +34,14 @@ RUN curl -sSL https://get.docker.com/ | sh
 # We manually install deprecated libraries for older browser versions.
 # Most of them are Debian 11 (buster) packages.
 # Stuff needed for chrome versions < 40
-RUN curl -sSLo multiarch-support.deb http://security.debian.org/debian-security/pool/updates/main/g/glibc/multiarch-support_2.28-10+deb10u4_amd64.deb &&\
-    curl -sSLo libgcrypt11.deb https://launchpadlibrarian.net/201289896/libgcrypt11_1.5.3-2ubuntu4.2_amd64.deb &&\
-    curl -sSLo libudev0.deb https://launchpad.net/ubuntu/+source/udev/175-0ubuntu9/+build/3386050/+files/libudev0_175-0ubuntu9_amd64.deb &&\
-    curl -sSLo libpng12.deb http://mirrors.kernel.org/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1_amd64.deb &&\
-    curl -sSLo pango1.0.deb http://ftp.de.debian.org/debian/pool/main/p/pango1.0/libpango-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
-    curl -sSLo libpangocairo-1.deb http://ftp.de.debian.org/debian/pool/main/p/pango1.0/libpangocairo-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
-    curl -sSLo libpangoft2.deb http://ftp.de.debian.org/debian/pool/main/p/pango1.0/libpangoft2-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
-    curl -sSLo libgtk-3.deb http://ftp.de.debian.org/debian/pool/main/g/gtk+3.0/libgtk-3-0_3.24.5-1_amd64.deb &&\
+RUN curl -sSLo multiarch-support.deb https://snapshot.debian.org/archive/debian-security/20240630T105336Z/pool/updates/main/g/glibc/multiarch-support_2.28-10%2Bdeb10u4_amd64.deb &&\
+    curl -sSLo libgcrypt11.deb https://snapshot.debian.org/archive/debian/20130820T215153Z/pool/main/libg/libgcrypt11/libgcrypt11_1.5.3-2_amd64.deb &&\
+    curl -sSLo libudev0.deb https://snapshot.debian.org/archive/debian/20111118T151858Z/pool/main/u/udev/libudev0_175-2_amd64.deb &&\
+    curl -sSLo libpng12.deb https://snapshot.debian.org/archive/debian/20151118T214328Z/pool/main/libp/libpng/libpng12-0_1.2.54-1_amd64.deb &&\
+    curl -sSLo pango1.0.deb https://snapshot.debian.org/archive/debian/20200504T084128Z/pool/main/p/pango1.0/libpango-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
+    curl -sSLo libpangocairo-1.deb https://snapshot.debian.org/archive/debian/20210326T204420Z/pool/main/p/pango1.0/libpangocairo-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
+    curl -sSLo libpangoft2.deb https://snapshot.debian.org/archive/debian/20210326T204420Z/pool/main/p/pango1.0/libpangoft2-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
+    curl -sSLo libgtk-3.deb https://snapshot.debian.org/archive/debian/20210326T204420Z/pool/main/g/gtk+3.0/libgtk-3-0_3.24.5-1_amd64.deb &&\
     dpkg -i multiarch-support.deb &&\
     dpkg -i libgtk-3.deb libpangoft2.deb libpangocairo-1.deb pango1.0.deb libgcrypt11.deb libudev0.deb libpng12.deb &&\
     rm multiarch-support.deb libgtk-3.deb libpangoft2.deb libpangocairo-1.deb pango1.0.deb libgcrypt11.deb libudev0.deb libpng12.deb &&\
