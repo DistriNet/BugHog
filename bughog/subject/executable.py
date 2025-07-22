@@ -197,36 +197,40 @@ class Executable(ABC):
         elif os.path.isdir(self.staging_folder):
             shutil.rmtree(self.staging_folder)
 
-    def run(self, experiment_specific_params: list[str], cwd: Optional[Folder] = None, timeout: int = 5):
+    def run(self, experiment_specific_params: list[str], cwd: Optional[Folder] = None):
         """
         Runs the executable with the given arguments, and kills it after the given timeout.
         """
         cli_command = self._get_cli_command() + experiment_specific_params
         logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
-            popen_args = {'args': cli_command, 'stdout': file, 'stderr': file}
+            popen_args = {
+                'args': cli_command,
+                'stdout': file,
+                'stderr': file,
+                'bufsize': 1,
+                'text': True
+            }
             if cwd:
                 popen_args['cwd'] = cwd.path
             if self._runtime_env_vars:
                 popen_args['env'] = self._runtime_env_vars
             self.__process = subprocess.Popen(**popen_args)
-            time.sleep(timeout)
 
-    def terminate(self):
+    def terminate(self, wait=False, timeout: int = 5):
         if self.__process is None:
             return
-        logger.debug('Terminating subject process using SIGINT...')
-        # Use SIGINT and SIGTERM to end process such that cookies remain saved.
-        self.__process.send_signal(signal.SIGINT)
-        self.__process.send_signal(signal.SIGTERM)
-
+        # Use SIGINT and SIGTERM to end process such that browser cookies remain saved.
+        if not wait:
+            logger.debug('Terminating subject process using SIGINT...')
+            self.__process.send_signal(signal.SIGINT)
+            self.__process.send_signal(signal.SIGTERM)
         try:
-            stdout, stderr = self.__process.communicate(timeout=5)
+            self.__process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
-            logger.info('Subject process did not terminate after 5s. Killing process through pkill...')
+            logger.info(f'Subject process did not terminate after {timeout}s. Killing process through pkill...')
             cli_command = self._get_cli_command()
             subprocess.run(['pkill', '-2', cli_command[0].split('/')[-1]])
-
         self.__process.wait()
         logger.debug('Subject process terminated.')
 

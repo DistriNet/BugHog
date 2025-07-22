@@ -71,6 +71,7 @@ class Evaluation:
         tries_left = 3
         collector.start()
         poc_was_reproduced = False
+        intermediary_variables = None
 
         # Perform experiment with retries
         while not poc_was_reproduced and tries_left > 0:
@@ -87,8 +88,8 @@ class Evaluation:
         collector.stop()
         raw_results, result_variables = collector.collect_results()
 
-        # Perform sanity check if not reproduced
-        if not poc_was_reproduced:
+        # Perform sanity check if not reproduced and potential in-poc sanity check did not succeed
+        if intermediary_variables is None or ExperimentResult.poc_is_dirty(intermediary_variables):
             collector.start()
             try:
                 Interaction(script).do_sanity_check(simulation)
@@ -96,7 +97,7 @@ class Evaluation:
                 logger.error(f'An error during the sanity check: {e}', exc_info=True)
             collector.stop()
             _, sanity_check_variables = collector.collect_results()
-            if ExperimentResult.poc_is_dirty(sanity_check_variables):
+            if not ExperimentResult.poc_passed_sanity_check(sanity_check_variables):
                 is_dirty = True
 
         logger.debug(f'Evaluation finished with {tries_left} tries left')

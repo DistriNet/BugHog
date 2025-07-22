@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote_plus
 
 import pyautogui as gui
 import Xlib.display
@@ -42,6 +43,9 @@ class BrowserSimulation(Simulation):
 
     def do_sanity_check(self):
         self.navigate('https://a.test/report/?bughog_sanity_check=ok')
+
+    def report_simulation_error(self, message: str):
+        self.navigate(f'https://a.test/report/?exception={quote_plus(message)}')
 
     def parse_position(self, position: str, max_value: int) -> int:
         # Screen percentage

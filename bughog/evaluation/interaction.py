@@ -1,6 +1,5 @@
 import logging
 from inspect import signature
-from urllib.parse import quote_plus
 
 from bughog.subject.simulation import Simulation
 from bughog.subject.web_browser.interaction.simulation import SimulationException
@@ -45,9 +44,9 @@ class Interaction:
             return True
         except SimulationException as e:
             # Simulation exception - sane behaviour, but do not continue interpreting
-            simulation.navigate(f'https://a.test/report/?exception={quote_plus(str(e))}')
+            simulation.report_simulation_error(str(e))
             return True
         except Exception as e:
             # Unexpected exception type - not sane, report the exception
-            simulation.navigate(f'https://a.test/report/?uncaught-exception={quote_plus(type(e).__name__)}&message={quote_plus(str(e))}')
+            simulation.report_simulation_error(str(e))
             return False
