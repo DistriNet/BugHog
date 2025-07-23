@@ -104,6 +104,9 @@ class DatabaseParameters:
     def __str__(self) -> str:
         return f"{self.username}@{self.host}:27017/{self.database_name}"
 
+    def __repr__(self) -> str:
+        return f"{self.username}@{self.host}:27017/{self.database_name}"
+
 
 @dataclass(frozen=True)
 class PlotParameters(EvaluationParameters):

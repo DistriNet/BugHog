@@ -4,7 +4,7 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class ExperimentResult:
-    executable_version: str
+    executable_version: Optional[str]
     executable_origin: Optional[str]
     state: dict
     raw_results: dict
@@ -41,6 +41,8 @@ class ExperimentResult:
         Pads the executable's version.
         Returns None if padding fails.
         """
+        if self.executable_version is None:
+            return None
         padding_target = 4
         padded_version = []
         for sub in self.executable_version.split('.'):

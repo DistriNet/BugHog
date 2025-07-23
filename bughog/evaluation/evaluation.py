@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 from bughog.configuration import Global
 from bughog.database.mongo.mongodb import MongoDB
@@ -52,19 +53,16 @@ class Evaluation:
             return
         try:
             executable.pre_experiment_setup()
-            logger.info(f'Starting test for {params}')
             result = self.conduct_experiment(executable, simulation, collector, script)
             MongoDB().store_result(params, result)
-            logger.info(f'Experiment finalized: {params}')
         except Exception as e:
             executable.status = ExecutableStatus.EXPERIMENT_FAILED
             if is_worker:
                 raise e
             else:
-                logger.error('An error occurred during evaluation', exc_info=True)
+                logger.error('An error occurred during experiment', exc_info=True)
         finally:
             executable.post_experiment_cleanup()
-        logger.debug('Evaluation finished')
 
     def conduct_experiment(self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]) -> ExperimentResult:
         is_dirty = False
@@ -74,6 +72,8 @@ class Evaluation:
         intermediary_variables = None
 
         # Perform experiment with retries
+        logger.info(f'Starting experiment for {executable.state}.')
+        start_time = time.time()
         while not poc_was_reproduced and tries_left > 0:
             tries_left -= 1
             executable.pre_try_setup()
@@ -100,7 +100,8 @@ class Evaluation:
             if not ExperimentResult.poc_passed_sanity_check(sanity_check_variables):
                 is_dirty = True
 
-        logger.debug(f'Evaluation finished with {tries_left} tries left')
+        elapsed_time = time.time() - start_time
+        logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s with {tries_left} tries left.')
         return ExperimentResult(executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty)
 
     def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:

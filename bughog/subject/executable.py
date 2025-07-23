@@ -146,9 +146,13 @@ class Executable(ABC):
         return os.path.isfile(self.executable_path) and self.version is not None
 
     @property
-    def version(self) -> str:
+    def version(self) -> Optional[str]:
         if self.__version is None:
-            self.__version = self._get_version()
+            try:
+                self.__version = self._get_version()
+            except Exception:
+                logger.error(f'Could not retrieve version for {self.state}', exc_info=True)
+                return None
         return self.__version
 
     def add_runtime_flags(self, flags: list[str]) -> None:
