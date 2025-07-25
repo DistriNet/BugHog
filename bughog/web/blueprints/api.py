@@ -5,15 +5,15 @@ import threading
 
 from flask import Blueprint, current_app, redirect, request
 
-from bughog.database.mongo.mongodb import MongoDB
-from bughog.integration_tests import evaluation_configurations
 import bughog.parameters as application_logic
 from bughog.app import sock
 from bughog.configuration import Global, Loggers
+from bughog.database.mongo.mongodb import MongoDB
+from bughog.integration_tests import evaluation_configurations
 from bughog.main import Main
 from bughog.parameters import MissingParametersException
 from bughog.subject import factory
-from bughog.subject.factory import get_subject_availability
+from bughog.subject.factory import get_all_subject_availability
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
 
@@ -127,7 +127,7 @@ def init_websocket(ws):
 
 @api.route('/subject/', methods=['GET'])
 def get_subjects():
-    return {'status': 'OK', 'subject_availability': get_subject_availability()}
+    return {'status': 'OK', 'subject_availability': get_all_subject_availability()}
 
 
 @api.route('/system/', methods=['GET'])
@@ -262,24 +262,18 @@ def remove_datapoint():
     return {'status': 'OK'}
 
 
-@api.route('/test/start/', methods=['POST'])
-def integration_tests_start():
-    # Remove all previous data
-    MongoDB().remove_all_data_from_collection('integrationtests_chromium')
-    MongoDB().remove_all_data_from_collection('integrationtests_firefox')
+@api.route('/test/continue/', methods=['POST'])
+def integration_tests_continue():
+    clean_slate = request.args.get('clean_slate', 'no')
     # Start integration tests
-    all_experiments = factory.create_experiments('web_browser')
-    experiments = all_experiments.get_experiments('IntegrationTests')
-    elegible_experiments = [experiment[0] for experiment in experiments if experiment[1]]
-    eval_parameters_list = evaluation_configurations.get_eval_parameters_list(elegible_experiments)
+    eval_parameters_list = []
+    for subject_type in factory.get_all_subject_types():
+        all_experiments = factory.create_experiments(subject_type)
+        experiments = all_experiments.get_experiments('IntegrationTests')
+        elegible_experiments = [experiment[0] for experiment in experiments if experiment[1]]
+        new_eval_parameters_list = evaluation_configurations.get_eval_parameters_list(subject_type, elegible_experiments)
+        if clean_slate == 'yes':
+            MongoDB().remove_all_data_for(new_eval_parameters_list)
+        eval_parameters_list.extend(new_eval_parameters_list)
     __start_thread(__get_main().run, args=[eval_parameters_list])
     return redirect('/test/')
-
-
-# @api.route('/test/continue/', methods=['POST'])
-# def integration_tests_continue():
-#     all_experiments = __get_main().evaluation_framework.get_experiments('IntegrationTests')
-#     elegible_experiments = [experiment[0] for experiment in all_experiments if experiment[1]]
-#     eval_parameters_list = get_eval_parameters_list(elegible_experiments)
-#     __start_thread(__get_main().run, args=[eval_parameters_list])
-#     return redirect('/test/')

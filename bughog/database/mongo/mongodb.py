@@ -367,6 +367,14 @@ class MongoDB:
         query = self.__to_experiment_query(params, state)
         collection.delete_one(query)
 
+    def remove_all_data_for(self, params_list: list[EvaluationParameters]) -> None:
+        for params in params_list:
+            collection = self.__get_data_collection(params)
+            collection.delete_many({
+                'project': params.evaluation_range.project_name,
+                'experiment': params.evaluation_range.experiment_name,
+            })
+
     def remove_all_data_from_collection(self, collection_name: str) -> None:
         collection = self.get_collection(collection_name)
         collection.delete_many({})

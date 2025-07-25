@@ -48,7 +48,7 @@ class JSEngineEvaluationFramework(EvaluationFramework):
                     return match.group(1).strip()
         return None
 
-    def get_default_experiment_script(self) -> list[str]:
+    def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
         return ['run poc.js']
 
     def create_empty_experiment(self, project: str, experiment: str):

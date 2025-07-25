@@ -19,7 +19,7 @@ class EvaluationFramework(ABC):
         pass
 
     @abstractmethod
-    def get_default_experiment_script(self) -> list[str]:
+    def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
         """
         Returns the default script, which is used when no 'script.cmd' is present in the experiment's folder.
         """

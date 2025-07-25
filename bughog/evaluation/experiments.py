@@ -153,7 +153,7 @@ class Experiments:
             with open(script_path) as file:
                 return file.readlines()
         else:
-            return self.framework.get_default_experiment_script()
+            return self.framework.get_default_experiment_script(experiment_folder)
 
     def create_empty_poc(self, project: str, experiment: str):
         return self.framework.create_empty_experiment(project, experiment)

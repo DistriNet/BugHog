@@ -21,7 +21,7 @@ class State(ABC):
 
         :returns bool: True if this state has a result, which is dirty.
         """
-        return self.result_variables is not None and ExperimentResult.poc_is_dirty(self.result_variables)
+        return ExperimentResult.poc_is_dirty(self.result_variables)
 
     def has_dirty_or_no_result(self) -> bool:
         """
@@ -29,7 +29,7 @@ class State(ABC):
 
         :returns bool: True if this state has no result, or a dirty result.
         """
-        return self.result_variables is None or ExperimentResult.poc_is_dirty(self.result_variables)
+        return ExperimentResult.poc_is_dirty(self.result_variables)
 
     def has_same_outcome(self, other: State) -> bool:
         """

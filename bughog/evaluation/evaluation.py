@@ -99,6 +99,7 @@ class Evaluation:
             _, sanity_check_variables = collector.collect_results()
             if not ExperimentResult.poc_passed_sanity_check(sanity_check_variables):
                 is_dirty = True
+            result_variables.update(sanity_check_variables)
 
         elapsed_time = time.time() - start_time
         logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s with {tries_left} tries left.')

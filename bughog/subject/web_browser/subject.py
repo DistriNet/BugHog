@@ -1,6 +1,7 @@
 from abc import ABC
 
 from bughog.evaluation.collectors.collector import Collector
+from bughog.evaluation.collectors.logs import LogCollector
 from bughog.evaluation.collectors.requests import RequestCollector
 from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters
@@ -23,4 +24,4 @@ class WebBrowser(Subject, ABC):
 
     @staticmethod
     def create_result_collector() -> Collector:
-        return Collector([RequestCollector()])
+        return Collector([RequestCollector(), LogCollector()])

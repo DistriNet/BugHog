@@ -59,7 +59,7 @@ class BrowserSimulation(Simulation):
     def navigate(self, url: str):
         self.executable.terminate()
         self.executable.run([url])
-        self.sleep(str(self.executable.post_experiment_sleep_duration))
+        self.sleep('3')
         self.click_position('100', '50%')  # focus the browser window
 
     def new_tab(self, url: str):
@@ -67,7 +67,7 @@ class BrowserSimulation(Simulation):
         self.sleep('0.5')
         self.write(url)
         self.press('enter')
-        self.sleep(str(self.executable.post_experiment_sleep_duration))
+        self.sleep('3')
 
     def click_position(self, x: str, y: str):
         max_x, max_y = gui.size()

@@ -25,8 +25,6 @@ def __run_by_worker() -> None:
     params = EvaluationParameters.deserialize(sys.argv[1])
     state = State.deserialize(sys.argv[2])
 
-    logger.critical(params)
-    logger.critical(state)
     MongoDB().connect(params.database_params)
 
     logger.info('Worker started')

@@ -75,7 +75,7 @@ class EvaluationRange:
 
 @dataclass(frozen=True)
 class SequenceConfiguration:
-    nb_of_containers: int = 8
+    nb_of_containers: int
     sequence_limit: int = 10000
     search_strategy: str | None = None
 

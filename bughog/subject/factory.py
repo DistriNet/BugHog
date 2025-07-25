@@ -57,7 +57,7 @@ def create_experiments(subject_type: str) -> Experiments:
 
 
 @staticmethod
-def get_subject_availability() -> list[dict]:
+def get_all_subject_availability() -> list[dict]:
     subject_availability = []
     for subject_type in get_all_subject_types():
         subjects_for_type = {'subject_type': subject_type, 'subjects': []}
@@ -65,6 +65,12 @@ def get_subject_availability() -> list[dict]:
             subjects_for_type['subjects'].append(subject.get_availability())
         subject_availability.append(subjects_for_type)
     return subject_availability
+
+
+@staticmethod
+def get_subject_availability(subject_type: str, subject_name: str) -> tuple[int,int]:
+    subject_availability = get_subject(subject_type, subject_name).get_availability()
+    return subject_availability['min_version'], subject_availability['max_version']
 
 
 @staticmethod

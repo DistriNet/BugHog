@@ -16,21 +16,25 @@ class ExperimentResult:
         return self.poc_is_reproduced(self.result_variables)
 
     @staticmethod
-    def poc_is_reproduced(result_variables: set[tuple[str,str]]) -> bool:
+    def poc_is_reproduced(result_variables: Optional[set[tuple[str,str]]]) -> bool:
+        if result_variables is None:
+            return False
         for key, value in result_variables:
             if key.lower() == 'reproduced' and value.lower() == 'ok':
                 return True
         return False
 
     @staticmethod
-    def poc_passed_sanity_check(result_variables: set[tuple[str,str]]) -> bool:
+    def poc_passed_sanity_check(result_variables: Optional[set[tuple[str,str]]]) -> bool:
+        if result_variables is None:
+            return False
         for key, value in result_variables:
             if key.lower() == 'sanity_check' and value.lower() == 'ok':
                 return True
         return False
 
     @staticmethod
-    def poc_is_dirty(result_variables: set[tuple[str,str]]) -> bool:
+    def poc_is_dirty(result_variables: Optional[set[tuple[str,str]]]) -> bool:
         reproduced = ExperimentResult.poc_is_reproduced(result_variables)
         sanity_check_succeeded = ExperimentResult.poc_passed_sanity_check(result_variables)
         return not reproduced and not sanity_check_succeeded

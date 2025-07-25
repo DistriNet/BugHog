@@ -83,6 +83,7 @@ class V8StateOracle(StateOracle):
         # return [f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-release%2Fd8-linux-release-v8-component-{commit_nb}.zip?alt=media']
 
     @staticmethod
+    @Cache.cache_in_db("js_engine", "v8", ttl=24)
     def __get_all_release_tags() -> list[str]:
         url = "https://chromium.googlesource.com/v8/v8.git/+refs"
         html = util.request_html(url).decode()
