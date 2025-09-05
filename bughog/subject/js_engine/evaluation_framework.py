@@ -51,5 +51,5 @@ class JSEngineEvaluationFramework(EvaluationFramework):
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
         return ['run poc.js']
 
-    def create_empty_experiment(self, project: str, experiment: str):
+    def fill_empty_experiment_with_default(self, path: str):
         pass

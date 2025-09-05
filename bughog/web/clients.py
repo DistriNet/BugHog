@@ -122,6 +122,7 @@ class Clients:
         subject_type = client_info.get('subject_type')
         project = client_info.get('project')
         if project and subject_type:
+            factory.invalidate_experiment_cache()
             experiments = factory.create_experiments(subject_type)
             experiments = experiments.get_experiments(project)
             ws_client.send(json.dumps({'update': {'experiments': experiments}}))

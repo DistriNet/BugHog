@@ -53,5 +53,14 @@ class Folder:
             all_folders_with_tag.extend(folder.get_all_folders_with_tag(tag))
         return all_folders_with_tag
 
+    def serialize(self) -> dict:
+        return {
+            'name': self.name,
+            'path': self.path,
+            'tags': self.tags,
+            'subfolders': [subfolder.serialize() for subfolder in self.subfolders],
+            'files': [{'name': file.name, 'path': file.path} for file in self.files],
+        }
+
     def __repr__(self):
         return f'Folder(name={self.name}, path={self.path}, subfolders={self.subfolders}, files={self.files})'

@@ -166,58 +166,53 @@ def get_experiments(subject_type: str, project: str):
 
 @api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/', methods=['GET'])
 def poc(subject_type: str, project: str, poc: str):
-    return {'status': 'OK', 'tree': factory.create_experiments(subject_type).get_poc_structure(project, poc)}
+    experiments = factory.create_experiments(subject_type)
+    dir_tree = experiments.get_experiment_dir_tree(project, poc)
+    return {'status': 'OK', 'tree': dir_tree}
 
 
-@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/<string:file>/', methods=['GET', 'POST'])
-def poc_file_content(subject_type: str, project: str, poc: str, file: str):
-    domain = request.args.get('domain', '')
-    path = request.args.get('path', '')
+@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/<string:file_name>/', methods=['GET', 'POST'])
+@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/<string:file_name>/<string:folder_name>/', methods=['GET', 'POST'])
+def poc_file_content(subject_type: str, project: str, poc: str, file_name: str, folder_name: str | None = None):
     if request.method == 'GET':
         return {
             'status': 'OK',
-            'content': factory.create_experiments(subject_type).get_poc_file(project, poc, domain, path, file),
+            'content': factory.create_experiments(subject_type).get_poc_file(project, poc, folder_name, file_name),
         }
     else:
         if not request.json:
             return {'status': 'NOK', 'msg': 'No content to update file with'}
         data = request.json.copy()
         content = data['content']
-        success = factory.create_experiments(subject_type).update_poc_file(project, poc, domain, path, file, content)
+        success = factory.create_experiments(subject_type).update_poc_file(project, poc, folder_name, file_name, content)
         if success:
             return {'status': 'OK'}
         else:
             return {'status': 'NOK'}
 
 
-@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/', methods=['POST'])
-def add_page(subject_type: str, project: str, poc: str):
+@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/', methods=['POST','DELETE'])
+def add_folder_or_file(subject_type: str, project: str, poc: str):
     if request.json is None:
         return {'status': 'NOK', 'msg': 'No page parameters found'}
-
     data = request.json.copy()
-    domain = data['domain']
-    path = data['page']
-    file_type = data['file_type']
-    try:
-        factory.create_experiments(subject_type).add_page(project, poc, domain, path, file_type)
-        return {'status': 'OK'}
-    except AttributeError as e:
-        return {'status': 'NOK', 'msg': str(e)}
+    folder_name = data['folder_name']
+    file_name = data['file_name']
 
-
-@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/config', methods=['POST'])
-def add_config(subject_type: str, project: str, poc: str):
-    if request.json is None:
-        return {'status': 'NOK', 'msg': 'No parameters found'}
-    data = request.json.copy()
-    type = data['type']
-    success = factory.create_experiments(subject_type).add_config(project, poc, type)
-    if success:
-        Clients.push_experiments_to_all()
-        return {'status': 'OK'}
+    if request.method == 'POST':
+        try:
+            factory.create_experiments(subject_type).add_folder_or_file(project, poc, folder_name, file_name)
+            Clients.push_experiments_to_all()
+            return {'status': 'OK'}
+        except AttributeError as e:
+            return {'status': 'NOK', 'msg': str(e)}
     else:
-        return {'status': 'NOK'}
+        try:
+            factory.create_experiments(subject_type).remove_folder_or_file(project, poc, folder_name, file_name)
+            Clients.push_experiments_to_all()
+            return {'status': 'OK'}
+        except AttributeError as e:
+            return {'status': 'NOK', 'msg': str(e)}
 
 
 @api.route('/poc/domain/', methods=['GET'])
@@ -235,7 +230,7 @@ def create_experiment(subject_type: str, project: str):
         return {'status': 'NOK', 'msg': 'Missing experiment name'}
     poc_name = data['poc_name']
     try:
-        factory.create_experiments(subject_type).create_empty_poc(project, poc_name)
+        factory.create_experiments(subject_type).add_experiment(project, poc_name)
         Clients.push_experiments_to_all()
         return {'status': 'OK'}
     except AttributeError as e:

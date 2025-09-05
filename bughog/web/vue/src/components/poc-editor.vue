@@ -24,11 +24,10 @@
             content: null,
             should_update_server: true,
         },
+        active_folder: null,
         active_poc: {
-            name: this.poc,
-            active_domain: null,
-            active_path: null,
-            tree: {},
+            name: null,
+            tree: null,
             // Example tree:
             // {
             //   'test.com': {
@@ -66,17 +65,11 @@
           page: '_',
         },
         dialog: {
-          domain: {
-            name: null,
-          },
-          page: {
-            name: "main",
-          },
-          file: {
-            type: null,
-          }
+          new_folder: null,
+          new_file: null,
+          selected_folder: null,
+          selected_file: null,
         },
-        config_type: null,
         editor: null,
         timeout: null,
       }
@@ -106,24 +99,27 @@
             }],
           ]
         }, [[configDomain, {[configPage]: {}}]]);
+      },
+      poc_api_path() {
+        const poc_name = this.active_poc.name;
+        return `/api/poc/${this.subject_type}/${this.project}/${poc_name}/`;
+      },
+      file_api_path() {
+        const poc_name = this.active_poc.name;
+        const file_name = this.active_file.name;
+        const folder_name = this.active_folder;
+        if (folder_name === null) {
+          return `/api/poc/${this.subject_type}/${this.project}/${poc_name}/${file_name}/`;
+        } else {
+          return `/api/poc/${this.subject_type}/${this.project}/${poc_name}/${file_name}/${folder_name}/`;
+        }
       }
     },
     methods: {
-      set_active_file(domain, file_path, file_name) {
-        this.active_poc.active_domain = domain;
-        this.active_poc.active_path = file_path;
+      set_active_file(folder_name, file_name) {
         this.active_file.name = file_name;
-        const project = this.project;
-        const poc = this.active_poc.name;
-        const params = {};
-        if (domain !== null) {
-          params["domain"] = domain;
-        }
-        if (file_path !== null) {
-          params["path"] = file_path;
-        }
-        const path = `/api/poc/${subject_type}/${project}/${poc}/${file_name}/`;
-        axios.get(path, {params: params})
+        this.active_folder = folder_name;
+        axios.get(this.file_api_path)
         .then((res) => {
           if (res.data.status === "OK") {
             this.active_file.should_update_server = false;
@@ -152,23 +148,10 @@
           return;
         }
         this.timeout = setTimeout(() => {
-          const project = this.project;
-          const poc = this.active_poc.name;
-          const domain = this.active_poc.active_domain;
-          const file_path = this.active_poc.active_path;
-          const file_name = this.active_file.name;
           const data = {
             "content": this.editor.session.getValue()
           };
-          const get_params = {};
-          if (domain !== null) {
-            get_params["domain"] = domain;
-          }
-          if (file_path !== null) {
-            get_params["path"] = file_path;
-          }
-          const path = `/api/poc/${subject_type}/${project}/${poc}/${file_name}/`;
-          axios.post(path, data, {params: get_params})
+          axios.post(this.file_api_path, data)
           .then((res) => {
             if (res.data.status == "NOK") {
               console.error("Could not update file on server");
@@ -179,13 +162,10 @@
           });
         }, 500);
       },
-      update_poc_tree(poc_name) {
-        const active_poc_name = poc_name === undefined ? this.active_poc.name : poc_name;
-        const path = `/api/poc/${this.subject_type}/${this.project}/${active_poc_name}/`;
-        axios.get(path)
+      update_poc_tree() {
+        axios.get(this.poc_api_path)
         .then((res) => {
           if (res.data.status === "OK") {
-            this.active_poc.name = active_poc_name;
             this.active_poc.tree = res.data.tree;
           }
         })
@@ -213,21 +193,16 @@
             break;
         }
       },
-      add_page() {
-        const url = `/api/poc/${this.subject_type}/${this.project}/${this.poc}/`;
-        const domain = this.dialog.domain.name;
-        const page = this.dialog.page.name;
-        const file_type = this.dialog.file.type;
-        axios.post(url, {
-          "domain": domain,
-          "page": page,
-          "file_type": file_type,
+      add_folder() {
+        const folder_name = this.dialog.new_folder;
+        axios.post(this.poc_api_path, {
+          "folder_name": folder_name,
+          "file_name": null,
         })
         .then((res) => {
           if (res.data.status === "OK") {
             this.update_poc_tree();
-            this.dialog.domain.name = null;
-            this.dialog.file.type = null;
+            this.dialog.folder_name = null;
           } else {
             alert(res.data.msg);
           }
@@ -236,27 +211,59 @@
 
         });
       },
-      add_config() {
-        const url = `/api/poc/${this.subject_type}/${this.project}/${this.poc}/config`;
-        axios.post(url, {
-          "type": this.config_type,
+      add_file() {
+        const folder_name = this.dialog.selected_folder;
+        const file_name = this.dialog.new_file;
+        axios.post(this.poc_api_path, {
+          "folder_name": folder_name,
+          "file_name": file_name,
         })
-        .then(() => {
-          this.update_poc_tree();
-          this.config_type = null;
+        .then((res) => {
+          if (res.data.status === "OK") {
+            this.update_poc_tree();
+            this.dialog.selected_folder = null;
+            this.dialog.new_file = null;
+          } else {
+            alert(res.data.msg);
+          }
         })
         .catch(() => {
 
         });
       },
-      has_config() {
-        if (this.active_poc.tree === undefined) {
-          console.error("Could not check config in undefined poc tree");
-          return false;
-        }
-        const arr = Object.keys(this.active_poc.tree).filter((domain) => ['url_queue.txt', 'script.cmd'].includes(domain));
-        return arr.length > 0;
-      }
+      add_script() {
+        const url = `${this.poc_api_path}script.cmd/`;
+        axios.post(url)
+        .then(() => {
+          this.update_poc_tree();
+        })
+        .catch(() => {
+
+        });
+      },
+      remove_file_or_folder() {
+        const folder_name = this.dialog.selected_folder;
+        const file_name = this.dialog.selected_file;
+        console.log(folder_name, file_name)
+        axios.delete(this.poc_api_path, {
+          data: {
+            "folder_name": folder_name,
+            "file_name": file_name,
+          }
+        })
+        .then((res) => {
+          if (res.data.status === "OK") {
+            this.update_poc_tree();
+            this.dialog.selected_folder = null;
+            this.dialog.selected_file = null;
+          } else {
+            alert(res.data.msg);
+          }
+        })
+        .catch(() => {
+
+        });
+      },
     },
     mounted() {
       ace.config.set('basePath', '/node_modules/ace-builds/src-min-noconflict');
@@ -282,7 +289,8 @@
         this.editor.clearSelection();
         this.active_file.name = null;
         this.active_file.content = null;
-        this.update_poc_tree(val);
+        this.active_poc.name = val;
+        this.update_poc_tree();
       },
       "project": function(val) {
         this.editor.setValue();
@@ -303,70 +311,75 @@
 </style>
 <template>
   <div class="flex flex-row h-[32rem]">
-    <div v-if="this.active_poc.name == null" class="basis-4/12 w-1/12 h-full pr-6">
+    <div v-if="this.active_poc.tree === null" class="basis-4/12 w-1/12 h-full pr-6">
       Select an experiment in the Experiments pane to edit it here.
     </div>
     <div v-else class="basis-4/12 w-1/12 h-full grow overflow-y-auto">
       <ul class="relative flex flex-col text-gray-700 bg-white shadow-md w-96 rounded-md bg-clip-border dark:bg-dark-3 dark:text-white">
         <nav class="flex min-w-[240px] h-full flex-col gap-1 p-2 font-sans text-base font-normal text-blue-gray-700">
-          <li v-for="([domain, pages]) in Object.entries(active_poc.tree).sort()">
-            <div v-if="domain === 'url_queue.txt' || domain === 'script.cmd'">
-              <div
-                class="flex border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
-                role="button"
-                @click="set_active_file(null, null, domain)" >
-                {{ domain }}
-              </div>
+        <!-- Root files -->
+        <li v-for="file in active_poc.tree.files.sort((a, b) => a.name.localeCompare(b.name))" :key="file.name">
+          <div
+            class="group flex p-2 mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
+            role="button"
+            @click="set_active_file(null, file.name)">
+            <span class="truncate">{{ file.name }}</span>
+            <!-- Remove button -->
+            <div
+              class="ml-auto button shrink-0 rounded text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+              @click="this.dialog.selected_file = file.name"
+              onclick="remove_file_or_folder_dialog.showModal()">
+              ✕
             </div>
-            <ul v-else>
-              <li v-for="([path, files]) in Object.entries(pages).sort()">
-                <div v-if="files">
-                  <div class="flex border-b-2 p-2 font-bold mb-2" >
-                    <div class="w-full">
-                      {{ domain }}/{{ path }}
-                    </div>
-                    <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
-                      <v-icon name="fa-link" class=""/>
-                    </a>
-                  </div>
-                  <ul>
-                    <li v-for="([file, _]) in Object.entries(files)"
-                    :class="(domain + '/' + path === this.active_poc.active_domain + '/' + this.active_poc.active_path) && (file === this.active_file.name) ? 'bg-blue-100 dark:bg-blue-900 rounded-lg' : 'rounded-lg'">
-                      <div
-                        role="button"
-                        class="flex items-center indent-4 w-full p-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900 rounded-lg"
-                        @click="set_active_file(domain, path, file)"
-                      >
-                        {{ file }}
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-                <div v-else class="flex justify-between border-b-2 p-2 font-bold mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900">
-                  <div
-                      role="button"
-                      class="rounded-lg"
-                      @click="set_active_file(domain, null, path)"
-                    >
-                    <div class="w-full">
-                      {{ domain }}/{{ path }}
-                    </div>
-                  </div>
-                  <div>
-                    <a :href="'https://'+domain+'/'+this.project+'/'+this.active_poc.name+'/'+path" target="_blank">
-                      <v-icon name="fa-link" class=""/>
-                    </a>
-                  </div>
-                </div>
-              </li>
-            </ul>
+          </div>
+        </li>
+        <!-- Folders -->
+        <div v-for="subfolder in active_poc.tree.subfolders.sort((a, b) => a.name.localeCompare(b.name))" :key="subfolder.name">
+          <li class="flex group border-b-2 mb-2">
+            <div class="font-bold m-2 focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900">
+            {{ subfolder.name }}
+            </div>
+            <div class="ml-auto button m-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            @click="dialog.selected_folder = subfolder.name"
+            onclick="add_file_dialog.showModal()">
+              +
+            </div>
+            <!-- Remove button -->
+            <div
+              class="button m-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              @click="this.dialog.selected_folder = subfolder.name"
+              onclick="remove_file_or_folder_dialog.showModal()">
+              ✕
+            </div>
           </li>
-          <div class="flex flex-row justify-between">
-            <li role="button" class="button text-center w-full mr-1" onclick="create_domain_dialog.showModal()">
-              Add page
+          <div>
+            <!-- Files in subfolder -->
+            <li v-for="file in subfolder.files.sort((a, b) => a.name.localeCompare(b.name))" :key="file.name">
+              <div class="group relative flex items-center p-2 mb-2
+                          hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900">
+                <div
+                  class="flex-grow hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
+                  role="button"
+                  @click="set_active_file(subfolder.name, file.name)">
+                  {{ file.name }}
+                </div>
+                <!-- Remove button -->
+                <div
+                  class="ml-auto button shrink-0 rounded text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click="this.dialog.selected_file = file.name, this.dialog.selected_folder = subfolder.name"
+                  onclick="remove_file_or_folder_dialog.showModal()">
+                  ✕
+                </div>
+              </div>
             </li>
-            <li v-if="!this.has_config()" role="button" class="button text-center w-full mr-1" onclick="create_config_dialog.showModal()">
-              Add script
+          </div>
+        </div>
+          <div class="flex flex-row justify-between">
+            <li role="button" class="button text-center w-full mr-1" onclick="add_folder_dialog.showModal()">
+              Add folder
+            </li>
+            <li role="button" class="button text-center w-full mr-1" onclick="add_file_dialog.showModal()">
+              Add root file
             </li>
           </div>
         </nav>
@@ -375,53 +388,68 @@
     <div id="editor" class="basis-8/12"></div>
   </div>
 
-  <!-- Create domain dialog -->
-  <dialog id="create_domain_dialog" class="dialog">
-    <form method="dialog" @submit="add_page">
+  <!-- Add folder dialog -->
+  <dialog id="add_folder_dialog" class="dialog">
+    <form method="dialog" @submit="add_folder">
       <p>
         <label>
-          <div class="py-2">Choose a domain:</div>
-          <select name="domain" id="domain" v-model="dialog.domain.name" required>
-            <option v-for="domain in available_domains" :value="domain">
-              {{ domain }}
-            </option>
-          </select>
-
-          <div class="py-2">Choose path:</div>
-          <input type="text" id="page" class="input-box" v-model="dialog.page.name" required />
-
-          <div class="py-2">Choose file type:</div>
-          <select name="file" id="file" v-model="dialog.file.type" required>
-            <option v-for="file_type in available_file_types" :value="file_type">
-              {{ file_type }}
-            </option>
-          </select>
+          <div class="py-2">Folder name:</div>
+          <input type="text" id="new_folder" class="input-box" v-model="dialog.new_folder" required />
         </label>
       </p>
       <div class="flex pt-3">
-        <input class="button m-2 w-full" type="submit" value="Add domain">
-        <input class="button m-2" type="button" value="Cancel" onclick="create_domain_dialog.close()">
+        <input class="button m-2 w-full" type="submit" value="Add folder">
+        <input class="button m-2" type="button" value="Cancel" onclick="add_folder_dialog.close()">
       </div>
     </form>
   </dialog>
 
-  <!-- Create config dialog -->
-  <dialog id="create_config_dialog" class="dialog">
-    <form method="dialog" @submit="add_config">
+  <!-- Add file dialog -->
+  <dialog id="add_file_dialog" class="dialog">
+    <form method="dialog" @submit="add_file">
       <p>
-        <label>
-          <div class="py-2">Choose config type:</div>
-          <select name="config_type" id="config_type" v-model="config_type" required>
-            <option v-for="(label, value) of available_config_types" :value="value">
-              {{ label }}
-            </option>
-          </select>
-        </label>
+        <div class="py-2">File name:</div>
+        <input type="text" id="page" class="input-box" v-model="dialog.new_file" required />
       </p>
       <div class="flex pt-3">
-        <input class="button m-2 w-full" type="submit" value="Create config">
-        <input class="button m-2" type="button" value="Cancel" onclick="create_config_dialog.close()">
+        <input class="button m-2 w-full" type="submit" value="Add file">
+        <input class="button m-2" type="button" value="Cancel" onclick="add_file_dialog.close()">
       </div>
     </form>
   </dialog>
+
+  <!-- Add file dialog -->
+  <dialog id="remove_file_or_folder_dialog" class="dialog">
+    <form method="dialog" @submit.prevent="remove_file_or_folder">
+      <p
+        v-if="this.dialog.selected_folder !== null && this.dialog.selected_file !== null"
+        class="py-2">
+        Remove <b>{{ this.dialog.selected_folder }}/{{ this.dialog.selected_file }}</b>?
+      </p>
+      <p
+        v-else-if="this.dialog.selected_folder !== null"
+        class="py-2">
+        Remove folder <b>{{ this.dialog.selected_folder }}</b> and all its contents?
+      </p>
+      <p
+        v-else
+        class="py-2">
+        Remove file <b>{{ this.dialog.selected_file }}</b>?
+      </p>
+
+      <div class="flex pt-3 gap-2">
+        <button type="submit"
+          class="button m-2 w-full bg-red-600 text-white"
+          onclick="remove_file_or_folder_dialog.close()">
+          Confirm
+        </button>
+        <button type="button" class="button m-2"
+          onclick="remove_file_or_folder_dialog.close()"
+          @click="this.dialog.selected_folder = null, this.dialog.selected_file = null">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </dialog>
+
 </template>

@@ -57,6 +57,11 @@ def create_experiments(subject_type: str) -> Experiments:
 
 
 @staticmethod
+def invalidate_experiment_cache():
+    create_experiments.cache_clear()
+
+
+@staticmethod
 def get_all_subject_availability() -> list[dict]:
     subject_availability = []
     for subject_type in get_all_subject_types():

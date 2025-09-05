@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import shutil
 
 from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters
@@ -25,7 +26,6 @@ SUPPORTED_DOMAINS = [
     'sub.b.test',
     'adition.com',
 ]
-EXPERIMENT_FOLDER_PATH = '/app/experiments/pages'
 
 
 class Experiments:
@@ -53,7 +53,7 @@ class Experiments:
         return [folder.name for folder in project_folders]
 
     def create_empty_project(self, project_name: str):
-        self.__is_valid_name(project_name)
+        self.__is_valid_file_or_folder(project_name)
         if project_name in [folder.name for folder in self.root_folder.get_all_folders_with_tag('project')]:
             raise AttributeError(f"The given project name '{project_name}' already exists.")
         new_project_path = os.path.join(self.root_folder_path, project_name)
@@ -66,22 +66,23 @@ class Experiments:
         experiments = [(folder.name, 'runnable' in folder.tags) for folder in experiment_folders]
         return sorted(experiments, key=lambda x: x[0])
 
-    def _get_poc_file_path(self, project: str, poc: str, domain: str, path: str, file_name: str) -> str:
-        # Top-level config file
-        if domain == 'Config' and path == '_':
-            return os.path.join(Global.custom_page_folder, project, poc, file_name)
+    def _get_poc_folder_path(self, project: str, poc: str, folder: str) -> str:
+        return os.path.join(self.root_folder_path, project, poc, folder)
 
-        return os.path.join(Global.custom_page_folder, project, poc, domain, path, file_name)
+    def _get_poc_file_path(self, project: str, poc: str, folder_name: str | None, file_name: str) -> str:
+        if folder_name is None:
+            return os.path.join(self.root_folder_path, project, poc, file_name)
+        return os.path.join(self.root_folder_path, project, poc, folder_name, file_name)
 
-    def get_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str) -> str:
-        file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
+    def get_poc_file(self, project: str, poc: str, folder_name: str | None, file_name: str) -> str:
+        file_path = self._get_poc_file_path(project, poc, folder_name, file_name)
         if os.path.isfile(file_path):
             with open(file_path) as file:
                 return file.read()
         raise AttributeError(f"Could not find PoC file at expected path '{file_path}'")
 
-    def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
-        file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
+    def update_poc_file(self, project: str, poc: str, folder: str | None, file_name: str, content: str) -> bool:
+        file_path = self._get_poc_file_path(project, poc, folder, file_name)
         if os.path.isfile(file_path):
             if content == '':
                 logger.warning('Attempt to save empty file ignored')
@@ -91,45 +92,39 @@ class Experiments:
             return True
         return False
 
-    def add_page(self, project: str, poc: str, domain: str, path: str, file_type: str):
-        domain_path = os.path.join(self.root_folder_path, project, poc, domain)
-        if not os.path.exists(domain_path):
-            os.makedirs(domain_path)
-
-        self.__is_valid_name(path)
-        if file_type == 'py':
-            file_name = path if path.endswith('.py') else path + '.py'
-            file_path = os.path.join(domain_path, file_name)
+    def add_experiment(self, project: str, poc_name: str) -> None:
+        poc_path = os.path.join(self.root_folder_path, project, poc_name)
+        if not os.path.exists(poc_path):
+            os.makedirs(poc_path)
         else:
-            page_path = os.path.join(domain_path, path)
-            if not os.path.exists(page_path):
-                os.makedirs(page_path)
-            new_file_name = f'index.{file_type}'
-            file_path = os.path.join(page_path, new_file_name)
-            headers_file_path = os.path.join(page_path, 'headers.json')
-            if not os.path.exists(headers_file_path):
-                with open(headers_file_path, 'w') as file:
-                    file.write(self.get_default_file_content('headers.json'))
+            raise AttributeError(f'Experiment {poc_name} for {project} already exists.')
 
-        if os.path.exists(file_path):
-            raise AttributeError(f"The given page '{path}' does already exist.")
-        with open(file_path, 'w') as file:
-            file.write(self.get_default_file_content(file_type))
+    def add_folder_or_file(self, project: str, poc: str, folder_name: str | None, file_name: str):
+        # Validate and create folder
+        if folder_name is not None:
+            self.__is_valid_file_or_folder(folder_name)
+            folder_path = self._get_poc_folder_path(project, poc, folder_name)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
 
-        self.reload_experiments()
-
-    def add_config(self, project: str, poc: str, type: str) -> bool:
-        content = self.get_default_file_content(type)
-
-        if content == '':
-            return False
-
-        file_path = os.path.join(self.root_folder_path, project, poc, type)
-        with open(file_path, 'w') as file:
-            file.write(content)
+        # Validate and create file
+        if file_name is not None:
+            self.__is_valid_file_or_folder(file_name)
+            file_path = self._get_poc_file_path(project, poc, folder_name, file_name)
+            if os.path.exists(file_path):
+                raise AttributeError(f"The given file '{file_path}' already exists.")
+            with open(file_path, 'bw') as file:
+                file.write(self.get_default_file_content(file_name))
 
         self.reload_experiments()
-        return True
+
+    def remove_folder_or_file(self, project: str, poc: str, folder_name: str | None, file_name: str):
+        if file_name is not None:
+            file_path = self._get_poc_file_path(project, poc, folder_name, file_name)
+            os.remove(file_path)
+        if folder_name is not None:
+            folder_path = self._get_poc_folder_path(project, poc, folder_name)
+            shutil.rmtree(folder_path)
 
     def __get_project_folder(self, project_name: str) -> Folder:
         for project in self.root_folder.subfolders:
@@ -137,14 +132,21 @@ class Experiments:
                 return project
         raise Exception(f"Could not find project '{project_name}'")
 
-    def get_experiment_folder(self, params: EvaluationParameters) -> Folder:
-        project_name = params.evaluation_range.project_name
-        experiment_name = params.evaluation_range.experiment_name
+    def __get_experiment_folder(self, project_name: str, experiment_name: str) -> Folder:
         project = self.__get_project_folder(project_name)
         for experiment in project.subfolders:
             if experiment.name == experiment_name:
                 return experiment
         raise Exception(f"Could not find experiment '{experiment_name}'")
+
+    def get_experiment_folder(self, params: EvaluationParameters) -> Folder:
+        project_name = params.evaluation_range.project_name
+        experiment_name = params.evaluation_range.experiment_name
+        return self.__get_experiment_folder(project_name, experiment_name)
+
+    def get_experiment_dir_tree(self, project_name: str, experiment_name: str) -> dict:
+        experiment_folder = self.__get_experiment_folder(project_name, experiment_name)
+        return experiment_folder.serialize()
 
     def get_interaction_script(self, experiment_folder: Folder) -> list[str]:
         script_path = os.path.join(experiment_folder.path, 'script.cmd')
@@ -155,10 +157,8 @@ class Experiments:
         else:
             return self.framework.get_default_experiment_script(experiment_folder)
 
-    def create_empty_poc(self, project: str, experiment: str):
-        return self.framework.create_empty_experiment(project, experiment)
-
-    def get_default_file_content(self, file_type: str) -> str:
+    def get_default_file_content(self, file_name: str) -> bytes:
+        _, file_type = os.path.splitext(file_name)
         return self.framework.get_default_file_content(file_type)
 
     def reload_experiments(self):
@@ -166,16 +166,17 @@ class Experiments:
         logger.info('Experiments are reloaded.')
 
     @staticmethod
-    def __is_valid_name(name: str) -> None:
+    def __is_valid_file_or_folder(name: str) -> None:
         """
-        Checks whether the given string is a valid experiment, page or project name, and raises an exception if not.
+        Checks whether the given strings are a valid names, and raises an exception if not.
         This is to prevent issues with URL encoding and decoding.
 
-        :param name: Name to be checked on validity.
+        :param name: File or folder name to be checked.
         """
         if name is None or name == '':
-            raise AttributeError('The given name cannot be empty.')
-        if re.match(r'^[A-Za-z0-9_\-.]+$', name) is None:
+            raise AttributeError('The file name cannot be empty.')
+        regex = r'^[A-Za-z0-9_\-.]+$'
+        if re.match(regex, name) is None:
             raise AttributeError(f"The given name '{name}' is invalid. Only letters, numbers, '.', '-' and '_' can be used, and the name should not be empty.")
 
 

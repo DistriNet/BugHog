@@ -29,7 +29,7 @@ Integration tests
 {% block content %}
 <h1>Integration tests</h1>
 
-<form action="/api/test/start/" method="post">
+<form action="/api/test/continue/?clean_slate=yes" method="post">
     <input type="submit" value="Run all integration tests">
 </form>
 <form action="/api/test/continue/" method="post">
@@ -37,24 +37,35 @@ Integration tests
 </form>
 
 <table>
-    <tr>
-        <th>Experiment</th>
-        <th>Browser</th>
-        <th>Success</th>
-        <th>Fail</th>
-        <th>Errors</th>
-        <th>Ratio</th>
-    </tr>
-{% for result in verification_results %}
-    <tr class="{{ 'green' if result['success_ratio'] == 100 else 'red' if result['success_ratio'] < 80 else 'orange' }}">
-        <td>{{ result['experiment_name'] }}</td>
-        <td>{{ result['browser_name'] }}</td>
-        <td>{{ result['nb_of_success_results'] }}</td>
-        <td>{{ result['nb_of_fail_results'] }}</td>
-        <td>{{ result['nb_of_error_results'] }}</td>
-        <td>{{ result['success_ratio'] }} %</td>
-    </tr>
-{% endfor %}
+    <thead>
+        <tr>
+            <th>Experiment</th>
+            <th>Subject</th>
+            <th>Success</th>
+            <th>Fail</th>
+            <th>Errors</th>
+            <th>Ratio</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for sublist in verification_results %}
+        <tr>
+            <td colspan="6" style="background: #ddd; font-weight: bold;">
+                Subject Type: {{ sublist[0]['subject_type'] if sublist|length > 0 else 'Unknown' }}
+            </td>
+        </tr>
+        {% for result in sublist %}
+            <tr class="{{ 'green' if result['success_ratio'] == 100 else 'red' if result['success_ratio'] < 80 else 'orange' }}">
+                <td>{{ result['experiment_name'] }}</td>
+                <td>{{ result['subject_name'] }}</td>
+                <td>{{ result['nb_of_success_results'] }}</td>
+                <td>{{ result['nb_of_fail_results'] }}</td>
+                <td>{{ result['nb_of_error_results'] }}</td>
+                <td>{{ result['success_ratio'] }} %</td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}

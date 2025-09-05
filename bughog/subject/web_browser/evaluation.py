@@ -11,7 +11,7 @@ class BrowserEvaluationFramework(EvaluationFramework):
         # If an experiment has no script.cmd, it should have exactly one main page.
         return self.__find_only_main_page(experiment_folder) is not None
 
-    def create_empty_experiment(self, project: str, experiment: str):
+    def fill_empty_experiment_with_default(self, path: str):
         pass
 
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:

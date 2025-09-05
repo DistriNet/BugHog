@@ -26,9 +26,9 @@ class EvaluationFramework(ABC):
         pass
 
     @abstractmethod
-    def create_empty_experiment(self, project: str, experiment: str):
+    def fill_empty_experiment_with_default(self, path: str):
         """
-        Creates an empty experiment context, with default configuration.
+        Populates an empty experiment with default folders and files.
         """
         pass
 
