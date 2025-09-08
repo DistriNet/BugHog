@@ -61,13 +61,6 @@ class Global:
         return not fatal
 
     @staticmethod
-    def initialize_folders():
-        for browser in ['chromium', 'firefox']:
-            if not os.path.isfile(f'/app/subject/web_browser/executable/{browser}/artisanal/meta.json'):
-                with open(f'/app/subject/web_browser/executable/{browser}/artisanal/meta.json', 'w') as file:
-                    file.write('{}')
-
-    @staticmethod
     def get_database_params() -> DatabaseParameters:
         if Global.__database_params:
             return Global.__database_params

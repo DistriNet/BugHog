@@ -3,6 +3,7 @@ browser/binaries/
 database/data/
 nginx/ssl/certs/*
 nginx/ssl/keys/*
+subject/*/executables/**
 !**/.gitkeep
 **/node_modules
 **/junit.xml

@@ -121,16 +121,15 @@ class Executable(ABC):
 
     @property
     @util.ensure_folder_exists
-    def storage_folder(self) -> str:
-        if self.state.has_local_executable():
-            return self.state.get_local_executable_folder_path()
-        else:
-            return self.temporary_storage_folder
-
-    @property
-    @util.ensure_folder_exists
     def temporary_storage_folder(self) -> str:
-        return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{str(self.state.index)}')
+        """
+        Executables are stored here before staging.
+        I.e., public executables are downloaded and artisanal executables are copied to this folder.
+        """
+        return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{self.state.name}')
+
+    def is_in_temporary_storage(self) -> bool:
+        return os.path.isdir(self.temporary_storage_folder)
 
     @property
     @util.ensure_folder_exists
@@ -171,13 +170,18 @@ class Executable(ABC):
     def fetch(self):
         from bughog.database.mongo.executable_cache import ExecutableCache
 
-        if self.state.has_local_executable():
-            logger.info(f'Executable for {self.state.name} was found locally.')
+        if self.is_in_temporary_storage():
+            logger.info(f'Executable for {self.state.name} was already present for staging.')
+        elif self.state.has_artisanal_executable():
+            self.origin = 'artisanal'
+            logger.info(f'Executable from artisanal build for {self.state.name} was found.')
+            executable_path = self.state.get_artisanal_executable_folder()
+            util.copy_folder(executable_path, self.temporary_storage_folder)
         elif ExecutableCache.fetch_executable_files(self.config, self.state.name, self.temporary_storage_folder):
+            self.origin = 'public'
             logger.info(f'Executable for {self.state.name} was fetched from cache.')
-        elif not self.state.has_publicly_available_executable():
-            raise Exception(f'Executable for {self.state.name} is not available online.')
-        else:
+        elif self.state.has_public_executable():
+            self.origin = 'public'
             start = time.time()
             executable_urls = self.state.get_executable_source_urls()
             util.download_and_extract(executable_urls, self.temporary_storage_folder)
@@ -185,9 +189,11 @@ class Executable(ABC):
             logger.info(f'Executable for {self.state.name} was downloaded in {elapsed_time:.2f}s')
             self._optimize_for_storage()
             ExecutableCache.store_executable_files(self.config, self.state.name, self.temporary_storage_folder)
+        else:
+            raise Exception(f'Executable for {self.state.name} is not available.')
 
     def remove(self):
-        if not self.state.has_local_executable():
+        if not self.is_in_temporary_storage():
             shutil.rmtree(self.temporary_storage_folder)
 
     def stage(self):
@@ -208,13 +214,7 @@ class Executable(ABC):
         cli_command = self._get_cli_command() + experiment_specific_params
         logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
-            popen_args = {
-                'args': cli_command,
-                'stdout': file,
-                'stderr': file,
-                'bufsize': 1,
-                'text': True
-            }
+            popen_args = {'args': cli_command, 'stdout': file, 'stderr': file, 'bufsize': 1, 'text': True}
             if cwd:
                 popen_args['cwd'] = cwd.path
             if self._runtime_env_vars:

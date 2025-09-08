@@ -1,4 +1,5 @@
 from functools import lru_cache
+import os
 
 from bughog.evaluation.experiments import Experiments
 from bughog.parameters import EvaluationParameters
@@ -6,6 +7,8 @@ from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework
 from bughog.subject.js_engine.v8.subject import V8Subject
 from bughog.subject.subject import Subject
+from bughog.subject.wasm_runtime.evaluation_framework import WasmRuntimeEvaluationFramework
+from bughog.subject.wasm_runtime.wasmtime.subject import WasmtimeSubject
 from bughog.subject.web_browser.chromium.subject import Chromium
 from bughog.subject.web_browser.evaluation import BrowserEvaluationFramework
 from bughog.subject.web_browser.firefox.subject import Firefox
@@ -15,6 +18,12 @@ subjects = {
         'evaluation_framework': JSEngineEvaluationFramework,
         'subjects': [
             V8Subject()
+        ]
+    },
+    'wasm_runtime': {
+        'evaluation_framework': WasmRuntimeEvaluationFramework,
+        'subjects': [
+            WasmtimeSubject()
         ]
     },
     'web_browser': {
@@ -92,3 +101,11 @@ def get_subject(subject_type: str, subject_name: str) -> Subject:
     if len(matched_subjects) > 0:
         return matched_subjects[0]
     raise AttributeError(f"Subject '{subject_type}, {subject_name}' is not supported.")
+
+
+@staticmethod
+def initialize_all_subject_folders() -> None:
+    for subject_type, specs in subjects.items():
+        os.makedirs(f'/app/subject/{subject_type}/experiments/', exist_ok=True)
+        for subject in specs.get('subjects', []):
+            os.makedirs(f'/app/subject/{subject_type}/executables/{subject.name}/', exist_ok=True)

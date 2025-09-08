@@ -1,0 +1,59 @@
+import re
+
+from bughog import cli
+from bughog.subject.executable import Executable
+
+
+class WasmtimeExecutable(Executable):
+    @property
+    def executable_name(self) -> str:
+        return 'wasmtime'
+
+    @property
+    def post_experiment_sleep_duration(self) -> int:
+        return 0
+
+    @property
+    def open_console_hotkey(self) -> list[str]:
+        raise NotImplementedError()
+
+    def _optimize_for_storage(self) -> None:
+        pass
+
+    def _configure_executable(self):
+        """
+        Configures the downloaded executable folder after download and extraction, but before it is cached or used.
+        This function should be idempotent.
+        """
+        cli.execute('chmod u+x wasmtime', cwd=self.staging_folder, ignore_error=False)
+
+    @property
+    def supported_options(self) -> list[str]:
+        return []
+
+    def _get_version(self) -> str:
+        command = './wasmtime --version'
+        output = cli.execute_and_return_output(command, cwd=self.staging_folder)
+        match = re.match(r'wasmtime (?P<version>[0-9]+\.[0-9]+\.[0-9]+)', output)
+        if match:
+            return match.group('version')
+        raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")
+
+    def _get_cli_command(self) -> list[str]:
+        return [self.executable_path] + self._runtime_flags
+
+    def pre_experiment_setup(self):
+        self.fetch()
+        self.stage()
+
+    def post_experiment_cleanup(self):
+        self.unstage()
+        self.remove()
+
+    def pre_try_setup(self):
+        pass
+
+    def post_try_cleanup(self):
+        pass
+
+

@@ -14,7 +14,7 @@ from bughog.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
-from bughog.subject.factory import get_subject_from_params
+from bughog.subject import factory
 from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 from bughog.version_control.state.base import State
 from bughog.version_control.state_factory import StateFactory
@@ -32,10 +32,10 @@ class Main:
 
         self.eval_queue = []
 
-        Global.initialize_folders()
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
         PublicBrowserStateCache.update()
+        factory.initialize_all_subject_folders()
 
         logger.info("BugHog is ready!")
         if os.getenv('GITHUB_TOKEN') is None:
@@ -133,7 +133,7 @@ class Main:
         sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
-        subject = get_subject_from_params(eval_params)
+        subject = factory.get_subject_from_params(eval_params)
         state_factory = StateFactory(subject.state_oracle, eval_params)
 
         if search_strategy == "bgb_sequence":

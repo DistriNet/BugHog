@@ -69,6 +69,14 @@ def find_commit_id_from_tag(owner: str, repo: str, tag: str) -> str:
     return resp.get('object', {}).get('sha')
 
 
+def get_all_tags(owner: str, repo: str) -> list[str]:
+    url = f'https://api.github.com/repos/{owner}/{repo}/git/refs/tags/'
+    resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))
+    if not resp or not isinstance(resp, dict):
+        raise Exception(f'Request to {url} returned {resp}.')
+    return [item['ref'] for item in resp]
+
+
 def __get_reference_commit_nb(owner: str, repo: str) -> int:
     url = f'https://api.github.com/repos/{owner}/{repo}/commits?page=1&per_page=1'
     resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))

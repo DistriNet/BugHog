@@ -93,8 +93,8 @@ class State(ABC):
     @staticmethod
     def from_dict(subject_type: str, subject_name: str, data: dict) -> State:
         from bughog.subject import factory
-        from bughog.version_control.state.commit.base import CommitState
-        from bughog.version_control.state.release.base import ReleaseState
+        from bughog.version_control.state.commit_state import CommitState
+        from bughog.version_control.state.release_state import ReleaseState
 
         subject_class = factory.get_subject(subject_type, subject_name)
         oracle = subject_class.state_oracle
@@ -107,16 +107,10 @@ class State(ABC):
                 raise Exception(f'Unknown state type: {data["type"]}')
 
     def has_available_executable(self) -> bool:
-        return self.has_local_executable() or self.has_publicly_available_executable()
-
-    def get_local_executable_folder_path(self) -> str:
-        return self.oracle.get_local_executable_folder_path(self.name)
-
-    def has_local_executable(self) -> bool:
-        return os.path.isdir(self.get_local_executable_folder_path())
+        return self.has_artisanal_executable() or self.has_public_executable()
 
     @abstractmethod
-    def has_publicly_available_executable(self) -> bool:
+    def has_public_executable(self) -> bool:
         pass
 
     @abstractmethod
@@ -125,6 +119,12 @@ class State(ABC):
         Returns a list of URLs where the associated binary can potentially be downloaded from.
         """
         pass
+
+    def has_artisanal_executable(self) -> bool:
+        return self.oracle.has_artisanal_executable(self.name)
+
+    def get_artisanal_executable_folder(self) -> str:
+        return self.oracle.get_artisanal_executable_folder(self.name)
 
     def get_previous_and_next_state_with_executable(self) -> tuple[State, State]:
         raise NotImplementedError(f'This function is not implemented for {self}')

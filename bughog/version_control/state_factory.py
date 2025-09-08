@@ -4,8 +4,8 @@ from bughog.database.mongo.mongodb import MongoDB
 from bughog.parameters import EvaluationParameters
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.state.base import State
-from bughog.version_control.state.commit.base import CommitState
-from bughog.version_control.state.release.base import ReleaseState
+from bughog.version_control.state.commit_state import CommitState
+from bughog.version_control.state.release_state import ReleaseState
 
 
 class StateFactory:

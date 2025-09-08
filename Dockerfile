@@ -54,15 +54,10 @@ RUN curl -sSLo multiarch-support.deb https://snapshot.debian.org/archive/debian-
     ln -s /usr/lib/x86_64-linux-gnu/libplc4.so /usr/lib/x86_64-linux-gnu/libplc4.so.0d  &&\
     ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.0d
 
-RUN mkdir -p /app/logs && \
-    mkdir -p /app/subject/web_browser/binaries/chromium/downloaded && \
-    mkdir -p /app/subject/web_browser/binaries/firefox/downloaded && \
-    mkdir -p /app/subject/web_browser/binaries/chromium/artisanal && \
-    mkdir -p /app/subject/web_browser/binaries/firefox/artisanal
-
 COPY subject/web_browser/profiles /app/subject/web_browser/profiles
 COPY --chmod=0755 scripts/ /app/scripts/
-RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
+RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb &&\
+    mkdir -p /app/logs
 
 # Install python packages
 COPY pyproject.toml /app/

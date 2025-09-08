@@ -81,8 +81,8 @@ class CommitState(State):
         #         self._commit_nb = state.get('revision_number', None)
         # # If not, fetch the missing data from the parser
 
-    def has_publicly_available_executable(self) -> bool:
-        return self.oracle.has_publicly_available_commit_executable(self.commit_nb)
+    def has_public_executable(self) -> bool:
+        return self.oracle.has_public_commit_executable(self.commit_nb)
 
     def get_executable_source_urls(self) -> list[str]:
         return self.oracle.get_commit_executable_download_urls(self.commit_nb)

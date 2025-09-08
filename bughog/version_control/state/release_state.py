@@ -1,7 +1,8 @@
 from typing import Optional
+
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.state.base import State
-from bughog.version_control.state.commit.base import CommitState
+from bughog.version_control.state.commit_state import CommitState
 from bughog.version_control.state_not_found import StateNotFound
 
 
@@ -47,8 +48,8 @@ class ReleaseState(State):
         }
         return {k: v for k, v in fields.items() if v is not None}
 
-    def has_publicly_available_executable(self) -> bool:
-        return self.oracle.has_publicly_available_release_executable(self.release_version)
+    def has_public_executable(self) -> bool:
+        return self.oracle.has_public_release_executable(self.release_version)
 
     def get_executable_source_urls(self) -> list[str]:
         return self.oracle.get_release_executable_download_urls(self.release_version)
