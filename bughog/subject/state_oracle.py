@@ -5,9 +5,10 @@ from typing import Optional
 
 
 class StateOracle(ABC):
-    def __init__(self, subject_type, subject_name) -> None:
+    def __init__(self, subject_type, subject_name, only_artisanal=False) -> None:
         self.subject_type = subject_type
         self.subject_name = subject_name
+        self._only_artisanal = only_artisanal
 
     # Commit / revision logic
 
@@ -31,6 +32,10 @@ class StateOracle(ABC):
     def get_commit_url(self, commit_nb, commit_id) -> str:
         pass
 
+    @abstractmethod
+    def get_most_recent_major_release_version(self) -> int:
+        pass
+
     @staticmethod
     def is_valid_commit_id(commit_id: str) -> bool:
         """
@@ -47,11 +52,13 @@ class StateOracle(ABC):
         """
         return re.match(r'[0-9]{1,7}', str(commit_nb)) is not None
 
-    # Public executables
+    @staticmethod
+    def get_full_version_from_release_tag(release_tag: str) -> str|None:
+        if match := re.search(r'\d+\.\d+\.\d+', release_tag):
+            return match[0]
+        return None
 
-    @abstractmethod
-    def get_most_recent_major_release_version(self) -> int:
-        pass
+    # Public executables
 
     @abstractmethod
     def has_public_release_executable(self, major_version: int) -> bool:
@@ -72,12 +79,11 @@ class StateOracle(ABC):
     # Artisanal executables
 
     def get_artisanal_executable_folder(self, state_name: str) -> str:
-        return f'/app/subject/executables/{self.subject_type}/{self.subject_name}/{state_name}'
+        return f'/app/subject/{self.subject_type}/executables/{self.subject_name}/{state_name}'
 
     def has_artisanal_executable(self, state_name: str) -> bool:
         executable_folder = self.get_artisanal_executable_folder(state_name)
         return os.path.isdir(executable_folder)
-
 
     # Helper functions
 
@@ -93,14 +99,16 @@ class StateOracle(ABC):
 
     @staticmethod
     def _get_earliest_tag_with_major(all_release_tags: list[str], major_release: int) -> str:
-        pattern = re.compile(r'^\d+\.\d+\.\d+$')
-        # Filter tags matching x.y.z format and starting with the given major
-        filtered_tags = [tag for tag in all_release_tags if pattern.match(tag) and tag.startswith(f'{major_release}.')]
-        if not filtered_tags:
-            Exception(f'Could not find earliest tag for {major_release}.')
+        candidates = []
+        for tag in all_release_tags:
+            v = StateOracle.get_full_version_from_release_tag(tag)
+            if v is None or not v.startswith(f"{major_release}."):
+                continue
+            parts = tuple(int(p) for p in v.split('.'))
+            candidates.append((parts, tag))
 
-        def version_tuple(tag):
-            return tuple(int(x) for x in tag.split('.'))
+        if not candidates:
+            raise ValueError(f"Could not find earliest tag for major {major_release}.")
 
-        sorted_tags = sorted(filtered_tags, key=version_tuple)
-        return sorted_tags[0]
+        candidates.sort()
+        return candidates[0][1]

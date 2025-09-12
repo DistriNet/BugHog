@@ -5,6 +5,7 @@ Helper module to find commit information for Google repos hosted on GitHub.
 import logging
 import os
 import re
+from datetime import datetime, timezone
 from typing import Optional
 
 from bughog import util
@@ -60,6 +61,29 @@ def find_commit_nb(owner: str, repo: str, commit_id: str) -> int:
         return commit_nb
     raise StateNotFound('commit number', f'commit id {commit_id}', url)
 
+def find_commit_id_with_date(owner: str, repo: str, ts: int) -> str:
+    """
+    The UNIX timestamp is considered the commit number.
+    """
+    date = datetime.fromtimestamp(ts + 1, tz=timezone.utc).isoformat().replace('+00:00','Z')
+    url = f'https://api.github.com/repos/{owner}/{repo}/commits?since={date}&until{date}'
+    resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))
+    if not isinstance(resp, list):
+        raise Exception(f'Request to {url} returned {resp}.')
+    return resp[0].get('sha')
+
+def find_commit_nb_with_date(owner: str, repo: str, commit_id: str) -> int:
+    """
+    The UNIX timestamp is considered the commit number.
+    """
+    url = f'https://api.github.com/repos/{owner}/{repo}/commits/{commit_id}'
+    resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))
+    if not resp or not isinstance(resp, dict):
+        raise Exception(f'Could not find commit nb for {url}.')
+    date = resp.get('commit', {}).get('author', {}).get('date', None)
+    if date is None:
+        raise Exception(f'Could not find date for {url}')
+    return int(datetime.fromisoformat(date).timestamp())
 
 def find_commit_id_from_tag(owner: str, repo: str, tag: str) -> str:
     url = f'https://api.github.com/repos/{owner}/{repo}/git/refs/tags/{tag}'
@@ -68,13 +92,12 @@ def find_commit_id_from_tag(owner: str, repo: str, tag: str) -> str:
         raise Exception(f'Request to {url} returned {resp}.')
     return resp.get('object', {}).get('sha')
 
-
 def get_all_tags(owner: str, repo: str) -> list[str]:
     url = f'https://api.github.com/repos/{owner}/{repo}/git/refs/tags/'
     resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))
-    if not resp or not isinstance(resp, dict):
+    if not resp or not isinstance(resp, list):
         raise Exception(f'Request to {url} returned {resp}.')
-    return [item['ref'] for item in resp]
+    return [re.sub(r'^refs/tags/', '', item['ref']) for item in resp if 'ref' in item]
 
 
 def __get_reference_commit_nb(owner: str, repo: str) -> int:

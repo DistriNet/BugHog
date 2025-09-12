@@ -2,7 +2,6 @@ import logging
 import os
 import time
 
-from bughog.configuration import Global
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.experiment_result import ExperimentResult
@@ -12,7 +11,6 @@ from bughog.subject import factory
 from bughog.subject.executable import Executable, ExecutableStatus
 from bughog.subject.simulation import Simulation
 from bughog.version_control.state.base import State
-from bughog.web.clients import Clients
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +32,7 @@ class Evaluation:
         executable = subject.create_executable(params.subject_configuration, state)
         runtime_flags = self.experiments.framework.get_runtime_flags(experiment_folder)
         runtime_env_vars = self.experiments.framework.get_runtime_env_vars(experiment_folder)
+        runtime_args = self.experiments.framework.get_runtime_args(experiment_folder)
 
         collector = subject.create_result_collector()
 
@@ -44,6 +43,7 @@ class Evaluation:
 
         executable.add_runtime_flags(runtime_flags)
         executable.add_runtime_env_vars(runtime_env_vars)
+        executable.add_runtime_args(runtime_args)
 
         simulation = subject.create_simulation(executable, experiment_folder, params)
         script = self.experiments.get_interaction_script(experiment_folder)
@@ -89,7 +89,7 @@ class Evaluation:
         raw_results, result_variables = collector.collect_results()
 
         # Perform sanity check if not reproduced and potential in-poc sanity check did not succeed
-        if intermediary_variables is None or ExperimentResult.poc_is_dirty(intermediary_variables):
+        if self.experiments.framework.requires_sanity_check() and (intermediary_variables is None or ExperimentResult.poc_is_dirty(intermediary_variables)):
             collector.start()
             try:
                 Interaction(script).do_sanity_check(simulation)
@@ -104,72 +104,6 @@ class Evaluation:
         elapsed_time = time.time() - start_time
         logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s with {tries_left} tries left.')
         return ExperimentResult(executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty)
-
-    def update_poc_file(self, project: str, poc: str, domain: str, path: str, file_name: str, content: str) -> bool:
-        file_path = self._get_poc_file_path(project, poc, domain, path, file_name)
-        if os.path.isfile(file_path):
-            if content == '':
-                logger.warning('Attempt to save empty file ignored')
-                return False
-            with open(file_path, 'w') as file:
-                file.write(content)
-            return True
-        return False
-
-    def create_empty_poc(self, project: str, poc_name: str):
-        self.is_valid_name(poc_name)
-        poc_path = os.path.join(Global.custom_page_folder, project, poc_name)
-        if os.path.exists(poc_path):
-            raise AttributeError(f"The given PoC name '{poc_name}' already exists.")
-
-        os.makedirs(poc_path)
-        self.reload_experiments()
-        Clients.push_experiments_to_all()
-
-    def add_page(self, project: str, poc: str, domain: str, path: str, file_type: str):
-        domain_path = os.path.join(Global.custom_page_folder, project, poc, domain)
-        if not os.path.exists(domain_path):
-            os.makedirs(domain_path)
-
-        self.is_valid_name(path)
-        if file_type == 'py':
-            file_name = path if path.endswith('.py') else path + '.py'
-            file_path = os.path.join(domain_path, file_name)
-        else:
-            page_path = os.path.join(domain_path, path)
-            if not os.path.exists(page_path):
-                os.makedirs(page_path)
-            new_file_name = f'index.{file_type}'
-            file_path = os.path.join(page_path, new_file_name)
-            headers_file_path = os.path.join(page_path, 'headers.json')
-            if not os.path.exists(headers_file_path):
-                with open(headers_file_path, 'w') as file:
-                    file.write(self.get_default_file_content('headers.json'))
-
-        if os.path.exists(file_path):
-            raise AttributeError(f"The given page '{path}' does already exist.")
-        with open(file_path, 'w') as file:
-            file.write(self.get_default_file_content(file_type))
-
-        self.reload_experiments()
-        # Notify clients of change (an experiment might now be runnable)
-        Clients.push_experiments_to_all()
-
-    def add_config(self, project: str, poc: str, type: str) -> bool:
-        content = self.get_default_file_content(type)
-
-        if content == '':
-            return False
-
-        file_path = os.path.join(Global.custom_page_folder, project, poc, type)
-        with open(file_path, 'w') as file:
-            file.write(content)
-
-        self.reload_experiments()
-        # Notify clients of change (an experiment might now be runnable)
-        Clients.push_experiments_to_all()
-
-        return True
 
     @staticmethod
     def get_default_file_content(file_type: str) -> str:

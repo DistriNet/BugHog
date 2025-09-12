@@ -84,7 +84,7 @@ class SequenceStrategy:
         except FunctionalityNotAvailable:
             pass
 
-        def index_has_available_binary(index: int) -> Optional[State]:
+        def index_has_available_executable(index: int) -> Optional[State]:
             state = self._state_factory.create_state(index)
             if state.has_available_executable():
                 return state
@@ -100,7 +100,7 @@ class SequenceStrategy:
                 for offset in (-diff, diff, -1 - diff, 1 + diff, -2 - diff, 2 + diff):
                     target_index = best_splitter_index + offset
                     if first_state.index < target_index < last_state.index:
-                        futures.append(executor.submit(index_has_available_binary, target_index))
+                        futures.append(executor.submit(index_has_available_executable, target_index))
 
                 for future in futures:
                     state = future.result()

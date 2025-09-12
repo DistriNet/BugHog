@@ -76,6 +76,6 @@ ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 
 FROM base AS worker
-# Copy rest of source codez
+# Copy rest of source code
 COPY bughog /app/bughog
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

@@ -34,7 +34,7 @@ class WasmtimeExecutable(Executable):
     def _get_version(self) -> str:
         command = './wasmtime --version'
         output = cli.execute_and_return_output(command, cwd=self.staging_folder)
-        match = re.match(r'wasmtime (?P<version>[0-9]+\.[0-9]+\.[0-9]+)', output)
+        match = re.match(r'wasmtime(-cli)? (?P<version>[0-9]+\.[0-9]+\.[0-9]+)', output)
         if match:
             return match.group('version')
         raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")

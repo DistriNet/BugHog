@@ -17,16 +17,19 @@ logger = logging.getLogger(__name__)
 
 
 class WorkerManager:
-    def __init__(self, max_nb_of_containers: int) -> None:
-        self.max_nb_of_containers = max_nb_of_containers
+    def __init__(self, eval_params: EvaluationParameters) -> None:
+        self.max_nb_of_containers = eval_params.sequence_configuration.nb_of_containers
 
         if self.max_nb_of_containers == 1:
             logger.info('Running in single container mode')
         else:
-            self.container_id_pool = Queue(maxsize=max_nb_of_containers)
-            for i in range(max_nb_of_containers):
+            self.container_id_pool = Queue(maxsize=self.max_nb_of_containers)
+            for i in range(self.max_nb_of_containers):
                 self.container_id_pool.put(i)
             self.client = docker.from_env()
+            subject_type = eval_params.subject_configuration.subject_type
+            subject_name = eval_params.subject_configuration.subject_name
+            self.worker_image_ref = self.__get_worker_image_ref(subject_type, subject_name)
 
     def start_experiment(self, params: EvaluationParameters, state: State, blocking_wait=True) -> None:
         if self.max_nb_of_containers != 1:
@@ -69,7 +72,7 @@ class WorkerManager:
             container = None
             try:
                 container = self.client.containers.run(
-                    f'bughog/worker:{Global.get_tag()}',
+                    self.worker_image_ref,
                     name=container_name,
                     hostname=container_name,
                     shm_size='2gb',
@@ -137,3 +140,27 @@ class WorkerManager:
     def forcefully_stop_all_running_containers():
         for container in WorkerManager.get_runnning_containers():
             container.remove(force=True)
+
+    def __get_worker_image_ref(self, subject_type: str, subject_name: str) -> str:
+        """
+        Returns the worker image's reference.
+        """
+        subject_type_ref = f'bughog/worker-{subject_type}:{Global.get_tag()}'
+        if self.__pull_worker_image(subject_type_ref):
+            return subject_type_ref
+
+        subject_name_ref = f'bughog/worker-{subject_name}:{Global.get_tag()}'
+        if self.__pull_worker_image(subject_name_ref):
+            return subject_name_ref
+
+        return f'bughog/worker:{Global.get_tag()}'
+
+    def __pull_worker_image(self, image_ref: str) -> bool:
+        try:
+            _ = self.client.images.pull(image_ref)
+            return True
+        except docker.errors.ImageNotFound:
+            return False
+        except docker.errors.APIError:
+            return False
+

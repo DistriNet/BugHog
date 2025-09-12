@@ -1,7 +1,6 @@
 import os
 from urllib.parse import quote_plus
 
-import pyautogui as gui
 import Xlib.display
 from pyvirtualdisplay.display import Display
 
@@ -10,9 +9,11 @@ from bughog.parameters import EvaluationParameters
 from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
 
+# TODO: all pyautogui are imported inside functions because the import needs DISPLAY var, while not all containers need and have that.
 
 class BrowserSimulation(Simulation):
     def __init__(self, executable: Executable, folder: Folder, params: EvaluationParameters):
+        import pyautogui as gui
         super().__init__(executable, folder, params)
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
         disp.start()
@@ -70,32 +71,40 @@ class BrowserSimulation(Simulation):
         self.sleep('3')
 
     def click_position(self, x: str, y: str):
+        import pyautogui as gui
         max_x, max_y = gui.size()
 
         gui.moveTo(self.parse_position(x, max_x), self.parse_position(y, max_y))
         gui.click()
 
     def click(self, el_id: str):
+        import pyautogui as gui
         el_image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'elements/{el_id}.png')
         x, y = gui.locateCenterOnScreen(el_image_path)
         self.click_position(str(x), str(y))
 
     def write(self, text: str):
+        import pyautogui as gui
         gui.write(text, interval=0.1)
 
     def press(self, key: str):
+        import pyautogui as gui
         gui.press(key)
 
     def hold(self, key: str):
+        import pyautogui as gui
         gui.keyDown(key)
 
     def release(self, key: str):
+        import pyautogui as gui
         gui.keyUp(key)
 
     def hotkey(self, *keys: str):
+        import pyautogui as gui
         gui.hotkey(*keys)
 
     def screenshot(self, filename: str):
+        import pyautogui as gui
         project_name = self.params.evaluation_range.project_name
         experiment_name = self.params.evaluation_range.experiment_name
         executable_name = f'{self.executable.executable_name}-{self.executable.version}'

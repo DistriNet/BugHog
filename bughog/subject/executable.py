@@ -30,6 +30,7 @@ class Executable(ABC):
         self.error_message = None
         self._runtime_flags = []
         self._runtime_env_vars = {}
+        self._runtime_args = []
         self.__version = None
         self.__process: Optional[subprocess.Popen] = None
 
@@ -129,12 +130,13 @@ class Executable(ABC):
         return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{self.state.name}')
 
     def is_in_temporary_storage(self) -> bool:
-        return os.path.isdir(self.temporary_storage_folder)
+        path = self.temporary_storage_folder
+        return os.path.isdir(path) and any(os.scandir(path))
 
     @property
     @util.ensure_folder_exists
     def staging_folder(self) -> str:
-        return os.path.join('/tmp/staging/', f'{self.config.subject_name}-{str(self.state.index)}')
+        return os.path.join('/tmp/staging/', f'{self.config.subject_name}-{str(self.state.name)}')
 
     @property
     def executable_path(self) -> str:
@@ -167,6 +169,9 @@ class Executable(ABC):
                 else:
                     self._runtime_env_vars[key] = value
 
+    def add_runtime_args(self, args: list[str]) -> None:
+        self._runtime_args.extend(args)
+
     def fetch(self):
         from bughog.database.mongo.executable_cache import ExecutableCache
 
@@ -193,7 +198,7 @@ class Executable(ABC):
             raise Exception(f'Executable for {self.state.name} is not available.')
 
     def remove(self):
-        if not self.is_in_temporary_storage():
+        if self.is_in_temporary_storage():
             shutil.rmtree(self.temporary_storage_folder)
 
     def stage(self):
@@ -211,7 +216,7 @@ class Executable(ABC):
         """
         Runs the executable with the given arguments, and kills it after the given timeout.
         """
-        cli_command = self._get_cli_command() + experiment_specific_params
+        cli_command = self._get_cli_command() + experiment_specific_params + self._runtime_args
         logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
             popen_args = {'args': cli_command, 'stdout': file, 'stderr': file, 'bufsize': 1, 'text': True}

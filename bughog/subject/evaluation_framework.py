@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -32,28 +33,61 @@ class EvaluationFramework(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_poc_file_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_comment_delimiter(self) -> str:
+        pass
+
     def get_runtime_flags(self, experiment_folder: Folder) -> list[str]:
         """
         Returns the experiment-defined runtime flags.
         """
+
+        if args := self.__get_bughog_poc_parameter(experiment_folder, 'runtime_flags'):
+            return args.split()
         return []
 
     def get_runtime_env_vars(self, experiment_folder: Folder) -> list[str]:
         """
         Returns the experiment-defined environment variables.
         """
+        if args := self.__get_bughog_poc_parameter(experiment_folder, 'env_vars'):
+            return args.split()
+        return []
+
+    def get_runtime_args(self, experiment_folder: Folder) -> list[str]:
+        """
+        Returns the experiment-defined executable arguments.
+        """
+        if args := self.__get_bughog_poc_parameter(experiment_folder, 'runtime_args'):
+            return args.split()
         return []
 
     def get_expected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
         """
         Returns the experiment-defined expected output regex.
         """
-        return None
+        return self.__get_bughog_poc_parameter(experiment_folder, 'expected_output')
 
     def get_unexpected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
         """
         Returns the experiment-defined unexpected output regex.
         """
+        return self.__get_bughog_poc_parameter(experiment_folder, 'unexpected_output')
+
+    def __get_bughog_poc_parameter(self, experiment_folder: Folder, parameter: str) -> Optional[str]:
+        """
+        Returns the given parameter's value, as defined in the poc file.
+        """
+        poc_path = os.path.join(experiment_folder.path, self.get_poc_file_name())
+        with open(poc_path, 'r') as poc:
+            for line in poc:
+                match = re.search(rf'^{self.get_comment_delimiter()}\s*bughog_{parameter}:\s*(.*)$', line)
+                if match:
+                    return match.group(1).strip()
         return None
 
     def get_default_file_content(self, file_type: str) -> bytes:
@@ -66,3 +100,6 @@ class EvaluationFramework(ABC):
             return b''
         with open(default_file_content_file, 'rb') as file:
             return file.read()
+
+    def requires_sanity_check(self) -> bool:
+        return True

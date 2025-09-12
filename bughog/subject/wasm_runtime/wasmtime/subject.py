@@ -11,11 +11,10 @@ class WasmtimeSubject(WasmRuntime):
         return 'wasmtime'
 
     def get_availability(self) -> dict:
-        # TODO: check availability based on artisanal executables
         return {
             'name': 'wasmtime',
             'min_version': 1,
-            'max_version': 30
+            'max_version': self.state_oracle.get_most_recent_major_release_version()
         }
 
     @property

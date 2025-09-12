@@ -3,6 +3,7 @@ import os
 import time
 
 import bughog.database.mongo.container as mongodb_container
+import bughog.version_control.revision_parser.bughog as bughog_commit_pos
 from bughog.configuration import Global, Loggers
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
@@ -35,6 +36,7 @@ class Main:
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
         PublicBrowserStateCache.update()
+        bughog_commit_pos.update_commit_pos_data()
         factory.initialize_all_subject_folders()
 
         logger.info("BugHog is ready!")
@@ -49,7 +51,7 @@ class Main:
 
     def run(self, eval_params_list: list[EvaluationParameters]) -> None:
         # Sequence_configuration settings are the same over evaluation parameters (quick fix)
-        worker_manager = WorkerManager(eval_params_list[0].sequence_configuration.nb_of_containers)
+        worker_manager = WorkerManager(eval_params_list[0])
         self.stop_gracefully = False
         self.stop_forcefully = False
         try:

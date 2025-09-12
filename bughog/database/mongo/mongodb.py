@@ -105,6 +105,12 @@ class MongoDB:
             self._db.create_collection("firefox_release_base_revs")
         if "chromium_release_base_revs" not in self._db.list_collection_names():
             self._db.create_collection("chromium_release_base_revs")
+        if "commit_pos" not in self._db.list_collection_names():
+            self._db.create_collection("commit_pos")
+            self._db["commit_pos"].create_index([("pos", ASCENDING), ("subject")])
+            self._db["commit_pos"].create_index([("hash"), ("subject")])
+            self._db["commit_pos"].create_index([("version_tag_of_forked_release_branch"), ("subject")])
+
 
     def get_collection(self, name: str, create_if_not_found: bool = False) -> Collection:
         if self._db is None:
