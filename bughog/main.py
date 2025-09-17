@@ -51,6 +51,7 @@ class Main:
 
     def run(self, eval_params_list: list[EvaluationParameters]) -> None:
         # Sequence_configuration settings are the same over evaluation parameters (quick fix)
+        self.__update_state(is_running=True, reason="user", status="running")
         worker_manager = WorkerManager(eval_params_list[0])
         self.stop_gracefully = False
         self.stop_forcefully = False
