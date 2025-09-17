@@ -130,7 +130,7 @@ class Experiments:
         for project in self.root_folder.subfolders:
             if project.name == project_name:
                 return project
-        raise Exception(f"Could not find project '{project_name}'")
+        raise Exception(f"Could not find project '{project_name}' for '{self.subject_type}'")
 
     def __get_experiment_folder(self, project_name: str, experiment_name: str) -> Folder:
         project = self.__get_project_folder(project_name)

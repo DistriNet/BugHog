@@ -14,6 +14,12 @@ class BrowserEvaluationFramework(EvaluationFramework):
     def fill_empty_experiment_with_default(self, path: str):
         pass
 
+    def get_poc_file_name(self) -> str:
+        return 'index.html'
+
+    def get_comment_delimiter(self) -> str:
+        return '<!--'
+
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
         if main_folder := self.__find_only_main_page(experiment_folder):
             project = main_folder.path.split('/')[-4]

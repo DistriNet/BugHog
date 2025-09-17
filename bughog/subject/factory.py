@@ -10,7 +10,7 @@ from bughog.subject.subject import Subject
 from bughog.subject.wasm_runtime.evaluation_framework import WasmRuntimeEvaluationFramework
 from bughog.subject.wasm_runtime.wasmtime.subject import WasmtimeSubject
 from bughog.subject.web_browser.chromium.subject import Chromium
-from bughog.subject.web_browser.evaluation import BrowserEvaluationFramework
+from bughog.subject.web_browser.evaluation_framework import BrowserEvaluationFramework
 from bughog.subject.web_browser.firefox.subject import Firefox
 
 subjects = {
