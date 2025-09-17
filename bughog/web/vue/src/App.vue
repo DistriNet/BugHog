@@ -139,7 +139,9 @@ export default {
     },
     "evalParams.subject_type": {
       handler(val) {
-        this.set_curr_subject_type(val)
+        this.set_curr_project(null);
+        this.get_projects();
+        this.propagate_new_params()
       },
       immediate: true
     },
@@ -166,7 +168,6 @@ export default {
       this.propagate_new_params()
     },
     "select_all_experiments": function (val) {
-      console.log("hi")
       if (this.select_all_experiments === true) {
         this.evalParams.experiments = this.experiments
           .filter(tuple => tuple[1]) // Only select enabled checkboxes
@@ -209,7 +210,8 @@ export default {
   },
   methods: {
     create_socket() {
-      const url = `/api/socket/`;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = `${protocol}//${window.location.host}/api/socket/`;
       const websocket = new WebSocket(url);
       websocket.addEventListener("open", () => {
         console.log("WebSocket opened!");
@@ -246,11 +248,11 @@ export default {
           }
         }
       });
-      websocket.addEventListener("error", () => {
-        console.log("Could not connect to backend socket.");
+      websocket.addEventListener("error", (event) => {
+        console.log("WebSocket error:", event.code, event.reason);
       });
-      websocket.addEventListener("close",  () => {
-        console.log("Connection to backend socket was unexpectedly closed.");
+      websocket.addEventListener("close",  (event) => {
+        console.log("WebSocket closed:", event.code, event.reason);
       });
       return websocket;
     },
@@ -323,7 +325,6 @@ export default {
         });
     },
     propagate_new_params() {
-      console.log(this.evalParams)
       if (this.missing_plot_params.length === 0) {
         console.log('Propagating parameter change');
         this.send_with_socket(
@@ -355,18 +356,13 @@ export default {
         this.set_curr_project(option)
       }
     },
-    set_curr_subject_type(subject_type) {
-      this.set_curr_project(null);
-      this.selected.subject = null;
-      this.selected.experiment == null;
-      this.get_projects();
-    },
     set_curr_project(project) {
       if (project !== null) {
-        this.experiments = [];
         this.send_with_socket({
           "select_project": project
         });
+      } else {
+        this.experiments = [];
       }
       this.evalParams.project_name = project;
       this.evalParams.experiments = [];
@@ -538,7 +534,7 @@ export default {
                 </label>
               </div>
             </li>
-            <li v-for="tuple in experiments">
+            <li v-for="tuple in experiments" :key="tuple[0]">
               <div>
                 <input v-model="this.evalParams.experiments" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
                 <label for="vue-checkbox-list" class="flex group w-full">
@@ -613,7 +609,7 @@ export default {
       </div>
       <div :class="this.hide_poc_editor ? 'hidden w-full' : 'w-full'">
         <poc-editor
-        :darkmode="this.darkmode"
+        :darkMode="this.darkMode"
         :available_domains="this.available_domains"
         :project="this.evalParams.project_name"
         :poc="selected.experiment"

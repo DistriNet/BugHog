@@ -12,7 +12,7 @@
   export default {
     props: {
       available_domains: Array,
-      darkmode: Boolean,
+      darkMode: Boolean,
       poc: String,
       project: String,
       subject_type: String,
@@ -271,7 +271,7 @@
       this.editor.session.addEventListener("change", this.update_file_content);
     },
     watch: {
-      "darkmode": function(val) {
+      "darkMode": function(val) {
         if (val) {
           this.editor.setTheme("ace/theme/twilight");
         } else {
