@@ -148,7 +148,7 @@ class PlotParameters(EvaluationParameters):
 
 
 @staticmethod
-def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> list[EvaluationParameters]:
+def evaluation_factory(kwargs: dict, database_params: DatabaseParameters, only_to_plot=False) -> list[EvaluationParameters]:
     experiments = set(x for x in kwargs.get("experiments", []) + [kwargs.get("experiment_to_plot")] if x is not None)
     if len(experiments) == 0:
         raise MissingParametersException()
@@ -161,6 +161,8 @@ def evaluation_factory(kwargs: dict, database_params: DatabaseParameters) -> lis
     )
     evaluation_params_list = []
     for experiment in sorted(experiments):
+        if only_to_plot and experiment != kwargs.get('experiment_to_plot'):
+            continue
         evaluation_range = EvaluationRange(
             kwargs["project_name"],
             experiment,
@@ -193,7 +195,8 @@ def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
     upper_version = form_data.get("upper_version", None)
     lower_version = int(lower_version) if lower_version else None
     upper_version = int(upper_version) if upper_version else None
-    assert (lower_version is None) == (upper_version is None)
+    if lower_version is None or upper_version is None:
+        return None
     return (lower_version, upper_version) if lower_version is not None else None
 
 
@@ -203,7 +206,8 @@ def __get_commit_nb_range(form_data: dict[str, str]) -> tuple[int, int] | None:
     upper_rev_number = form_data.get("upper_commit_nb", None)
     lower_rev_number = int(lower_rev_number) if lower_rev_number else None
     upper_rev_number = int(upper_rev_number) if upper_rev_number else None
-    assert (lower_rev_number is None) == (upper_rev_number is None)
+    if lower_rev_number is None or upper_rev_number is None:
+        return None
     return (lower_rev_number, upper_rev_number) if lower_rev_number is not None else None
 
 

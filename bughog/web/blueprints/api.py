@@ -14,7 +14,7 @@ from bughog.main import Main
 from bughog.parameters import MissingParametersException
 from bughog.subject import factory
 from bughog.subject.factory import get_all_subject_availability
-from bughog.version_control.state.base import State
+from bughog.version_control.state.base import ShallowState
 from bughog.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -111,14 +111,8 @@ def init_websocket(ws):
             break
         try:
             message = json.loads(message)
-            if params := message.get('select_subject_type', None):
-                Clients.associate_subject_type(ws, params)
-            if params := message.get('new_subject', None):
-                Clients.associate_subject(ws, params)
             if params := message.get('new_params', None):
                 Clients.associate_params(ws, params)
-            if params := message.get('select_project', None):
-                Clients.associate_project(ws, params)
             if requested_variables := message.get('get', []):
                 __get_main().push_info(ws, *requested_variables)
         except ValueError:
@@ -243,14 +237,21 @@ def remove_datapoint():
         return {'status': 'NOK', 'msg': 'No evaluation parameters found'}
 
     data = request.json.copy()
+    if not isinstance(data, dict):
+        return {'status': 'NOK', 'msg': 'Received dataformat is not a dictionary.'}
+    if (type := data.get('type')) not in ['release', 'commit']:
+        return {'status': 'NOK', 'msg': 'Type argument should be release or commit.'}
     database_params = Global.get_database_params()
     try:
-        params_list = application_logic.evaluation_factory(data, database_params)
+        params_list = application_logic.evaluation_factory(data, database_params, only_to_plot=True)
         if len(params_list) < 1:
-            return {'status': 'NOK', 'msg': 'Could not construct removal parameters'}
-        subject_type = params_list[0].subject_configuration.subject_type
-        subject_name = params_list[0].subject_configuration.subject_name
-        state = State.from_dict(subject_type, subject_name, data)
+            return {'status': 'NOK', 'msg': 'Could not construct removal parameters.'}
+        state = ShallowState(
+            type,
+            data.get('major_version'),
+            data.get('commit_nb'),
+            data.get('commit_id')
+        )
         __get_main().remove_datapoint(params_list[0], state)
     except MissingParametersException:
         return {'status': 'NOK', 'msg': 'Could not remove datapoint due to missing parameters'}

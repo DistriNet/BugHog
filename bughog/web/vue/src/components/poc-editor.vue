@@ -244,7 +244,6 @@
       remove_file_or_folder() {
         const folder_name = this.dialog.selected_folder;
         const file_name = this.dialog.selected_file;
-        console.log(folder_name, file_name)
         axios.delete(this.poc_api_path, {
           data: {
             "folder_name": folder_name,

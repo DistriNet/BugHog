@@ -16,7 +16,7 @@ from bughog.parameters import (
     EvaluationParameters,
     SubjectConfiguration,
 )
-from bughog.version_control.state.base import State
+from bughog.version_control.state.base import ShallowState, State
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +171,7 @@ class MongoDB:
         }
         collection.update_one(query, update, upsert=True)
 
-    def get_result(self, params: EvaluationParameters, state: State) -> Optional[ExperimentResult]:
+    def get_result(self, params: EvaluationParameters, state: ShallowState) -> Optional[ExperimentResult]:
         collection = self.__get_data_collection(params)
         query = self.__to_experiment_query(params, state)
         doc = collection.find_one(query)
@@ -188,7 +188,7 @@ class MongoDB:
             logger.error(f"Could not find document for query {query}.")
             return None
 
-    def has_result(self, params: EvaluationParameters, state: State) -> bool:
+    def has_result(self, params: EvaluationParameters, state: ShallowState) -> bool:
         collection = self.__get_data_collection(params)
         query = self.__to_experiment_query(params, state)
         nb_of_documents = collection.count_documents(query)
@@ -238,9 +238,8 @@ class MongoDB:
             states.append(state)
         return states
 
-    def __to_experiment_query(self, params: EvaluationParameters, state: State) -> dict:
-        state_dict = state.to_dict()
-        state_query = {'state.' + k: v for k, v in state_dict.items()}
+    def __to_experiment_query(self, params: EvaluationParameters, state: ShallowState) -> dict:
+        state_query = {'state.' + k: v for k, v in state.dict.items()}
         query = {
             "subject_config": params.subject_configuration.subject_setting,
             "experiment": params.evaluation_range.experiment_name,
@@ -275,13 +274,6 @@ class MongoDB:
 
     # Caching of online executable availability
 
-    def has_executable_available_online(self, subject_config: SubjectConfiguration, state: State):
-        collection = self.get_binary_availability_collection(subject_config)
-        document = collection.find_one({"subject_name": subject_config.subject_name, "state": state})
-        if document is None:
-            return None
-        return document["executable_online"]
-
     def get_stored_binary_availability(self, subject_config: SubjectConfiguration):
         collection = MongoDB().get_binary_availability_collection(subject_config)
         result = collection.find(
@@ -294,43 +286,6 @@ class MongoDB:
         if subject_config.subject_name == "firefox":
             result.sort("build_id", -1)
         return result
-
-    # def get_complete_state_dict_from_binary_availability_cache(self, state: State) -> Optional[dict]:
-    #     collection = MongoDB().get_binary_availability_collection(state.browser_name)
-    #     # We have to flatten the state dictionary to ignore missing attributes.
-    #     state_dict = {'state': state.to_dict()}
-    #     query = flatten(state_dict, reducer='dot')
-    #     document = collection.find_one(query)
-    #     if document is None:
-    #         return None
-    #     return document['state']
-
-    # def store_executable_availability_online_cache(
-    #     self, subject_type: str, subject_name: str, state: State, executable_online: bool, url: Optional[str] = None
-    # ):
-    #     collection = MongoDB().get_binary_availability_collection(browser)
-    #     collection.update_one(
-    #         {'state': state.to_dict()},
-    #         {
-    #             '$set': {
-    #                 'state': state.to_dict(),
-    #                 'executable_online': executable_online,
-    #                 'url': url,
-    #             'ts': str(datetime.now(timezone.utc).replace(microsecond=0)),
-    #         }
-    #     },
-    #     upsert=True,
-    # )
-
-    def get_build_id_firefox(self, state: State):
-        collection = MongoDB().get_binary_availability_collection("firefox")
-
-        result = collection.find_one({"state": state.to_dict()}, {"_id": False, "build_id": 1})
-        # Result can only be None if the executable associated with the state_id is artisanal:
-        # This state_id will not be included in the binary_availability_collection and not have a build_id.
-        if result is None or len(result) == 0:
-            return None
-        return result["build_id"]
 
     def get_documents_for_plotting(self, params: EvaluationParameters, releases: bool = False) -> list:
         collection = self.__get_data_collection(params)
@@ -368,10 +323,14 @@ class MongoDB:
         )
         return list(docs)
 
-    def remove_datapoint(self, params: EvaluationParameters, state: State) -> None:
+    def remove_datapoint(self, params: EvaluationParameters, state: ShallowState) -> None:
         collection = self.__get_data_collection(params)
         query = self.__to_experiment_query(params, state)
-        collection.delete_one(query)
+        count = collection.delete_one(query)
+        if count.deleted_count == 0:
+            logger.error(f'Could not remove datapoint for {state}.')
+        else:
+            logger.debug(f'Removed datapoint for {state}.')
 
     def remove_all_data_for(self, params_list: list[EvaluationParameters]) -> None:
         for params in params_list:

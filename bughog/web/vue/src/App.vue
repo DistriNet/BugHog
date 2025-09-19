@@ -41,8 +41,6 @@ export default {
       select_all_experiments: false,
       slider: {
         state: [0, 100],
-        state_range: [0, 100],
-        disabled: true
       },
       server_info: {
         db_info: {
@@ -57,7 +55,6 @@ export default {
       },
       selected: {
         experiment: null,
-        subject: null,
       },
       dialog: {
         new_experiment_name: null,
@@ -76,11 +73,6 @@ export default {
     }
   },
   computed: {
-    "missing_plot_params": function () {
-      const required_params_for_plotting = ["subject_type", "subject_name", "project", "experiment_to_plot"];
-      return required_params_for_plotting.filter(param => this.evalParams[param] === null);
-
-    },
     "banner_message": function () {
       if (this.fatal_error) {
         return `A fatal error has occurred! Please, check the logs below...`
@@ -103,6 +95,21 @@ export default {
         return [];
       }
     },
+    "slider_state_range": function () {
+      const subject_name = this.evalParams.subject_name;
+      const subject = this.available_subjects.find(subject => subject.name === subject_name);
+      if (subject !== undefined) {
+        return [
+          subject["min_version"],
+          subject["max_version"],
+        ];
+      } else {
+        return [0, 100];
+      }
+    },
+    "slider_disabled": function () {
+      return this.evalParams.subject_name === null || this.evalParams.subject_name === undefined;
+    },
   },
   watch: {
     "selected.experiment": function (val) {
@@ -113,7 +120,6 @@ export default {
     "slider.state": function () {
       this.evalParams.lower_version = this.slider.state[0];
       this.evalParams.upper_version = this.slider.state[1];
-      this.propagate_new_params();
     },
     "info.log": {
       function(val) {
@@ -129,35 +135,49 @@ export default {
       } else {
         this.evalParams.target_mech_id = val;
       }
-      this.propagate_new_params();
     },
     "evalParams.experiment_to_plot": function (val) {
+      if (val === null) {
+        console.log("Clearing plot.");
+        this.$refs.gantt.clear_plot();
+      }
       if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
         this.evalParams.target_mech_id = val;
       }
-      this.propagate_new_params();
     },
-    "evalParams.subject_type": {
-      handler(val) {
-        this.set_curr_project(null);
-        this.get_projects();
-        this.propagate_new_params()
-      },
-      immediate: true
+    "evalParams.subject_type": function (val) {
+      console.log(`Setting subject type to '${val}'`);
+      // this.evalParams.subject_name = null;
+      // this.evalParams.project_name = null;
+      if (this.available_subjects.length === 1) {
+        this.evalParams.subject_name = this.available_subjects[0].name;
+      }
+      this.get_projects(() => {
+        if (this.projects.length === 1) {
+          this.evalParams.project_name = this.projects[0];
+        }
+      });
     },
-    "selected.subject": function (subject) {
-      if (subject === null) {
-        console.log("Unset subject");
+    "evalParams.subject_name": function (subject_name) {
+      if (subject_name === null) {
+        console.log("Unsetting subject");
         this.reset_slider();
         return;
       }
-      console.log("Set subject: " + subject["name"])
-      this.evalParams.subject_name = subject["name"];
-      this.slider.state_range[0] = subject["min_version"];
-      this.slider.state_range[1] = subject["max_version"];
+      console.log("Setting subject: " + subject_name)
+      const subject = this.available_subjects.find(subject => subject.name === subject_name);
       this.slider.state = [subject["min_version"], subject["max_version"]];
-      this.slider.disabled = false;
-      this.propagate_new_params();
+    },
+    "evalParams.project_name": function (project_name) {
+      if (project_name === null) {
+        console.log("Unsetting project name.");
+        this.experiments = [];
+      } else {
+        console.log(`Setting project name to '${project_name}'`);
+      }
+      this.evalParams.experiments = [];
+      this.select_all_experiments = false;
+      this.evalParams.experiment_to_plot = null;
     },
     "cli_options_str": function (val) {
       if (val !== "") {
@@ -165,7 +185,6 @@ export default {
       } else {
         this.evalParams.cli_options = [];
       }
-      this.propagate_new_params()
     },
     "select_all_experiments": function (val) {
       if (this.select_all_experiments === true) {
@@ -220,9 +239,6 @@ export default {
           "get": ["all"],
         });
         // This might be a re-open after connection loss, which means we might have to propagate our params again
-        if (this.evalParams.project_name !== null) {
-          this.set_curr_project(this.evalParams.project_name);
-        }
         this.propagate_new_params();
       });
       websocket.addEventListener("message", (e) => {
@@ -239,7 +255,6 @@ export default {
           }
           if (data.update.hasOwnProperty("previous_cli_options")) {
             this.previous_cli_options_list = data.update.previous_cli_options;
-            console.log(this.previous_cli_options_list);
           }
           else {
             for (const variable in data.update) {
@@ -272,7 +287,7 @@ export default {
       });
     },
     get_projects(cb) {
-      if (this.evalParams.subject_type === null) {
+      if (this.evalParams.subject_type === null || this.evalParams.subject_type === undefined) {
         console.warn('Could not get projects because the subject type is not defined.');
         return;
       }
@@ -324,49 +339,18 @@ export default {
           console.error(error);
         });
     },
-    propagate_new_params() {
-      if (this.missing_plot_params.length === 0) {
-        console.log('Propagating parameter change');
-        this.send_with_socket(
-          {
-            "new_params": this.evalParams
-          }
-        );
-      } else if (this.evalParams.subject_name !== null) {
-        console.log('Propagating subject change');
-        this.send_with_socket(
-          {
-            "new_subject": this.evalParams
-          }
-        );
-      } else {
-        console.log("Missing plot parameters: ", this.missing_plot_params);
-      }
+    async propagate_new_params() {
+      console.log('<- Propagating parameter change ->');
+      this.send_with_socket(
+        {
+          "new_params": this.evalParams
+        }
+      );
     },
     reset_slider() {
       this.slider.state = [0, 100];
       this.slider.state_range = [0, 100];
       this.slider.disabled = true;
-    },
-    project_dropdown_change(event) {
-      const option = event.target.value;
-      if (option == "Create new project...") {
-        create_project_dialog.showModal();
-      } else {
-        this.set_curr_project(option)
-      }
-    },
-    set_curr_project(project) {
-      if (project !== null) {
-        this.send_with_socket({
-          "select_project": project
-        });
-      } else {
-        this.experiments = [];
-      }
-      this.evalParams.project_name = project;
-      this.evalParams.experiments = [];
-      this.select_all_experiments = false;
     },
     submit_form() {
       const path = `/api/evaluation/start/`;
@@ -426,7 +410,7 @@ export default {
         if (res.data.status === "OK") {
           this.dialog.new_project_name = null;
           this.get_projects(() => {
-            this.set_curr_project(new_project_name);
+            this.evalParams.project_name = new_project_name;
           });
         } else {
           alert(res.data.msg);
@@ -452,9 +436,9 @@ export default {
       <!-- <p>[FRAMEWORK NAME + LOGO]</p> -->
       <p :class="{ '!font-bold !text-red-600' : fatal_error }">{{ banner_message }}</p>
 
-      <select id="subject-type-select" class="w-64 block p-2 border border-gray-300 rounded" v-model="this.evalParams.subject_type" :disabled="!subject_availability.length" >
+      <select id="subject-type-select" class="w-64 block p-2 border border-gray-300 rounded" v-model="this.evalParams.subject_type" :disabled="!subject_availability.length" @change="propagate_new_params">
         <option value="" disabled>Select subject type</option>
-        <option v-for="subject in subject_availability" :key="subject.subject_type" :value="subject.subject_type" >
+        <option v-for="subject in subject_availability" :key="subject.subject_type" :value="subject.subject_type">
           {{ subject.subject_type }}
         </option>
       </select>
@@ -478,7 +462,7 @@ export default {
     <h2 class="form-subsection-title">Subject</h2>
     <div class="flex flex-row justify-center mx-5">
       <div v-for="subject in available_subjects" :key="subject.name" class="radio-item flex-auto">
-        <input type="radio" :id="subject.name" name="subject" :value="subject" v-model="selected.subject" />
+        <input type="radio" :id="subject.name" name="subject" :value="subject.name" v-model="evalParams.subject_name" @change="propagate_new_params" />
         <label :for="subject.name">{{ subject.name }}</label>
       </div>
     </div>
@@ -490,10 +474,11 @@ export default {
             <div class="w-5/6 m-auto pt-12">
               <Slider
                 v-model="this.slider.state"
-                :min="this.slider.state_range[0]"
-                :max="this.slider.state_range[1]"
-                :disabled="this.slider.disabled"
+                :min="this.slider_state_range[0]"
+                :max="this.slider_state_range[1]"
+                :disabled="this.slider_disabled"
                 class="slider"
+                @change="propagate_new_params"
               />
             </div>
             <div class="pt-5 checkbox-item">
@@ -513,13 +498,15 @@ export default {
       <!-- Experiments -->
       <div class="form-section flex flex-col grow h-0">
         <section-header section="experiments" class="w-1/2"></section-header>
-
-        <select id="project_dropdown" class="mb-2" @change="project_dropdown_change" v-model="this.evalParams.project_name">
-          <option disabled value="">Select a project</option>
-          <option v-for="project in projects">{{ project }}</option>
-          <option>Create new project...</option>
-        </select>
-
+        <div class="flex mb-2 mr-1">
+          <select id="project_dropdown" v-model="this.evalParams.project_name" @change="propagate_new_params" >
+            <option disabled value="">Select a project</option>
+            <option v-for="project in projects">{{ project }}</option>
+          </select>
+          <button class="button ml-2" onclick="create_project_dialog.showModal()">
+            +
+          </button>
+        </div>
         <div class="h-0 grow overflow-y-auto overflow-x-hidden">
           <ul class="horizontal-select">
             <li>
@@ -572,7 +559,7 @@ export default {
       <div class="results-section mt-2 h-full flex flex-col">
         <section-header section="results" left></section-header>
         <div class="flex flex-wrap justify-between h-fit">
-          <select class="w-fit h-fit" v-model="this.evalParams.experiment_to_plot">
+          <select class="w-fit h-fit" v-model="this.evalParams.experiment_to_plot" @change="propagate_new_params">
             <option disabled value="">Select an experiment</option>
             <option v-for="experiment in this.evalParams.experiments">{{ experiment }}</option>
           </select>

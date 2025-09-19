@@ -38,7 +38,7 @@ class PlotFactory:
     @staticmethod
     def __add_outcome_info(docs: list):
         if not docs:
-            return {'commit_nb': [], 'subject_version': [], 'subject_version_str': [], 'outcome': []}
+            return {'commit_nb': [], 'major_version': [], 'version_printed_by_executable': [], 'outcome': []}
         docs_with_outcome = []
 
         for doc in docs:
@@ -46,8 +46,8 @@ class PlotFactory:
             new_doc = {
                 'commit_nb': doc['state']['commit_nb'],
                 'commit_url': doc['state']['commit_url'] if 'commit_url' in doc['state'] else None,
-                'subject_version': int(doc['subject_version'].split('.')[0]),
-                'subject_version_str': doc['subject_version'].split('.')[0],
+                'major_version': doc['state'].get('major_version', None), # commit states don't have this field
+                'version_printed_by_executable': doc['subject_version'],
             }
             if doc['dirty']:
                 new_doc['outcome'] = 'Error'

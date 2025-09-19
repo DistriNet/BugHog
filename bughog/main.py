@@ -17,7 +17,7 @@ from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bughog.subject import factory
 from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
-from bughog.version_control.state.base import State
+from bughog.version_control.state.base import ShallowState
 from bughog.version_control.state_factory import StateFactory
 from bughog.web.clients import Clients
 
@@ -125,7 +125,7 @@ class Main:
         for dirty_state in dirty_states:
             if self.stop_gracefully or self.stop_forcefully:
                 return
-            MongoDB().remove_datapoint(eval_params, dirty_state)
+            MongoDB().remove_datapoint(eval_params, dirty_state.to_shallow_state())
             worker_manager.start_experiment(eval_params, dirty_state)
         worker_manager.wait_until_all_evaluations_are_done()
         dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
@@ -193,7 +193,7 @@ class Main:
                 update["state"] = self.state
         Clients.push_info(ws, update)
 
-    def remove_datapoint(self, params: EvaluationParameters, state: State) -> None:
+    def remove_datapoint(self, params: EvaluationParameters, state: ShallowState) -> None:
         MongoDB().remove_datapoint(params, state)
         Clients.push_results_to_all()
 

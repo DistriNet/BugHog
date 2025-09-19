@@ -88,12 +88,12 @@ export default {
                 this.plot.text(
                 { field: 'commit_nb' },
                 { field: 'outcome' },
-                { field: 'subject_version_str' },
+                { field: 'major_version' },
                 {
                     source: this.version_source,
                     x_offset: 0,
                     y_offset: -20,
-                    text: { field: 'subject_version_str' },
+                    text: { field: 'major_version' },
                     text_color: "black",
                     text_align: 'center',
                     text_font_size: '14px',
@@ -103,25 +103,23 @@ export default {
                 )
             }
 
-            // TODO: add functionality server-side for browsers
-            // const urlTemplate = this.subject_name === 'chromium' ? 'https://crrev.com/' :
-            // this.subject_name === 'firefox' ? 'https://hg.mozilla.org/mozilla-central/rev/' :
-            // this.subject_name === 'v8' ? 'https:/' :
-            // 'place_holder (TODO)';
-
             const tapTool = new Bokeh.TapTool({
                 behavior: 'select',
                 callback: (e) => {
                     var index;
+                    var datapoint_index;
                     if ((index = this.revision_source.selected.indices[0]) !== undefined) {
                         var commit_nb = this.revision_source.data.commit_nb[index];
-                        var subject_version = this.revision_source.data.subject_version[index];
+                        var version_printed_by_executable = this.revision_source.data.version_printed_by_executable[index];
                         var commit_url = this.revision_source.data.commit_url[index];
                         var type = "commit";
+                        datapoint_index = commit_nb;
                     } else if ((index = this.version_source.selected.indices[0]) !== undefined) {
                         var commit_nb = this.version_source.data.commit_nb[index];
-                        var subject_version = this.version_source.data.subject_version[index];
+                        var major_version = this.version_source.data.major_version[index];
+                        var version_printed_by_executable = this.version_source.data.version_printed_by_executable[index];
                         var type = "release";
+                        datapoint_index = major_version;
                     } else {
                         console.log("Nothing interesting was selected...");
                         return;
@@ -129,12 +127,11 @@ export default {
 
                     if (this.shift_down === true) {
                         // Ask to remove datapoint
-                        this.remove_datapoint(commit_nb, subject_version, type);
+                        this.remove_datapoint(type, datapoint_index);
                     } else {
                         // Open revision page
                         if (this.revision_source.selected.indices.length > 0) {
                             if (commit_url !== null) {
-                                console.log(this.revision_source.data)
                                 window.open(commit_url);
                             }
                         }
@@ -150,7 +147,7 @@ export default {
             const hover = new Bokeh.HoverTool({
                 tooltips: [
                 ['Commit number', '@commit_nb'],
-                ['Subject version', '@subject_version']
+                ['Executable version', '@version_printed_by_executable']
                 ]
             });
             this.plot.add_tools(hover);
@@ -162,7 +159,6 @@ export default {
             console.log("Gantt chart initialized!");
         },
         update_plot(subject_name, revision_data, version_data, project, poc) {
-            console.log(subject_name)
             if (revision_data === null && version_data === null) {
                 return;
             }
@@ -173,43 +169,53 @@ export default {
             this.poc = poc;
 
             if (init_required) {
-                this.revision_source = new Bokeh.ColumnDataSource({ data: revision_data });;
+                this.revision_source = new Bokeh.ColumnDataSource({ data: revision_data });
                 this.version_source = new Bokeh.ColumnDataSource({ data: version_data });
                 this.init_plot();
             } else {
                 this.revision_source.data = revision_data;
                 this.version_source.data = version_data;
             }
-
             this.update_x_range(this.subject_name !== subject_name)
         },
+        clear_plot() {
+            const empty_data = {
+                'commit_nb': [],
+                'outcome': [],
+                'major_version': [],
+            };
+            this.revision_source.data = empty_data;
+            this.version_source.data = empty_data;
+        },
         update_x_range(force_update) {
-            console.log("executing update_x_range");
+            console.log("Updating Gantt chart x range");
             if (this.plot !== null) {
                 if (this.revision_source.length !== 0 || this.version_source.length !== 0) {
-                    console.log("calculating new x");
                     var new_x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
                     var new_x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
                     if (new_x_min != this.x_min || force_update === true) {
-                        console.log("updating x_min");
                         this.x_min = new_x_min;
                         this.plot.x_range.start = new_x_min;
                     }
                     if (new_x_max != this.x_max || force_update === true) {
-                        console.log("updating x_max");
                         this.x_max = new_x_max;
                         this.plot.x_range.end = new_x_max;
                     }
                 }
             }
         },
-        remove_datapoint(commit_nb, subject_version, type) {
-            console.log("Removing datapoint ", commit_nb, type);
-            const path = "/api/data/remove/"
-            var params = this.eval_params
-            params['type'] = type
-            params["commit_nb"] = commit_nb
-            params["major_version"] = subject_version
+        remove_datapoint(type, index) {
+            console.log(`Removing ${type} datapoint with index ${index}.`);
+            const path = "/api/data/remove/";
+            var params = { ...this.eval_params};
+            params['type'] = type;
+            if (type === 'commit') {
+                params["commit_nb"] = index;
+            } else if (type === 'release') {
+                params["major_version"] = index;
+            } else {
+                console.error(`Unknown datapoint type ${type}!`)
+            }
             axios.post(path, params)
             .then((res) => {
             })

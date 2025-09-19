@@ -111,7 +111,7 @@ label {
 }
 
 .input-box {
-  @apply dark:bg-dark-4
+  @apply text-gray-900 dark:text-gray-300 dark:bg-dark-4
 }
 
 .tooltip {

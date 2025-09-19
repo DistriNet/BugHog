@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 
 class Clients:
     __semaphore = threading.Semaphore()
-    __clients: dict[Server, dict | None] = {}
+    __clients: dict[Server, dict] = {}
 
     @staticmethod
     def add_client(ws_client: Server):
         with Clients.__semaphore:
-            Clients.__clients[ws_client] = None
+            Clients.__clients[ws_client] = {}
 
     @staticmethod
     def __remove_disconnected_clients():
@@ -27,40 +27,33 @@ class Clients:
             Clients.__clients = {k: v for k, v in Clients.__clients.items() if k.connected}
 
     @staticmethod
-    def associate_subject_type(ws_client: Server, subject_type: str):
+    def associate_params(ws_client: Server, new_params: dict):
         with Clients.__semaphore:
-            if not (params := Clients.__clients.get(ws_client, None)):
-                params = {}
-            params['subject_type'] = subject_type
-            Clients.__clients[ws_client] = params
-            Clients.push_experiments(ws_client)
-        # Clients.push_previous_cli_options(ws_client)
+            old_params = Clients.__clients.get(ws_client, {})
+            updated_keys = Clients.get_keys_with_different_values(old_params, new_params)
+            Clients.__clients[ws_client] = new_params
+            if 'subject_type' in updated_keys:
+                Clients.push_experiments(ws_client)
+            if 'project_name' in updated_keys:
+                Clients.push_experiments(ws_client)
+        required_params_for_results = [
+            'subject_type',
+            'subject_name',
+            'lower_version',
+            'upper_version',
+            'project_name',
+            'experiment_to_plot'
+        ]
+        if all([new_params.get(param) is not None for param in required_params_for_results]):
+            Clients.push_results(ws_client)
 
     @staticmethod
-    def associate_subject(ws_client: Server, params: dict):
-        with Clients.__semaphore:
-            Clients.__clients[ws_client] = params
-        # Clients.push_previous_cli_options(ws_client)
-
-    @staticmethod
-    def associate_params(ws_client: Server, params: dict):
-        with Clients.__semaphore:
-            Clients.__clients[ws_client] = params
-        Clients.push_results(ws_client)
-
-    @staticmethod
-    def associate_project(ws_client: Server, project: str):
-        # Technical debt: this method is to quickly associate a project with a client.
-        # This is necessary to update the `runnable` exclamation mark in the UI when a main page is added to an experiment.
-        # This functionality should be included in the `associate_params`.
-        # Then, missing params should be checked server-side instead of client-side, as is the case now.
-        with Clients.__semaphore:
-            if not (params := Clients.__clients.get(ws_client, None)):
-                params = {}
-            params['project'] = project
-            Clients.__clients[ws_client] = params
-            Clients.push_experiments(ws_client)
-            # Clients.push_previous_cli_options(ws_client)
+    def get_keys_with_different_values(dict1: dict, dict2: dict) -> list[str]:
+        """
+        Returns a list of keys for which dict1 and that have different values.
+        """
+        keys = set(dict1.keys()).union(set(dict2.keys()))
+        return [key for key in keys if dict1.get(key) != dict2.get(key)]
 
     @staticmethod
     def push_results(ws_client: Server):
@@ -120,7 +113,7 @@ class Clients:
             return
 
         subject_type = client_info.get('subject_type')
-        project = client_info.get('project')
+        project = client_info.get('project_name')
         if project and subject_type:
             factory.invalidate_experiment_cache()
             experiments = factory.create_experiments(subject_type)
@@ -132,9 +125,3 @@ class Clients:
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
             Clients.push_experiments(ws_client)
-
-    # @staticmethod
-    # def push_previous_cli_options(ws_client: Server):
-    #     if params := Clients.__clients.get(ws_client, None):
-    #         previous_cli_options = MongoDB().get_previous_cli_options(params)
-    #         ws_client.send(json.dumps({'update': {'previous_cli_options': previous_cli_options}}))

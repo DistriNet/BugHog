@@ -1,17 +1,36 @@
 from __future__ import annotations
 
 import base64
-import os
 import pickle
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Optional
 
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.subject.state_oracle import StateOracle
 
 
+@dataclass(frozen=True)
+class ShallowState:
+    type: str
+    major_version: int|None
+    commit_nb: int|None
+    commit_id: str|None
+
+    @property
+    def dict(self) -> dict:
+        fields = {
+            'type': self.type,
+            'major_version': self.major_version,
+            'commit_nb': self.commit_nb,
+            'commit_id': self.commit_id,
+        }
+        return {k: v for k, v in fields.items() if v is not None}
+
+
 class State(ABC):
     def __init__(self, oracle: StateOracle):
+        super().__init__()
         self.oracle = oracle
         self.result_variables: Optional[set[tuple[str, str]]] = None
 
@@ -86,9 +105,8 @@ class State(ABC):
         pickled_bytes = base64.b64decode(pickled_str)
         return pickle.loads(pickled_bytes)
 
-    @abstractmethod
     def to_dict(self) -> dict:
-        pass
+        return self.to_shallow_state().dict
 
     @staticmethod
     def from_dict(subject_type: str, subject_name: str, data: dict) -> State:
@@ -128,6 +146,10 @@ class State(ABC):
 
     def get_previous_and_next_state_with_executable(self) -> tuple[State, State]:
         raise NotImplementedError(f'This function is not implemented for {self}')
+
+    @abstractmethod
+    def to_shallow_state(self) -> ShallowState:
+        pass
 
     def __repr__(self) -> str:
         return f'State(index={self.index})'

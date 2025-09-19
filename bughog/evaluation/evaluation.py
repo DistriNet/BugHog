@@ -22,7 +22,7 @@ class Evaluation:
         self.should_stop = False
 
     def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
-        if MongoDB().has_result(params, state):
+        if MongoDB().has_result(params, state.to_shallow_state()):
             logger.warning(f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping.")
             return
 

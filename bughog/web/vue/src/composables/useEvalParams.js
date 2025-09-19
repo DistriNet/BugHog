@@ -21,24 +21,63 @@ const DEFAULT_EVAL_PARAMS = {
 }
 
 function loadPersistedParams() {
-  const persisted = localStorage.getItem('eval_params_persisted')
-  return persisted ? { ...DEFAULT_EVAL_PARAMS, ...JSON.parse(persisted) } : { ...DEFAULT_EVAL_PARAMS }
+  const selected_subject_type = localStorage.getItem('selected_subject_type');
+  var eval_params = localStorage.getItem(`eval_params_${selected_subject_type}`);
+  if (selected_subject_type === null || eval_params === null) {
+    console.log(`No elected subject type ${selected_subject_type}.`)
+    return { ...DEFAULT_EVAL_PARAMS };
+  } else if (eval_params === null) {
+    console.log(`Loaded stored selected subject type ${selected_subject_type}.`);
+    return { ...DEFAULT_EVAL_PARAMS, ...{ 'subject_type': selected_subject_type } }
+  } else {
+    eval_params = JSON.parse(eval_params);
+    return { ...eval_params, ...{ 'subject_type': selected_subject_type } };
+  }
 }
 
 export function useEvalParams() {
-  const evalParams = reactive(loadPersistedParams())
+  var evalParams = reactive(loadPersistedParams());
 
-  watch(evalParams, (val) => {
-    const persist = {
-      subject_type: val.subject_type,
-      subject_name: val.subject_name,
-      project_name: val.project_name,
-      // Add more fields as needed
+  watch(evalParams, (new_params) => {
+    const to_persist = [
+      'subject_name',
+      'project_name',
+    ]
+    const old_selected_subject_type = localStorage.getItem('selected_subject_type');
+    var old_params = localStorage.getItem(`eval_params_${new_params.subject_type}`);
+
+    if (new_params.subject_type === null) {
+      return;
+    } else if (old_params === null) {
+      const default_params = Object.fromEntries(
+        Object.entries(DEFAULT_EVAL_PARAMS).filter(([key]) => to_persist.includes(key))
+      );
+      Object.assign(evalParams, default_params);
+      localStorage.setItem(`eval_params_${new_params.subject_type}`, JSON.stringify(default_params))
+    } else {
+      old_params = JSON.parse(old_params);
     }
-    localStorage.setItem('eval_params_persisted', JSON.stringify(persist))
-  }, { deep: true })
 
-  // Helper: reset parameters to default (if needed)
+    if (new_params.subject_type !== old_selected_subject_type) {
+      console.log(`Updating stored selected subject type from ${old_selected_subject_type} to ${new_params.subject_type}.`);
+      localStorage.setItem('selected_subject_type', new_params.subject_type);
+      if (old_params !== null) {
+        to_persist.forEach(key => {
+          evalParams[key] = old_params[key];
+        });
+      }
+    } else {
+      var params_to_store = {}
+      to_persist.forEach(key => {
+        if (new_params[key] !== old_params[key]) {
+          console.log(`Updating stored ${key} from ${old_params[key]} to ${new_params[key]}`);
+        }
+        params_to_store[key] = new_params[key];
+      });
+      localStorage.setItem(`eval_params_${new_params.subject_type}`, JSON.stringify(params_to_store));
+    }
+  }, { deep: true });
+
   function resetEvalParams() {
     Object.assign(evalParams, { ...DEFAULT_EVAL_PARAMS })
     localStorage.removeItem('eval_params_persisted')

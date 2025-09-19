@@ -14,20 +14,6 @@ class Global:
     custom_page_folder = '/app/experiments/pages'
 
     @staticmethod
-    def get_extension_folder(browser: str) -> str:
-        return Global.get_browser_config_class(browser).extension_folder
-
-    @staticmethod
-    def get_browser_config_class(browser: str):
-        match browser:
-            case 'chromium':
-                return Chromium
-            case 'firefox':
-                return Firefox
-            case _:
-                raise ValueError(f"Invalid browser '{browser}'")
-
-    @staticmethod
     def get_available_domains() -> list[str]:
         return [
             'a.test',
