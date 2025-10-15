@@ -31,7 +31,7 @@ function loadPersistedParams() {
     return { ...DEFAULT_EVAL_PARAMS, ...{ 'subject_type': selected_subject_type } }
   } else {
     eval_params = JSON.parse(eval_params);
-    return { ...eval_params, ...{ 'subject_type': selected_subject_type } };
+    return { ...DEFAULT_EVAL_PARAMS, ...eval_params, ...{ 'subject_type': selected_subject_type } };
   }
 }
 
