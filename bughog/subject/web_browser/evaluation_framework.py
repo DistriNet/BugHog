@@ -1,18 +1,18 @@
-from typing import Optional
+import os
+import re
+
 from bughog.evaluation.file_structure import Folder
 from bughog.subject.evaluation_framework import EvaluationFramework
 
 
 class BrowserEvaluationFramework(EvaluationFramework):
     def experiment_is_runnable(self, experiment_folder: Folder) -> bool:
-        if 'script.cmd' in [file.name for file in experiment_folder.files]:
-            return True
-
-        # If an experiment has no script.cmd, it should have exactly one main page.
-        return self.__find_only_main_page(experiment_folder) is not None
+        return any(file.name in ('script.cmd', 'index.html') for file in experiment_folder.files)
 
     def fill_empty_experiment_with_default(self, path: str):
-        pass
+        file_path = os.path.join(path, 'index.html')
+        with open(file_path, 'w') as file:
+            file.write('<html></html>')
 
     def get_poc_file_name(self) -> str:
         return 'index.html'
@@ -21,25 +21,20 @@ class BrowserEvaluationFramework(EvaluationFramework):
         return '<!--'
 
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
-        if main_folder := self.__find_only_main_page(experiment_folder):
-            project = main_folder.path.split('/')[-4]
-            experiment = main_folder.path.split('/')[-3]
-            domain = main_folder.path.split('/')[-2]
-            url = f'https://{domain}/{project}/{experiment}/main/'
-            return [f'navigate {url}']
-        return ['navigate']
+        index_file_path = os.path.join(experiment_folder.path, 'index.html')
+        if (domain := self.__get_domain(index_file_path)) is None:
+            domain = 'a.test'
+        project = experiment_folder.path.split('/')[5]
+        experiment = experiment_folder.path.split('/')[6]
+        url = f'https://{domain}/{project}/{experiment}/'
+        return [f'navigate {url}']
 
     def get_default_file_content(self, file_type: str):
         pass
 
-    def __find_only_main_page(self, experiment_folder: Folder) -> Optional[Folder]:
-        main_folder = None
-        for domain_folder in experiment_folder.subfolders:
-            for path_folder in domain_folder.subfolders:
-                if path_folder.name == 'main':
-                    if main_folder is None:
-                        main_folder = path_folder
-                    else:
-                        return None
-        return main_folder
-
+    @staticmethod
+    def __get_domain(file_path: str) -> str|None:
+        with open(file_path, 'r') as file:
+            content = file.read()
+            match = re.match(r'bughog_domain: (.+)$', content, re.MULTILINE)
+            return match[1].strip() if match else None

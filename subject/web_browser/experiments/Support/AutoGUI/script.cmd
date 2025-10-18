@@ -1,4 +1,4 @@
-NAVIGATE https://a.test/Support/AutoGUI/main
+NAVIGATE https://a.test/Support/AutoGUI/
 
 OPEN_CONSOLE
 

@@ -46,7 +46,6 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             body = self.rfile.read(content_length)
             self.request_body = body.decode('utf-8')
 
-        # Because of our hacky NGINX methodology, we have to allow premature socket closings.
         try:
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain; charset=utf-8')

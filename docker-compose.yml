@@ -92,7 +92,7 @@ services:
     restart: always
     volumes:
       - ./nginx/ssl/:/etc/nginx/ssl/:ro
-      - ./subject/web_browser/experiments/:/www/data/pages/:ro
+      - ./subject/web_browser/experiments/:/www/data/poc/:ro
       - ./subject/web_browser/resources/:/www/data/res/:ro
       - ./logs/:/logs/:rw
       - ./logs/screenshots/:/www/data/screenshots/:ro

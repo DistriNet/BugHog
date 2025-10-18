@@ -19,6 +19,12 @@ class Folder:
     __files_and_folders_to_ignore = ['.DS_Store']
 
     def __init__(self, name: str, path: str):
+        """
+        Initializes the Folder instance.
+
+        :param name: Name of the folder.
+        :param path: Absolute path of the folder, including the name.
+        """
         self.name = name
         self.path = path
         self.subfolders: list[Folder] = []
