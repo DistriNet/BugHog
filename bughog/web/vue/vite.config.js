@@ -8,6 +8,11 @@ export default defineConfig({
     exclude: ['oh-vue-icons/icons']
   },
   server: {
-    allowedHosts: ['bughog.io']
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    https: false,
+    cors: false,
+    allowedHosts: ['bughog.io'],
   }
 })
