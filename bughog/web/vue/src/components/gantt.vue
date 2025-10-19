@@ -121,7 +121,6 @@ export default {
                         var type = "release";
                         datapoint_index = major_version;
                     } else {
-                        console.log("Nothing interesting was selected...");
                         return;
                     }
 

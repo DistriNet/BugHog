@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue'
+import { reactive, watch } from 'vue';
 
 const DEFAULT_EVAL_PARAMS = {
   subject_type: null,
@@ -8,8 +8,7 @@ const DEFAULT_EVAL_PARAMS = {
   cli_options: [],
   extensions: [],
   experiments: [],
-  lower_version: null,
-  upper_version: null,
+  version_range: [1, 100],
   lower_commit_nb: null,
   upper_commit_nb: null,
   only_release_commits: true,
@@ -24,7 +23,7 @@ function loadPersistedParams() {
   const selected_subject_type = localStorage.getItem('selected_subject_type');
   var eval_params = localStorage.getItem(`eval_params_${selected_subject_type}`);
   if (selected_subject_type === null || eval_params === null) {
-    console.log(`No elected subject type ${selected_subject_type}.`)
+    console.log(`No selected subject type.`)
     return { ...DEFAULT_EVAL_PARAMS };
   } else if (eval_params === null) {
     console.log(`Loaded stored selected subject type ${selected_subject_type}.`);

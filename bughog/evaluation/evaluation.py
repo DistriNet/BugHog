@@ -106,13 +106,13 @@ class Evaluation:
         return ExperimentResult(executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty)
 
     @staticmethod
-    def get_default_file_content(file_type: str) -> str:
+    def get_default_file_content(file_type: str) -> bytes:
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'default_files/{file_type}')
 
         if not os.path.exists(path):
-            return ''
+            return b''
 
-        with open(path, 'r') as file:
+        with open(path, 'rb') as file:
             return file.read()
 
     def stop_gracefully(self):

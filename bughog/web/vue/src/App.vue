@@ -1,16 +1,18 @@
 <script>
-import { useDarkMode } from './composables/useDarkMode'
-import { useEvalParams } from './composables/useEvalParams'
-import 'vue-multiselect/dist/vue-multiselect.min.css'
-import '@vueform/slider/themes/default.css'
-import axios from 'axios'
+import '@vueform/slider/themes/default.css';
+import { useDebounceFn } from '@vueuse/core';
+import axios from 'axios';
+import 'vue-multiselect/dist/vue-multiselect.min.css';
+import { useDarkMode } from './composables/useDarkMode';
+import { useEvalParams } from './composables/useEvalParams';
 
-import Gantt from "./components/gantt.vue"
-import PocEditor from "./components/poc-editor.vue"
-import SectionHeader from "./components/section-header.vue";
-import Slider from '@vueform/slider'
-import Tooltip from "./components/tooltip.vue";
+import Slider from '@vueform/slider';
 import EvaluationStatus from './components/evaluation_status.vue';
+import Gantt from "./components/gantt.vue";
+import PocEditor from "./components/poc-editor.vue";
+import SectionHeader from "./components/section-header.vue";
+import Tooltip from "./components/tooltip.vue";
+
 export default {
   components: {
     Gantt,
@@ -39,9 +41,6 @@ export default {
       previous_cli_options_list: [],
       experiments: [],
       select_all_experiments: false,
-      slider: {
-        state: [0, 100],
-      },
       server_info: {
         db_info: {
           "host": null,
@@ -117,10 +116,6 @@ export default {
         this.hide_poc_editor = false;
       }
     },
-    "slider.state": function () {
-      this.evalParams.lower_version = this.slider.state[0];
-      this.evalParams.upper_version = this.slider.state[1];
-    },
     "info.log": {
       function(val) {
         if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
@@ -161,12 +156,11 @@ export default {
     "evalParams.subject_name": function (subject_name) {
       if (subject_name === null) {
         console.log("Unsetting subject");
-        this.reset_slider();
         return;
       }
       console.log("Setting subject: " + subject_name)
       const subject = this.available_subjects.find(subject => subject.name === subject_name);
-      this.slider.state = [subject["min_version"], subject["max_version"]];
+      this.evalParams.version_range = [subject["min_version"], subject["max_version"]];
     },
     "evalParams.project_name": function (project_name) {
       if (project_name === null) {
@@ -198,6 +192,11 @@ export default {
   },
   created: function () {
     this.websocket = this.create_socket();
+    this.propagate_new_params = useDebounceFn(() => {
+      console.log('<- Propagating parameter change ->');
+      const eval_params = JSON.parse(JSON.stringify(this.evalParams));
+      this.send_with_socket({new_params: eval_params});
+    }, 50);
     this.get_subject_support();
     this.get_projects();
     const path = `/api/poc/domain/`;
@@ -339,18 +338,10 @@ export default {
           console.error(error);
         });
     },
-    async propagate_new_params() {
-      console.log('<- Propagating parameter change ->');
-      this.send_with_socket(
-        {
-          "new_params": this.evalParams
-        }
-      );
-    },
     reset_slider() {
-      this.slider.state = [0, 100];
-      this.slider.state_range = [0, 100];
-      this.slider.disabled = true;
+      if (this.slider_disabled !== true) {
+        this.evalParams.version_range = this.slider_state_range;
+      }
     },
     submit_form() {
       const path = `/api/evaluation/start/`;
@@ -473,9 +464,10 @@ export default {
           <div class="flex flex-wrap">
             <div class="w-5/6 m-auto pt-12">
               <Slider
-                v-model="this.slider.state"
+                v-model="this.evalParams.version_range"
                 :min="this.slider_state_range[0]"
                 :max="this.slider_state_range[1]"
+                :merge="25"
                 :disabled="this.slider_disabled"
                 class="slider"
                 @change="propagate_new_params"
@@ -652,7 +644,7 @@ export default {
       </div>
       <div :class="hide_advanced_evaluation_options ? 'hidden' : ''">
         <div class="grid grid-cols-[auto,auto,auto] justify-start">
-          <div class="flex flex-col">
+          <!-- <div class="flex flex-col">
             <div class="form-subsection">
               <section-header section="subject_rev_range"></section-header>
               <div class="p-1 w-1/2">
@@ -665,7 +657,7 @@ export default {
                 <input v-model.lazy="this.evalParams.upper_commit_nb" class="number-input w-32" type="number">
               </div>
             </div>
-          </div>
+          </div> -->
 
           <!-- Evaluation settings -->
           <div class="form-subsection w-fit eval_opts col-start-3">

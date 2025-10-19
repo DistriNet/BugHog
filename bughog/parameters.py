@@ -191,13 +191,10 @@ def __get_cookie_name(form_data: dict[str, str]) -> str | None:
 
 @staticmethod
 def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
-    lower_version = form_data.get("lower_version", None)
-    upper_version = form_data.get("upper_version", None)
-    lower_version = int(lower_version) if lower_version else None
-    upper_version = int(upper_version) if upper_version else None
-    if lower_version is None or upper_version is None:
-        return None
-    return (lower_version, upper_version) if lower_version is not None else None
+    if range := form_data.get('version_range', None):
+        if len(range) == 2:
+            return (int(range[0]), int(range[1]))
+    return None
 
 
 @staticmethod

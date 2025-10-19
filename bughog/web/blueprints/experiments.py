@@ -136,7 +136,7 @@ def python_evaluation(project: str, experiment: str, file_name: str):
     host = request.host.lower()
 
     module_name = f"{host}/{project}/{experiment}"
-    path = f"experiments/pages/{project}/{experiment}/{host}/{file_name}.py"
+    path = f"/app/subject/web_browser/experiments/{project}/{experiment}/{file_name}.py"
 
     # Dynamically import the file
     sys.dont_write_bytecode = True

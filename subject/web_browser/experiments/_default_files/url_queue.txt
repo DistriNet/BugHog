@@ -1,2 +1,0 @@
-TODO - add your URLs to visit
-https://a.test/report/?bughog_sanity_check=OK

@@ -48,7 +48,6 @@ class CommitState(State):
             'type': self.type,
             'commit_nb': self.commit_nb,
             'commit_id': self.commit_id,
-            'commit_url': self.commit_url,
         }
         return {k: v for k, v in fields.items() if v is not None}
 

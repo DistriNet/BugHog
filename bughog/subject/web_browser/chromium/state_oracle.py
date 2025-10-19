@@ -64,7 +64,7 @@ class ChromiumStateOracle(StateOracle):
     # Commit state functions
 
     def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
-        return 'TODO'
+        return f'https://chromium.googlesource.com/chromium/src/+/{commit_id}'
 
     @Cache.cache_in_db('web_browser', 'chromium')
     def has_public_commit_executable(self, commit_nb: int) -> bool:

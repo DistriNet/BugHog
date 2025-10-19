@@ -29,8 +29,13 @@ class BrowserEvaluationFramework(EvaluationFramework):
         url = f'https://{domain}/{project}/{experiment}/'
         return [f'navigate {url}']
 
-    def get_default_file_content(self, file_type: str):
-        pass
+    def get_default_file_content(self, file_type: str) -> bytes:
+        default_file_path = os.path.join('/app/subject/web_browser/experiments/default_files/', file_type)
+        if not os.path.isfile(default_file_path):
+            return b''
+        else:
+            with open(default_file_path, 'rb') as file:
+                return file.read()
 
     @staticmethod
     def __get_domain(file_path: str) -> str|None:

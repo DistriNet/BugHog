@@ -29,7 +29,7 @@ class StateOracle(ABC):
         pass
 
     @abstractmethod
-    def get_commit_url(self, commit_nb, commit_id) -> str:
+    def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
         pass
 
     @abstractmethod

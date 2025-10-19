@@ -10,16 +10,16 @@ class WasmtimeSubject(WasmRuntime):
     def name(self) -> str:
         return 'wasmtime'
 
+    @property
+    def _state_oracle_class(self) -> type[WasmtimeStateOracle]:
+        return WasmtimeStateOracle
+
     def get_availability(self) -> dict:
         return {
             'name': 'wasmtime',
             'min_version': 1,
             'max_version': self.state_oracle.get_most_recent_major_release_version()
         }
-
-    @property
-    def _state_oracle_class(self) -> type[WasmtimeStateOracle]:
-        return WasmtimeStateOracle
 
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> WasmtimeExecutable:
         return WasmtimeExecutable(subject_configuration, state)

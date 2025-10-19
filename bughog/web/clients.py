@@ -39,8 +39,7 @@ class Clients:
         required_params_for_results = [
             'subject_type',
             'subject_name',
-            'lower_version',
-            'upper_version',
+            'version_range',
             'project_name',
             'experiment_to_plot'
         ]

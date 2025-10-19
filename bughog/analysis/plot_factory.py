@@ -1,18 +1,21 @@
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.parameters import EvaluationParameters
+from bughog.subject import factory
+from bughog.subject.state_oracle import StateOracle
 
 
 class PlotFactory:
     @staticmethod
     def get_plot_commit_data(params: EvaluationParameters) -> dict:
         commit_docs = MongoDB().get_documents_for_plotting(params)
-        return PlotFactory.__add_outcome_info(commit_docs)
+        state_oracle = factory.get_subject_from_params(params).state_oracle
+        return PlotFactory.__add_outcome_info(commit_docs, state_oracle)
 
     @staticmethod
     def get_plot_release_data(params: EvaluationParameters) -> dict:
         release_docs = MongoDB().get_documents_for_plotting(params, releases=True)
-        return PlotFactory.__add_outcome_info(release_docs)
+        return PlotFactory.__add_outcome_info(release_docs, None)
 
     @staticmethod
     def validate_params(params: EvaluationParameters) -> list[str]:
@@ -36,16 +39,24 @@ class PlotFactory:
         return new_docs
 
     @staticmethod
-    def __add_outcome_info(docs: list):
+    def __add_outcome_info(docs: list, state_oracle: StateOracle|None):
         if not docs:
             return {'commit_nb': [], 'major_version': [], 'version_printed_by_executable': [], 'outcome': []}
-        docs_with_outcome = []
 
+        docs_with_outcome = []
         for doc in docs:
             result_variables = set((variables[0], variables[1]) for variables in doc['result']['variables'])
+
+            commit_nb = doc['state']['commit_nb']
+            commit_id = doc['state']['commit_id']
+            if state_oracle:
+                commit_url = state_oracle.get_commit_url(commit_nb, commit_id)
+            else:
+                commit_url = None
+
             new_doc = {
-                'commit_nb': doc['state']['commit_nb'],
-                'commit_url': doc['state']['commit_url'] if 'commit_url' in doc['state'] else None,
+                'commit_nb': commit_nb,
+                'commit_url': commit_url,
                 'major_version': doc['state'].get('major_version', None), # commit states don't have this field
                 'version_printed_by_executable': doc['subject_version'],
             }
