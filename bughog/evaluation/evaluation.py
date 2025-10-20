@@ -91,10 +91,12 @@ class Evaluation:
         # Perform sanity check if not reproduced and potential in-poc sanity check did not succeed
         if self.experiments.framework.requires_sanity_check() and (intermediary_variables is None or ExperimentResult.poc_is_dirty(intermediary_variables)):
             collector.start()
+            executable.pre_try_setup()
             try:
                 Interaction(script).do_sanity_check(simulation)
             except Exception as e:
                 logger.error(f'An error during the sanity check: {e}', exc_info=True)
+            executable.post_try_cleanup()
             collector.stop()
             _, sanity_check_variables = collector.collect_results()
             if not ExperimentResult.poc_passed_sanity_check(sanity_check_variables):

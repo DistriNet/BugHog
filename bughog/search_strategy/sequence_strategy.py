@@ -25,7 +25,7 @@ class SequenceStrategy:
         self._considered_states = considered_states if considered_states else []
 
     @abstractmethod
-    def next(self) -> State:
+    def next(self, wait=True) -> State:
         pass
 
     def is_available(self, state: State) -> bool:

@@ -44,7 +44,7 @@ class PublicBrowserStateCache:
 
     @staticmethod
     def firefox_get_commit_nb(commit_id: str) -> int:
-        collection = MongoDB().get_collection("firefox_executable_availability")
+        collection = MongoDB().get_collection("firefox_binary_availability")
         result = collection.find_one({"revision_id": commit_id}, {"revision_number": 1})
         if result is None or "revision_number" not in result:
             raise AttributeError(f"Could not find 'revision_number' in {result}")
@@ -52,7 +52,7 @@ class PublicBrowserStateCache:
 
     @staticmethod
     def firefox_has_executable_for(commit_nb: Optional[int] = None, commit_id: Optional[str] = None) -> bool:
-        collection = MongoDB().get_collection("firefox_executable_availability")
+        collection = MongoDB().get_collection("firefox_binary_availability")
         if commit_nb:
             result = collection.find_one({"revision_number": commit_nb})
         elif commit_id:
@@ -63,12 +63,12 @@ class PublicBrowserStateCache:
 
     @staticmethod
     def firefox_get_executable_info(commit_id: str) -> Optional[dict]:
-        collection = MongoDB().get_collection("firefox_executable_availability")
+        collection = MongoDB().get_collection("firefox_binary_availability")
         return collection.find_one({"node": commit_id}, {"files_url": 1, "app_version": 1})
 
     @staticmethod
     def firefox_get_previous_and_next_commit_nb_with_executable(commit_nb: int) -> tuple[Optional[int], Optional[int]]:
-        collection = MongoDB().get_collection("firefox_executable_availability")
+        collection = MongoDB().get_collection("firefox_binary_availability")
 
         previous_commit_nbs = collection.find({"revision_number": {"$lt": commit_nb}}).sort({"revision_number": DESCENDING})
         previous_document = next(previous_commit_nbs, None)
@@ -83,7 +83,7 @@ class PublicBrowserStateCache:
 
     @staticmethod
     def firefox_get_commit_id(commit_nb: int) -> Optional[str]:
-        collection = MongoDB().get_collection("firefox_executable_availability")
+        collection = MongoDB().get_collection("firefox_binary_availability")
         result = collection.find_one({"revision_number": commit_nb})
         if result is None:
             return None

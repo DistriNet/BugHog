@@ -14,11 +14,14 @@ class FirefoxStateOracle(StateOracle):
 
     @Cache.cache_in_db('web_browser', 'firefox')
     def find_commit_nb_of_release(self, release_version: int) -> int:
-        return get_release_revision_number(release_version)
+        return PublicBrowserStateCache.get_release_commit_nb('firefox', release_version)
 
     @Cache.cache_in_db('web_browser', 'firefox')
     def find_commit_id_of_release(self, release_version: int) -> str:
         return PublicBrowserStateCache.get_release_commit_id('firefox', release_version)
+
+    def get_most_recent_major_release_version(self) -> int:
+        return PublicBrowserStateCache.get_most_recent_major_version('firefox')
 
     @Cache.cache_in_db('web_browser', 'firefox')
     def has_public_release_executable(self, major_version: int) -> bool:
@@ -29,6 +32,9 @@ class FirefoxStateOracle(StateOracle):
             f'https://ftp.mozilla.org/pub/firefox/releases/{major_version}.0/linux-x86_64/en-US/firefox-{major_version}.0.tar.bz2',
             f'https://ftp.mozilla.org/pub/firefox/releases/{major_version}.0/linux-x86_64/en-US/firefox-{major_version}.0.tar.xz',
         ]
+
+    def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
+        return f'https://hg.mozilla.org/releases/mozilla-release/rev/{commit_id}'
 
     @Cache.cache_in_db('web_browser', 'firefox')
     def has_public_commit_executable(self, commit_nb: int) -> bool:
