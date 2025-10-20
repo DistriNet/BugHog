@@ -37,11 +37,11 @@ class ChromiumStateOracle(StateOracle):
         assert re.match(r'[a-z0-9]{40}', rev_id)
         return rev_id
 
-    @Cache.cache_in_db('web_browser', 'chromium')
+    # @Cache.cache_in_db('web_browser', 'chromium')
     def find_commit_nb_of_release(self, release_version: int) -> int:
         return PublicBrowserStateCache.get_release_commit_nb('chromium', release_version)
 
-    @Cache.cache_in_db('web_browser', 'chromium')
+    # @Cache.cache_in_db('web_browser', 'chromium')
     def find_commit_id_of_release(self, release_version: int) -> str:
         return PublicBrowserStateCache.get_release_commit_id('chromium', release_version)
 
@@ -50,13 +50,13 @@ class ChromiumStateOracle(StateOracle):
 
     # Release state functions
 
-    @Cache.cache_in_db('web_browser', 'chromium')
+    # @Cache.cache_in_db('web_browser', 'chromium')
     def has_public_release_executable(self, major_version: int) -> bool:
         # TODO: check cache at factory
         commit_nb = PublicBrowserStateCache.get_release_commit_nb('chromium', major_version)
         return self.has_public_commit_executable(commit_nb)
 
-    @Cache.cache_in_db('web_browser', 'chromium')
+    # @Cache.cache_in_db('web_browser', 'chromium')
     def get_release_executable_download_urls(self, major_version: int) -> list[str]:
         commit_nb = PublicBrowserStateCache.get_release_commit_nb('chromium', major_version)
         return self.get_commit_executable_download_urls(commit_nb)

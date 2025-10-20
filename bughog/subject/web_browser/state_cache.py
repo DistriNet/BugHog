@@ -27,7 +27,7 @@ class PublicBrowserStateCache:
                 logger.error(f"Could not update commit cache for {collection_name}", exc_info=True)
 
         executor = ThreadPoolExecutor()
-        executor.submit(safe_request_json_and_update, "firefox_executable_availability", transform=lambda x: list(x.values()))
+        executor.submit(safe_request_json_and_update, "firefox_binary_availability", transform=lambda x: list(x.values()))
         executor.submit(safe_request_json_and_update, "firefox_release_base_revs")
         executor.submit(safe_request_json_and_update, "chromium_release_base_revs")
         executor.shutdown(wait=False)

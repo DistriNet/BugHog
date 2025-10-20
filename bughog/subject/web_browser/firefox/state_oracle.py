@@ -4,19 +4,19 @@ from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 
 
 class FirefoxStateOracle(StateOracle):
-    @Cache.cache_in_db('web_browser', 'firefox')
+    # @Cache.cache_in_db('web_browser', 'firefox')
     def find_commit_nb(self, commit_id: str) -> int:
         return PublicBrowserStateCache.firefox_get_commit_nb(commit_id)
 
-    @Cache.cache_in_db('web_browser', 'firefox')
+    # @Cache.cache_in_db('web_browser', 'firefox')
     def find_commit_id(self, commit_nb: int) -> str:
         return PublicBrowserStateCache.firefox_get_commit_id(commit_nb)
 
-    @Cache.cache_in_db('web_browser', 'firefox')
+    # @Cache.cache_in_db('web_browser', 'firefox')
     def find_commit_nb_of_release(self, release_version: int) -> int:
         return PublicBrowserStateCache.get_release_commit_nb('firefox', release_version)
 
-    @Cache.cache_in_db('web_browser', 'firefox')
+    # @Cache.cache_in_db('web_browser', 'firefox')
     def find_commit_id_of_release(self, release_version: int) -> str:
         return PublicBrowserStateCache.get_release_commit_id('firefox', release_version)
 
@@ -36,7 +36,9 @@ class FirefoxStateOracle(StateOracle):
     def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
         return f'https://hg.mozilla.org/releases/mozilla-release/rev/{commit_id}'
 
-    @Cache.cache_in_db('web_browser', 'firefox')
+    # We don't cache this for firefox, since it is implicitly caches by PublicBrowserStateCache.
+    # If we would, negative results for future executables remain stored even after the executable becomes available.
+    # @Cache.cache_in_db('web_browser', 'firefox')
     def has_public_commit_executable(self, commit_nb: int) -> bool:
         return PublicBrowserStateCache.firefox_has_executable_for(commit_nb=commit_nb)
 
