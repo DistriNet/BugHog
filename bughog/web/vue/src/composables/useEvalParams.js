@@ -8,7 +8,7 @@ const DEFAULT_EVAL_PARAMS = {
   cli_options: [],
   extensions: [],
   experiments: [],
-  version_range: [1, 100],
+  version_range: [],
   lower_commit_nb: null,
   upper_commit_nb: null,
   only_release_commits: true,
@@ -81,6 +81,8 @@ export function useEvalParams() {
     Object.assign(evalParams, { ...DEFAULT_EVAL_PARAMS })
     localStorage.removeItem('eval_params_persisted')
   }
+
+  console.log("Eval params has been initialized.")
 
   return {
     evalParams,

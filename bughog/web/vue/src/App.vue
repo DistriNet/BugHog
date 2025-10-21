@@ -12,6 +12,7 @@ import Gantt from "./components/gantt.vue";
 import PocEditor from "./components/poc-editor.vue";
 import SectionHeader from "./components/section-header.vue";
 import Tooltip from "./components/tooltip.vue";
+import { useSubjectAvailability } from './composables/useSubjectAvailability';
 
 export default {
   components: {
@@ -25,17 +26,20 @@ export default {
   setup() {
     const { darkMode } = useDarkMode()
     const { evalParams, resetEvalParams } = useEvalParams()
+    const { subject_availability } = useSubjectAvailability(() => {
+      evalParams.version_range = subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name);
+    })
     return {
       darkMode,
       evalParams,
       resetEvalParams,
+      subject_availability,
     }
   },
   data() {
     return {
       timer: null,
       projects: [],
-      subject_availability: [],
       subject_settings: [],
       cli_options_str: "",
       previous_cli_options_list: [],
@@ -82,47 +86,16 @@ export default {
         return `Connecting to database...`;
       }
     },
-    "available_subjects": function () {
-      const subject_type = this.evalParams.subject_type;
-      if (this.subject_availability.length == 0) {
-        return [];
-      }
-      if (this.evalParams.subject_type !== null) {
-        const result = this.subject_availability.find(type_entry => type_entry.subject_type === subject_type);
-        return result['subjects'];
-      } else {
-        return [];
-      }
-    },
-    "slider_state_range": function () {
-      const subject_name = this.evalParams.subject_name;
-      const subject = this.available_subjects.find(subject => subject.name === subject_name);
-      if (subject !== undefined) {
-        return [
-          subject["min_version"],
-          subject["max_version"],
-        ];
-      } else {
-        return [0, 100];
-      }
-    },
-    "slider_disabled": function () {
-      return this.evalParams.subject_name === null || this.evalParams.subject_name === undefined;
-    },
+    "computed_slider_merge": function () {
+      const version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, this.evalParams.subject_name);
+      return Math.ceil((version_range[1] - version_range[0]) / 7);
+    }
   },
   watch: {
     "selected.experiment": function (val) {
       if (val !== null) {
         this.hide_poc_editor = false;
       }
-    },
-    "info.log": {
-      function(val) {
-        if (log_section.scrollHeight - log_section.scrollTop - log_section.clientHeight < 1) {
-          log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
-        }
-      },
-      "flush": "post",
     },
     "target_mech_id_input": function (val) {
       if (val === null || val === "") {
@@ -144,8 +117,9 @@ export default {
       console.log(`Setting subject type to '${val}'`);
       // this.evalParams.subject_name = null;
       // this.evalParams.project_name = null;
-      if (this.available_subjects.length === 1) {
-        this.evalParams.subject_name = this.available_subjects[0].name;
+      const subject_names = this.subject_availability.get_available_subject_names_for_type(val);
+      if (subject_names !== null && subject_names.length > 0) {
+        this.evalParams.subject_name = subject_names[0];
       }
       this.get_projects(() => {
         if (this.projects.length === 1) {
@@ -156,11 +130,10 @@ export default {
     "evalParams.subject_name": function (subject_name) {
       if (subject_name === null) {
         console.log("Unsetting subject");
-        return;
+      } else {
+        console.log("Setting subject: " + subject_name)
+        this.evalParams.version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, subject_name);
       }
-      console.log("Setting subject: " + subject_name)
-      const subject = this.available_subjects.find(subject => subject.name === subject_name);
-      this.evalParams.version_range = [subject["min_version"], subject["max_version"]];
     },
     "evalParams.project_name": function (project_name) {
       if (project_name === null) {
@@ -197,7 +170,6 @@ export default {
       const eval_params = JSON.parse(JSON.stringify(this.evalParams));
       this.send_with_socket({new_params: eval_params});
     }, 50);
-    this.get_subject_support();
     this.get_projects();
     const path = `/api/poc/domain/`;
     axios.get(path)
@@ -207,9 +179,6 @@ export default {
       }
     })
     this.timer = setInterval(() => {
-      if (this.subject_availability.length == 0) {
-        this.get_subject_support();
-      }
       if (this.projects.length == 0 && this.evalParams.subject_type !== null) {
         this.get_projects();
       }
@@ -304,18 +273,6 @@ export default {
           console.error(error);
         });
     },
-    get_subject_support() {
-      const path = `/api/subject/`;
-      axios.get(path)
-        .then((res) => {
-          if (res.data.status == "OK") {
-            this.subject_availability = res.data.subject_availability;
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
     get_system_info() {
       const path = `/api/system/`;
       axios.get(path)
@@ -337,11 +294,6 @@ export default {
         .catch((error) => {
           console.error(error);
         });
-    },
-    reset_slider() {
-      if (this.slider_disabled !== true) {
-        this.evalParams.version_range = this.slider_state_range;
-      }
     },
     submit_form() {
       const path = `/api/evaluation/start/`;
@@ -427,10 +379,10 @@ export default {
       <!-- <p>[FRAMEWORK NAME + LOGO]</p> -->
       <p :class="{ '!font-bold !text-red-600' : fatal_error }">{{ banner_message }}</p>
 
-      <select id="subject-type-select" class="w-64 block p-2 border border-gray-300 rounded" v-model="this.evalParams.subject_type" :disabled="!subject_availability.length" @change="propagate_new_params">
+      <select id="subject-type-select" class="w-64 block p-2 border border-gray-300 rounded" v-model="this.evalParams.subject_type" :disabled="subject_availability.is_empty()" @change="propagate_new_params">
         <option value="" disabled>Select subject type</option>
-        <option v-for="subject in subject_availability" :key="subject.subject_type" :value="subject.subject_type">
-          {{ subject.subject_type }}
+        <option v-for="subject_type in subject_availability.get_available_subject_types()" :key="subject_type" :value="subject_type">
+          {{ subject_type }}
         </option>
       </select>
 
@@ -452,9 +404,9 @@ export default {
         <!-- Subject --><div class="form-subsection">
     <h2 class="form-subsection-title">Subject</h2>
     <div class="flex flex-row justify-center mx-5">
-      <div v-for="subject in available_subjects" :key="subject.name" class="radio-item flex-auto">
-        <input type="radio" :id="subject.name" name="subject" :value="subject.name" v-model="evalParams.subject_name" @change="propagate_new_params" />
-        <label :for="subject.name">{{ subject.name }}</label>
+      <div v-for="subject_name in subject_availability.get_available_subject_names_for_type(this.evalParams.subject_type)" :key="subject_name" class="radio-item flex-auto">
+        <input type="radio" :id="subject_name" name="subject" :value="subject_name" v-model="evalParams.subject_name" @change="propagate_new_params" />
+        <label :for="subject_name">{{ subject_name }}</label>
       </div>
     </div>
   </div>
@@ -464,11 +416,13 @@ export default {
           <div class="flex flex-wrap">
             <div class="w-5/6 m-auto pt-12">
               <Slider
-                v-model="this.evalParams.version_range"
-                :min="this.slider_state_range[0]"
-                :max="this.slider_state_range[1]"
-                :merge="25"
-                :disabled="this.slider_disabled"
+                ref="version_slider"
+                v-model="evalParams.version_range"
+                :lazy=true
+                :min="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[0]"
+                :max="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[1]"
+                :merge="computed_slider_merge"
+                :disabled=false
                 class="slider"
                 @change="propagate_new_params"
               />
