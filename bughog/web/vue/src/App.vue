@@ -115,8 +115,6 @@ export default {
     },
     "evalParams.subject_type": function (val) {
       console.log(`Setting subject type to '${val}'`);
-      // this.evalParams.subject_name = null;
-      // this.evalParams.project_name = null;
       const subject_names = this.subject_availability.get_available_subject_names_for_type(val);
       if (subject_names !== null && subject_names.length > 0) {
         this.evalParams.subject_name = subject_names[0];
@@ -126,6 +124,7 @@ export default {
           this.evalParams.project_name = this.projects[0];
         }
       });
+      this.selected.experiment = null;
     },
     "evalParams.subject_name": function (subject_name) {
       if (subject_name === null) {
@@ -145,6 +144,7 @@ export default {
       this.evalParams.experiments = [];
       this.select_all_experiments = false;
       this.evalParams.experiment_to_plot = null;
+      this.selected.experiment = null;
     },
     "cli_options_str": function (val) {
       if (val !== "") {

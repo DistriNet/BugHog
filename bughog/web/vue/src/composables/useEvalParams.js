@@ -8,7 +8,7 @@ const DEFAULT_EVAL_PARAMS = {
   cli_options: [],
   extensions: [],
   experiments: [],
-  version_range: [],
+  version_range: [-1, -1],
   lower_commit_nb: null,
   upper_commit_nb: null,
   only_release_commits: true,

@@ -1,14 +1,14 @@
 <script>
-  import ace from "ace-builds";
-  import { Mode as HtmlMode } from 'ace-builds/src-noconflict/mode-html';
-  import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
-  import { Mode as JsonMode } from 'ace-builds/src-noconflict/mode-json';
-  import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
-  import { getMode as getInteractionScriptMode } from '../interaction_script_mode';
-  import 'ace-builds/src-min-noconflict/ext-modelist';
-  import 'ace-builds/src-min-noconflict/theme-twilight';
-  import 'ace-builds/src-min-noconflict/theme-xcode';
-  import axios from 'axios';
+import ace from "ace-builds";
+import 'ace-builds/src-min-noconflict/ext-modelist';
+import 'ace-builds/src-min-noconflict/theme-twilight';
+import 'ace-builds/src-min-noconflict/theme-xcode';
+import { Mode as HtmlMode } from 'ace-builds/src-noconflict/mode-html';
+import { Mode as JsMode } from 'ace-builds/src-noconflict/mode-javascript';
+import { Mode as JsonMode } from 'ace-builds/src-noconflict/mode-json';
+import { Mode as PyMode } from 'ace-builds/src-noconflict/mode-python';
+import axios from 'axios';
+import { getMode as getInteractionScriptMode } from '../interaction_script_mode';
   export default {
     props: {
       available_domains: Array,
@@ -28,28 +28,6 @@
         active_poc: {
             name: null,
             tree: null,
-            // Example tree:
-            // {
-            //   'test.com': {
-            //     "path1": {
-            //        "file1": null,
-            //        "file2": null
-            //     },
-            //     "path2": {
-            //        "file1": null
-            //     },
-            //   },
-            //   'not.test': {
-            //     "path1": {
-            //        "file1": null,
-            //        "file2": null
-            //     },
-            //     "path2": {
-            //        "file1": null
-            //     },
-            //   },
-            //  'script.cmd': null,
-            // },
         },
         available_file_types: [
           'html',
@@ -108,7 +86,9 @@
         const poc_name = this.active_poc.name;
         const file_name = this.active_file.name;
         const folder_name = this.active_folder;
-        if (folder_name === null) {
+        if (poc_name === null) {
+          return null;
+        } else if (folder_name === null) {
           return `/api/poc/${this.subject_type}/${this.project}/${poc_name}/${file_name}/`;
         } else {
           return `/api/poc/${this.subject_type}/${this.project}/${poc_name}/${file_name}/${folder_name}/`;
@@ -117,25 +97,38 @@
     },
     methods: {
       set_active_file(folder_name, file_name) {
+        this.active_file.should_update_server = false;
         this.active_file.name = file_name;
         this.active_folder = folder_name;
-        axios.get(this.file_api_path)
-        .then((res) => {
-          if (res.data.status === "OK") {
-            this.active_file.should_update_server = false;
-            this.active_file.content = res.data.content;
-            const modelist = ace.require("ace/ext/modelist");
-            const mode = modelist.getModeForPath(file_name).mode
-            this.editor.session.setMode(mode);
-            this.editor.setValue(res.data.content);
-            this.editor.clearSelection();
-            this.active_file.should_update_server = true;
-            this.update_editor_mode(file_name);
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+        if (file_name === null) {
+          console.log("Clearing PoC editor.");
+          this.editor.setValue("");
+          this.editor.clearSelection();
+          this.active_file.name = null;
+          this.active_file.content = null;
+          this.active_poc.name = null;
+          this.active_poc.active_domain = null;
+          this.active_poc.active_path = null;
+          this.active_poc.tree = null;
+        } else {
+          axios.get(this.file_api_path)
+          .then((res) => {
+            if (res.data.status === "OK") {
+              this.active_file.should_update_server = false;
+              this.active_file.content = res.data.content;
+              const modelist = ace.require("ace/ext/modelist");
+              const mode = modelist.getModeForPath(file_name).mode
+              this.editor.session.setMode(mode);
+              this.editor.setValue(res.data.content);
+              this.editor.clearSelection();
+              this.update_editor_mode(file_name);
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+        }
+        this.active_file.should_update_server = true;
       },
       update_file_content() {
         if (this.timeout) {
@@ -148,6 +141,9 @@
           return;
         }
         this.timeout = setTimeout(() => {
+          if (this.file_api_path === null) {
+            return;
+          }
           const data = {
             "content": this.editor.session.getValue()
           };
@@ -163,15 +159,20 @@
         }, 500);
       },
       update_poc_tree() {
-        axios.get(this.poc_api_path)
-        .then((res) => {
-          if (res.data.status === "OK") {
-            this.active_poc.tree = res.data.tree;
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+        if (this.poc === null) {
+          this.active_poc.name = null;
+          this.active_poc.tree = null;
+        } else {
+          axios.get(this.poc_api_path)
+          .then((res) => {
+            if (res.data.status === "OK") {
+              this.active_poc.tree = res.data.tree;
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+        }
       },
       update_editor_mode(file_name) {
         const file_ext = file_name.split('.').pop();
@@ -284,22 +285,16 @@
         });
       },
       "poc": function(val) {
-        this.editor.setValue();
-        this.editor.clearSelection();
-        this.active_file.name = null;
-        this.active_file.content = null;
+        this.set_active_file(null, null);
         this.active_poc.name = val;
         this.update_poc_tree();
       },
-      "project": function(val) {
-        this.editor.setValue();
-        this.editor.clearSelection();
-        this.active_file.name = null;
-        this.active_file.content = null;
-        this.active_poc.name = null;
-        this.active_poc.active_domain = null;
-        this.active_poc.active_path = null;
+      "project": function() {
+        this.set_active_file(null, null);
       },
+      "subject_type": function() {
+        this.set_active_file(null, null);
+      }
     },
   };
 </script>
