@@ -29,15 +29,6 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
             name: null,
             tree: null,
         },
-        available_file_types: [
-          'html',
-          'js',
-          'py',
-        ],
-        available_config_types: {
-          'script.cmd': 'Interaction script',
-          'url_queue.txt': 'URL queue'
-        },
         poc_tree_config: {
           domain: 'Config',
           page: '_',
@@ -318,12 +309,19 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
             role="button"
             @click="set_active_file(null, file.name)">
             <span class="truncate">{{ file.name }}</span>
-            <!-- Remove button -->
-            <div
-              class="ml-auto button shrink-0 rounded text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-              @click="this.dialog.selected_file = file.name"
-              onclick="remove_file_or_folder_dialog.showModal()">
-              ✕
+            <div class="ml-auto flex flex-row">
+              <!-- Link to PoC URL if file is HTML file -->
+              <div v-if="file.name.endsWith('.html') && this.subject_type === 'web_browser'"
+                class="button shrink-0 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                <a :href="`https://a.test/${project}/${active_poc.name}/${file.name}`" target="_blank" class="text-white">link</a>
+              </div>
+              <!-- Remove button -->
+              <div
+                class="ml-1 button shrink-0 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                @click="this.dialog.selected_file = file.name"
+                onclick="remove_file_or_folder_dialog.showModal()">
+                ✕
+              </div>
             </div>
           </div>
         </li>
