@@ -162,7 +162,7 @@ class Experiments:
         return self.framework.get_default_file_content(file_type)
 
     def reload_experiments(self):
-        self.initialize_experiments()
+        self.root_folder = self.initialize_experiments()
         logger.info('Experiments are reloaded.')
 
     @staticmethod

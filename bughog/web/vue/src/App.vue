@@ -345,24 +345,42 @@ export default {
         console.error('Could not create new experiment');
       });
     },
-    create_new_project() {
-      const url = `/api/poc/${this.evalParams.subject_type}/`;
-      const new_project_name = this.dialog.new_project_name;
-      axios.post(url, {'project_name': new_project_name})
-      .then((res) => {
+    async create_new_project() {
+      try {
+        const url = `/api/poc/${this.evalParams.subject_type}/`;
+        const new_project_name = this.dialog.new_project_name;
+
+        const res = await axios.post(url, {'project_name': new_project_name});
+
         if (res.data.status === "OK") {
           this.dialog.new_project_name = null;
-          this.get_projects(() => {
-            this.evalParams.project_name = new_project_name;
-          });
+          const initial_project_count = this.projects.length;
+          let tries_left = 3;
+
+          while (tries_left > 0 && this.projects.length === initial_project_count) {
+            tries_left--;
+
+            await new Promise((resolve) => {
+              this.get_projects(() => {
+                if (this.projects.length > initial_project_count) {
+                  console.log(`Setting new project: ${new_project_name}`);
+                  this.evalParams.project_name = new_project_name;
+                }
+                resolve();
+              });
+            });
+            await new Promise((r) => setTimeout(r, 200))
+          }
+          if (this.projects.length === initial_project_count) {
+            console.warn('New project not detected after retries');
+          }
         } else {
           alert(res.data.msg);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Could not create new project', error);
-      });
-    },
+      }
+    }
   },
   beforeDestroy() {
     clearInterval(this.timer);
