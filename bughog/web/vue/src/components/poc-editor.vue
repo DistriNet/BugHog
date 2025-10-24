@@ -105,8 +105,8 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
           axios.get(this.file_api_path)
           .then((res) => {
             if (res.data.status === "OK") {
-              this.active_file.should_update_server = false;
               this.active_file.content = res.data.content;
+              this.active_file.should_update_server = true;
               const modelist = ace.require("ace/ext/modelist");
               const mode = modelist.getModeForPath(file_name).mode
               this.editor.session.setMode(mode);
@@ -119,7 +119,6 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
             console.error(error);
           });
         }
-        this.active_file.should_update_server = true;
       },
       update_file_content() {
         if (this.timeout) {

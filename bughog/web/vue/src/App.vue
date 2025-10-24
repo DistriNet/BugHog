@@ -365,6 +365,7 @@ export default {
                 if (this.projects.length > initial_project_count) {
                   console.log(`Setting new project: ${new_project_name}`);
                   this.evalParams.project_name = new_project_name;
+                  this.propagate_new_params();
                 }
                 resolve();
               });
