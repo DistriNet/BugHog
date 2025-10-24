@@ -50,7 +50,7 @@ class Experiments:
 
     def get_projects(self) -> list[str]:
         project_folders = self.root_folder.get_all_folders_with_tag('project')
-        return [folder.name for folder in project_folders]
+        return sorted([folder.name for folder in project_folders], key=str.lower)
 
     def create_empty_project(self, project_name: str):
         self.__is_valid_file_or_folder(project_name)
