@@ -202,6 +202,7 @@ class MongoDB:
     ) -> list[State]:
         collection = self.__get_data_collection(params)
         query = {
+            "project": params.evaluation_range.project_name,
             "subject_config": params.subject_configuration.subject_setting,
             "experiment": params.evaluation_range.experiment_name,
             "result": {"$exists": True},
@@ -241,6 +242,7 @@ class MongoDB:
     def __to_experiment_query(self, params: EvaluationParameters, state: ShallowState) -> dict:
         state_query = {'state.' + k: v for k, v in state.dict.items()}
         query = {
+            "project": params.evaluation_range.project_name,
             "subject_config": params.subject_configuration.subject_setting,
             "experiment": params.evaluation_range.experiment_name,
         }

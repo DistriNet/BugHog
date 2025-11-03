@@ -480,7 +480,10 @@ export default {
                 <label for="vue-checkbox-list" class="flex group w-full">
                   <div class="pl-0 w-full">
                     <p class="truncate w-0 grow">
-                      Select all
+                      Select all experiments
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-500">
+                      ({{ experiments.length }})
                     </p>
                   </div>
                 </label>
