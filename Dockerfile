@@ -21,7 +21,7 @@ CMD ["start.sh"]
 
 
 FROM python:3.13-slim-bullseye AS base
-COPY --from=ghcr.io/astral-sh/uv:0.7.15 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.7 /uv /uvx /bin/
 WORKDIR /app
 
 RUN apt-get update
