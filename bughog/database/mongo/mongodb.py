@@ -294,6 +294,7 @@ class MongoDB:
         subject_config = params.subject_configuration
 
         query = {
+            "project": evaluation_range.project_name,
             "experiment": evaluation_range.experiment_name,
             "subject_config": subject_config.subject_setting,
             "state.type": "release" if releases else "commit",
