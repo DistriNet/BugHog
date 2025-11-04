@@ -17,8 +17,11 @@ class BrowserEvaluationFramework(EvaluationFramework):
     def get_poc_file_name(self) -> str:
         return 'index.html'
 
-    def get_comment_delimiter(self) -> str:
+    def get_comment_prefix_delimiter(self) -> str:
         return '<!--'
+
+    def get_comment_suffix_delimiter(self) -> str:
+        return '-->'
 
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
         index_file_path = os.path.join(experiment_folder.path, 'index.html')
@@ -38,7 +41,7 @@ class BrowserEvaluationFramework(EvaluationFramework):
                 return file.read()
 
     @staticmethod
-    def __get_domain(file_path: str) -> str|None:
+    def __get_domain(file_path: str) -> str | None:
         with open(file_path, 'r') as file:
             content = file.read()
             match = re.match(r'bughog_domain: (.+)$', content, re.MULTILINE)

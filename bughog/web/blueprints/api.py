@@ -9,7 +9,7 @@ import bughog.parameters as application_logic
 from bughog.app import sock
 from bughog.configuration import Global, Loggers
 from bughog.database.mongo.mongodb import MongoDB
-from bughog.integration_tests import evaluation_configurations
+from bughog.integration_tests import evaluation_configurations, verify_results
 from bughog.main import Main
 from bughog.parameters import MissingParametersException
 from bughog.subject import factory
@@ -261,11 +261,10 @@ def remove_datapoint():
 @api.route('/test/continue/', methods=['POST'])
 def integration_tests_continue():
     clean_slate = request.args.get('clean_slate', 'no')
-    # Start integration tests
     eval_parameters_list = []
-    for subject_type in factory.get_all_subject_types():
+    for subject_type in verify_results.get_all_testable_subject_types():
         all_experiments = factory.create_experiments(subject_type)
-        experiments = all_experiments.get_experiments('IntegrationTests')
+        experiments = all_experiments.get_experiments(verify_results.TEST_PROJECT_NAME)
         elegible_experiments = [experiment[0] for experiment in experiments if experiment[1]]
         new_eval_parameters_list = evaluation_configurations.get_eval_parameters_list(subject_type, elegible_experiments)
         if clean_slate == 'yes':

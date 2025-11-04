@@ -1,6 +1,7 @@
 import os
 
 from bughog.configuration import Global
+from bughog.integration_tests import verify_results
 from bughog.parameters import (
     EvaluationParameters,
     EvaluationRange,
@@ -10,7 +11,7 @@ from bughog.parameters import (
 from bughog.subject import factory
 
 
-def get_default_browser_configuration(subject_type: str, subject_name: str) -> SubjectConfiguration:
+def get_default_configuration(subject_type: str, subject_name: str) -> SubjectConfiguration:
     return SubjectConfiguration(
         subject_type,
         subject_name,
@@ -23,7 +24,7 @@ def get_default_browser_configuration(subject_type: str, subject_name: str) -> S
 def get_default_evaluation_range(subject_type: str, subject_name: str, experiment: str, only_releases: bool) -> EvaluationRange:
     min_version, max_version = factory.get_subject_availability(subject_type, subject_name)
     return EvaluationRange(
-        'IntegrationTests',
+        verify_results.TEST_PROJECT_NAME,
         experiment,
         (min_version, max_version),
         None,
@@ -40,10 +41,10 @@ def get_default_sequence_config(sequence_limit: int) -> SequenceConfiguration:
     )
 
 
-def get_default_evaluation_parameters(subject_type: str, subject_name: str, experiment: str, sequence_limit: int = 50, only_releases: bool = True) -> EvaluationParameters:
+def get_default_evaluation_parameters(subject_type: str, subject_name: str, experiment: str, sequence_limit: int = 100, only_releases: bool = True) -> EvaluationParameters:
     database_params = Global.get_database_params()
     return EvaluationParameters(
-        get_default_browser_configuration(subject_type, subject_name),
+        get_default_configuration(subject_type, subject_name),
         get_default_evaluation_range(subject_type, subject_name, experiment, only_releases),
         get_default_sequence_config(sequence_limit),
         database_params,
@@ -54,10 +55,6 @@ def get_eval_parameters_list(subject_type: str, experiments: list[str]) -> list[
     evaluation_parameters_list = []
     for subject_name in factory.get_all_subject_names_for(subject_type):
         for experiment in experiments:
-            if experiment == 'all_reproduced':
-                sequence_limit = 999
-            else:
-                sequence_limit = 50
-            params = get_default_evaluation_parameters(subject_type, subject_name, experiment, sequence_limit=sequence_limit)
+            params = get_default_evaluation_parameters(subject_type, subject_name, experiment, sequence_limit=100)
             evaluation_parameters_list.append(params)
     return evaluation_parameters_list

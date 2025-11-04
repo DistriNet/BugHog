@@ -9,7 +9,7 @@ class JSEngineEvaluationFramework(EvaluationFramework):
     def get_poc_file_name(self) -> str:
         return 'poc.js'
 
-    def get_comment_delimiter(self) -> str:
+    def get_comment_prefix_delimiter(self) -> str:
         return '//'
 
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:

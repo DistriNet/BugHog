@@ -60,6 +60,9 @@ class Experiments:
         self.reload_experiments()
 
     def get_experiments(self, project_name: str) -> list[tuple[str, bool]]:
+        """
+        Returns all experiments in the given project, in a tuple indicating whether the experiment is runnable.
+        """
         project_root_folder = self.__get_project_folder(project_name)
         experiment_folders = project_root_folder.get_all_folders_with_tag('experiment')
         experiments = [(folder.name, 'runnable' in folder.tags) for folder in experiment_folders]

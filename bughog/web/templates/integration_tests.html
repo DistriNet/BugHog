@@ -48,13 +48,13 @@ Integration tests
         </tr>
     </thead>
     <tbody>
-    {% for sublist in verification_results %}
+    {% for subject_type, result_list in verification_results.items() %}
         <tr>
             <td colspan="6" style="background: #ddd; font-weight: bold;">
-                Subject Type: {{ sublist[0]['subject_type'] if sublist|length > 0 else 'Unknown' }}
+                Subject Type: {{ subject_type }}
             </td>
         </tr>
-        {% for result in sublist %}
+        {% for result in result_list %}
             <tr class="{{ 'green' if result['success_ratio'] == 100 else 'red' if result['success_ratio'] < 80 else 'orange' }}">
                 <td>{{ result['experiment_name'] }}</td>
                 <td>{{ result['subject_name'] }}</td>

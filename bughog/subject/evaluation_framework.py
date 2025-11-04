@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class EvaluationFramework(ABC):
     def __init__(self, subject_type: str) -> None:
-        self.experiment_root_folder = os.path.join('/app/subject/', subject_type, 'experiments')
+        self.experiment_root_folder = os.path.join('./subject/', subject_type, 'experiments')
         if not os.path.isdir(self.experiment_root_folder):
             raise AttributeError(f"Could not open '{self.experiment_root_folder}'.")
 
@@ -38,15 +38,18 @@ class EvaluationFramework(ABC):
         pass
 
     @abstractmethod
-    def get_comment_delimiter(self) -> str:
+    def get_comment_prefix_delimiter(self) -> str:
         pass
+
+    def get_comment_suffix_delimiter(self) -> str:
+        return ''
 
     def get_runtime_flags(self, experiment_folder: Folder) -> list[str]:
         """
         Returns the experiment-defined runtime flags.
         """
 
-        if args := self.__get_bughog_poc_parameter(experiment_folder, 'runtime_flags'):
+        if args := self.get_bughog_poc_parameter(experiment_folder, 'runtime_flags'):
             return args.split()
         return []
 
@@ -54,7 +57,7 @@ class EvaluationFramework(ABC):
         """
         Returns the experiment-defined environment variables.
         """
-        if args := self.__get_bughog_poc_parameter(experiment_folder, 'env_vars'):
+        if args := self.get_bughog_poc_parameter(experiment_folder, 'env_vars'):
             return args.split()
         return []
 
@@ -62,7 +65,7 @@ class EvaluationFramework(ABC):
         """
         Returns the experiment-defined executable arguments.
         """
-        if args := self.__get_bughog_poc_parameter(experiment_folder, 'runtime_args'):
+        if args := self.get_bughog_poc_parameter(experiment_folder, 'runtime_args'):
             return args.split()
         return []
 
@@ -70,25 +73,30 @@ class EvaluationFramework(ABC):
         """
         Returns the experiment-defined expected output regex.
         """
-        return self.__get_bughog_poc_parameter(experiment_folder, 'expected_output')
+        return self.get_bughog_poc_parameter(experiment_folder, 'expected_output')
 
     def get_unexpected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
         """
         Returns the experiment-defined unexpected output regex.
         """
-        return self.__get_bughog_poc_parameter(experiment_folder, 'unexpected_output')
+        return self.get_bughog_poc_parameter(experiment_folder, 'unexpected_output')
 
-    def __get_bughog_poc_parameter(self, experiment_folder: Folder, parameter: str) -> Optional[str]:
+    def get_bughog_poc_parameter(self, experiment_folder: Folder, parameter: str) -> Optional[str]:
         """
         Returns the given parameter's value, as defined in the poc file.
         """
         poc_path = os.path.join(experiment_folder.path, self.get_poc_file_name())
         with open(poc_path, 'r') as poc:
             for line in poc:
-                match = re.search(rf'^{self.get_comment_delimiter()}\s*bughog_{parameter}:\s*(.*)$', line)
-                if match:
-                    return match.group(1).strip()
+                if parameter_value := self._parse_bughog_poc_param_line(line, parameter):
+                    return parameter_value
         return None
+
+    def _parse_bughog_poc_param_line(self, line: str, parameter: str) -> str | None:
+        prefix = self.get_comment_prefix_delimiter()
+        suffix = self.get_comment_suffix_delimiter()
+        match = re.search(rf'^\s*{prefix}\s*bughog_{parameter}:\s*(.*)\s*{suffix}\s*$', line)
+        return match.group(1).strip() if match else None
 
     def get_default_file_content(self, file_type: str) -> bytes:
         """
