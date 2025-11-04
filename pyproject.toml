@@ -60,6 +60,7 @@ dev = [
     "flask==3.1.1",
     "flask-sock==0.7.0",
     "flatten-dict==0.4.2",
+    "genbadge[all]>=1.1.2",
     "gunicorn==23.0.0",
     "h11==0.16.0",
     "idna==3.10",

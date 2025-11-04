@@ -35,7 +35,7 @@
 		}
 	},
 
-	"postCreateCommand": "uv sync --group dev"
+	"postCreateCommand": "uv sync --dev --locked"
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
