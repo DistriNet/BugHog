@@ -60,8 +60,8 @@ RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb &&\
     mkdir -p /app/logs
 
 # Install python packages
-COPY pyproject.toml /app/
-RUN uv sync
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --no-dev --locked
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Initiate PyAutoGUI
