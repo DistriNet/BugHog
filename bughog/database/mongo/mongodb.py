@@ -167,6 +167,9 @@ class MongoDB:
                 "result.variables": [list(item) for item in result.result_variables],
                 "dirty": result.is_dirty,
                 "ts": str(datetime.now(timezone.utc).replace(microsecond=0)),
+            },
+            "$inc": {
+                "result.attempt": 1,
             }
         }
         collection.update_one(query, update, upsert=True)
@@ -236,6 +239,7 @@ class MongoDB:
             subject_name = params.subject_configuration.subject_name
             state = State.from_dict(subject_type, subject_name, doc["state"])
             state.result_variables = set(tuple(item) for item in doc["result"]["variables"])
+            state.result_attempt = doc["result"].get("attempt", 1)
             states.append(state)
         return states
 

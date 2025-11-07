@@ -47,60 +47,74 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         while next_pair := self.__get_next_pair_to_split():
             splitter_state = self._find_best_splitter_state(next_pair[0], next_pair[1])
             if splitter_state is None:
+                # No available splitter state was found.
                 self._unavailability_gap_pairs.add(next_pair)
-            if splitter_state:
+            else:
+                # The state is not considered yet.
                 logger.debug(f'Splitting [{next_pair[0].index}]--/{splitter_state.index}/--[{next_pair[1].index}]')
                 self._add_state(splitter_state)
                 return splitter_state
+
         raise SequenceFinished()
 
-    def __get_next_pair_to_split(self) -> Optional[tuple[State, State]]:
+    def __get_next_pair_to_split(self, pinpoint_error_shifts=False) -> Optional[tuple[State, State]]:
         """
-        Returns the next pair of states to split.
+        Returns the next pair to split.
         """
         states = self._considered_states
-        # Remove all states that are confined by states with the same result, ignoring resultless and dirty states.
-        states_to_remove = []
-        for i, state in enumerate(states):
-            # Skip first and last state.
-            if i == 0 or i == len(states) - 1:
-                continue
-            # Skip pairs that have a result, which also is not dirty.
-            if not state.has_dirty_or_no_result():
-                continue
-            preceding_states = [state for state in states[:i] if not state.has_dirty_or_no_result()]
-            succeeding_states = [state for state in states[i + 1 :] if not state.has_dirty_or_no_result()]
-            # Normally, there should always be at least one preceding and one succeeding state, because we evaluate
-            # border states first. However, we never want this function to fail and thus double check this.
-            if len(preceding_states) == 0 or len(succeeding_states) == 0:
-                continue
-            if state.has_same_outcome(preceding_states[-1]) and state.has_same_outcome(succeeding_states[0]):
-                states_to_remove.append(state)
-        for state in states_to_remove:
-            states.remove(state)
 
-        # Make pairwise list of states and remove pairs with the same outcome
-        pairs = [(state1, state2) for state1, state2 in zip(states, states[1:]) if not state1.has_same_outcome(state2)]
-        if not pairs:
+        # There should be at least one state in between the outer states, otherwise we cannot split.
+        if not states[0].index + 1 < states[-1].index:
             return None
-        # Remove the first and last pair if they have a first and last state without a result, respectively
-        if pairs[0][0].result_variables is None:
-            pairs = pairs[1:]
-        if not pairs:
+
+        # For each clean state, we find the closest next clean state, and make pairs in between them.
+        pairs = []
+        for i in range(0, len(states)):
+            if not states[i].has_result() or states[i].has_dirty_result():
+                continue
+            j = self.__find_next_clean_state(states, i)
+            if j is None:
+                break
+            elif states[i].has_same_outcome(states[j]):
+                pass
+            else:
+                new_pairs = self.__create_pairs_between_clean_states(states[i:j+1])
+                pairs.extend(new_pairs)
+
+        # Remove pairs that cannot be split.
+        pairs = [pair for pair in pairs if pair[0].index + 1 < pair[1].index]
+        if len(pairs) == 0:
             return None
-        if pairs[-1][1].result_variables is None:
-            pairs = pairs[:-1]
-        # Remove all pairs that have already been identified as unavailability gaps
+
+        # Remove pairs already identified as unavailability gaps.
         pairs = [pair for pair in pairs if pair not in self._unavailability_gap_pairs]
-
-        if not pairs:
+        if len(pairs) == 0:
             return None
-        # Sort pairs to prioritize pairs with bigger gaps.
-        # This way, we refrain from pinpointing pair-by-pair, making the search more efficient.
-        # E.g., when the splitter of the first gap is being evaluated, we can already evaluate the
-        # splitter of the second gap with having to wait for the first gap to be fully evaluated.
+
+        # Sort pairs from largest to smallest range.
         pairs.sort(key=lambda pair: pair[1].index - pair[0].index, reverse=True)
         return pairs[0]
+
+    @staticmethod
+    def __find_next_clean_state(states: list[State], start: int) -> int | None:
+        """
+        Returns the index of the next state with a clean result, with the search starting after the given start index.
+        """
+        for i in range(start + 1, len(states)):
+            if states[i].has_result() and not states[i].has_dirty_result():
+                return i
+        return None
+
+    @staticmethod
+    def __create_pairs_between_clean_states(states: list[State]) -> list[tuple[State,State]]:
+        """
+        Creates pairs of a sequence bordered by two clean states.
+        We assume there are no other clean states in this range.
+        """
+        return[
+            pair for pair in zip(states, states[1:])
+            if not (pair[0].has_dirty_result() and pair[1].has_dirty_result())
+        ]
 
     @staticmethod
     def create_from_bgb_sequence(bgb_sequence: BiggestGapBisectionSequence) -> BiggestGapBisectionSearch:

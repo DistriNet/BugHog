@@ -126,7 +126,16 @@ def request_final_url(url: str) -> str:
         raise ResourceNotFound from e
 
 
-def __get_session(token: Optional[str] = None, max_retries: int = 3, backoff_factor: float = 2.0) -> Session:
+def post_request(url: str, json: dict) -> None:
+    session = __get_session()
+    logger.debug(f'Sending POST to {url}.')
+    try:
+        session.post(url, json=json)
+    except RequestException:
+        logger.warning(f"Could not propagate request to collector at {url}.")
+
+
+def __get_session(token: Optional[str] = None, max_retries: int = 3, backoff_factor: int = 2) -> Session:
     session = Session()
     if token:
         session.headers.update({

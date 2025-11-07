@@ -14,39 +14,48 @@ class TestSequenceStrategy(unittest.TestCase):
     """
 
     @staticmethod
-    def get_states(indexes: list[int], is_available, outcome_func) -> list[State]:
-        return [TestSequenceStrategy.create_state(index, is_available, outcome_func) for index in indexes]
+    def get_states(indexes: list[int], is_available, outcome_func, error_func, pending_func) -> list[State]:
+        return [TestSequenceStrategy.create_state(index, is_available, outcome_func, error_func, pending_func) for index in indexes]
 
     @staticmethod
-    def create_state_factory(is_available: Callable, evaluated_indexes: Optional[list[int]] = None, outcome_func: Optional[Callable] = None) -> StateFactory:
+    def create_state_factory(is_available: Callable, evaluated_indexes: Optional[list[int]] = None, outcome_func: Optional[Callable] = None, error_func: Optional[Callable] = None, pending_func: Optional[Callable] = None) -> StateFactory:
         eval_params = MagicMock(spec=EvaluationParameters)
         eval_params.evaluation_range = MagicMock(spec=EvaluationRange)
         eval_params.evaluation_range.major_version_range = [0, 99]
 
         factory = MagicMock(spec=StateFactory)
         factory.__eval_params = eval_params
-        factory.create_state = lambda index: TestSequenceStrategy.create_state(index, is_available, outcome_func)
-        first_state = TestSequenceStrategy.create_state(0, is_available, outcome_func)
-        last_state = TestSequenceStrategy.create_state(99, is_available, outcome_func)
+        factory.create_state = lambda index: TestSequenceStrategy.create_state(index, is_available, outcome_func, error_func, pending_func)
+        first_state = TestSequenceStrategy.create_state(0, is_available, outcome_func, error_func, pending_func)
+        last_state = TestSequenceStrategy.create_state(99, is_available, outcome_func, error_func, pending_func)
         factory.boundary_states = (first_state, last_state)
 
         if evaluated_indexes:
-            factory.create_evaluated_states = lambda: TestSequenceStrategy.get_states(evaluated_indexes, lambda _: True, outcome_func)
+            factory.create_evaluated_states = lambda: TestSequenceStrategy.get_states(evaluated_indexes, lambda _: True, outcome_func, error_func, pending_func)
         else:
             factory.create_evaluated_states = lambda: []
         return factory
 
     @staticmethod
-    def create_state(index, is_available: Callable, outcome_func: Optional[Callable]) -> State:
+    def create_state(index, is_available: Callable, outcome_func: Optional[Callable], error_func: Optional[Callable], pending_func: Optional[Callable]) -> State:
         state = MagicMock(spec=State)
         state.index = index
         state.has_available_executable = lambda: is_available(index)
+        state.has_result = lambda: State.has_result(state)
+        state.has_dirty_result = lambda: State.has_dirty_result(state)
         state.has_same_outcome = lambda x: State.has_same_outcome(state, x)
-        state.has_dirty_or_no_result = lambda: State.has_dirty_or_no_result(state)
-        if outcome_func:
-            state.result_variables = {('reproduced', 'ok')} if outcome_func(index) else set()
+
+        if error_func is None or not error_func(index):
+            if outcome_func and outcome_func(index):
+                state.result_variables = {('sanity_check', 'ok'), ('reproduced', 'ok')}
+            else:
+                state.result_variables = {('sanity_check', 'ok')}
         else:
+            state.result_variables = set()
+
+        if pending_func and pending_func(index):
             state.result_variables = None
+
         state.__eq__ = State.__eq__
         state.__repr__ = State.__repr__
         state.get_previous_and_next_state_with_executable = lambda: State.get_previous_and_next_state_with_executable(state)

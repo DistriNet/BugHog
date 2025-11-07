@@ -5,6 +5,7 @@ import sys
 import threading
 
 import requests
+from bughog import util
 from bughog.evaluation.experiments import SUPPORTED_DOMAINS
 from flask import Blueprint, Request, make_response, render_template, request, url_for
 
@@ -38,10 +39,7 @@ def __report(request: Request) -> None:
     }
 
     def send_report_to_collector():
-        try:
-            requests.post(f"http://{remote_ip}:5001/report/", json=response_data, timeout=5)
-        except requests.exceptions.ConnectionError:
-            logger.warning(f"WARNING: Could not propagate request to collector at {remote_ip}:5001")
+        util.post_request(f'http://{remote_ip}:5001/report/', response_data)
 
     threading.Thread(target=send_report_to_collector).start()
 

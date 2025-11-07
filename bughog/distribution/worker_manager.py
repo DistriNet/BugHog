@@ -92,6 +92,9 @@ class WorkerManager:
                 )
                 result = container.wait()
                 if result['StatusCode'] != 0:
+                    # Assign dirty result to state associated with crashed container.
+                    logger.debug(f'Assigning dirty result to {state} associated with crashed container.')
+                    state.result_variables = set()
                     logger.error(
                         f"'{container_name}' exited unexpectedly with status code {result['StatusCode']}. "
                         'Check the worker logs in ./logs/ for more information.'
@@ -108,16 +111,21 @@ class WorkerManager:
                 if container is not None:
                     container_info = container.attrs['State']
                     logger.error(f"'{container_name}' exited unexpectedly with {container_info}", exc_info=True)
-            finally:
+
+            try:
                 if container is not None:
                     container.remove()
+            except docker.errors.APIError:
+                logger.warning("Error received while removing container, likely because it was already being removed.")
+            finally:
                 self.container_id_pool.put(container_id)
+
 
         thread = threading.Thread(target=start_container_thread)
         thread.start()
         logger.info(f"Container '{container_name}' started experiments for '{state}'")
         # Sleep to avoid all workers downloading executables at once, clogging up all IO.
-        time.sleep(5)
+        time.sleep(3)
 
     def get_nb_of_running_worker_containers(self):
         return len(self.get_runnning_containers())

@@ -79,3 +79,26 @@ class TestBiggestGapBisectionSearch(unittest.TestCase):
 
         assert ([state.index for state in sequence._considered_states]
                 == [0, 12, 22, 34, 36, 38, 44, 56, 66, 68, 72, 78, 88, 98])
+
+    def test_sbg_search_specific_error_case_1(self):
+        state_factory = helper.create_state_factory(
+            helper.always_has_binary,
+            outcome_func=lambda x: True if x < 50 else False,
+            error_func=lambda x: True if x in [49, 50, 51] else False)
+        sequence = BiggestGapBisectionSearch(state_factory)
+        index_sequence = [sequence.next(wait=False).index for _ in range(15)]
+        assert index_sequence == [0, 99, 49, 74, 24, 36, 61, 42, 55, 45, 52, 47, 50, 48, 51]
+        self.assertRaises(SequenceFinished, lambda: sequence.next(wait=False))
+
+    def test_sbg_search_specific_error_case_2(self):
+        state_factory = helper.create_state_factory(
+            helper.always_has_binary,
+            evaluated_indexes=[0, 48, 49, 50, 51, 52, 99],
+            outcome_func=lambda x: True if x < 50 else False,
+            error_func=lambda x: True if x in [49, 50, 51] else False,
+            pending_func=lambda x: True if x in [48, 52] else False)
+        sequence = BiggestGapBisectionSearch(state_factory)
+        index_sequence = [sequence.next(wait=False).index for _ in range(11)]
+        print(index_sequence)
+        assert index_sequence == [24, 75, 36, 63, 42, 57, 45, 54, 46, 47, 53]
+        self.assertRaises(SequenceFinished, lambda: sequence.next(wait=False))

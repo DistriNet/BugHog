@@ -35,6 +35,9 @@ class ExperimentResult:
 
     @staticmethod
     def poc_is_dirty(result_variables: Optional[set[tuple[str,str]]]) -> bool:
+        """
+        Returns whether the poc is dirty: it is not reproduced and the sanity check did not succeed.
+        """
         reproduced = ExperimentResult.poc_is_reproduced(result_variables)
         sanity_check_succeeded = ExperimentResult.poc_passed_sanity_check(result_variables)
         return not reproduced and not sanity_check_succeeded

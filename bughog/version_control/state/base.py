@@ -33,6 +33,15 @@ class State(ABC):
         super().__init__()
         self.oracle = oracle
         self.result_variables: Optional[set[tuple[str, str]]] = None
+        self.result_attempt: int | None
+
+    def has_result(self) -> bool:
+        """
+        Returns whether this state has a result.
+
+        :returns bool: True if this state has a result.
+        """
+        return self.result_variables is not None
 
     def has_dirty_result(self) -> bool:
         """
@@ -40,15 +49,7 @@ class State(ABC):
 
         :returns bool: True if this state has a result, which is dirty.
         """
-        return ExperimentResult.poc_is_dirty(self.result_variables)
-
-    def has_dirty_or_no_result(self) -> bool:
-        """
-        Returns whether this state has no result or a dirty result.
-
-        :returns bool: True if this state has no result, or a dirty result.
-        """
-        return ExperimentResult.poc_is_dirty(self.result_variables)
+        return self.has_result() and ExperimentResult.poc_is_dirty(self.result_variables)
 
     def has_same_outcome(self, other: State) -> bool:
         """
@@ -56,7 +57,7 @@ class State(ABC):
 
         :returns bool: True if states are both reproduced, not reproduced, or dirty.
         """
-        if self.result_variables is None or other.result_variables is None:
+        if not self.has_result() or not other.has_result():
             return False
         else:
             return ExperimentResult.poc_is_reproduced(self.result_variables) == ExperimentResult.poc_is_reproduced(other.result_variables) and ExperimentResult.poc_is_dirty(self.result_variables) == ExperimentResult.poc_is_dirty(other.result_variables)
@@ -152,7 +153,13 @@ class State(ABC):
         pass
 
     def __repr__(self) -> str:
-        return f'State(index={self.index})'
+        if not self.has_result():
+            status = 'PENDING'
+        elif self.has_dirty_result():
+            status = 'DIRTY'
+        else:
+            status = 'CLEAN'
+        return f'State(index={self.index}, status={status})'
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, State):
