@@ -69,17 +69,23 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
 
         # For each clean state, we find the closest next clean state, and make pairs in between them.
         pairs = []
-        for i in range(0, len(states)):
+        i = 0
+        while i < len(states):
+            # Skip resultless and dirty states.
             if not states[i].has_result() or states[i].has_dirty_result():
+                i += 1
                 continue
+
+            # Find the next clean state and break if there is none.
             j = self.__find_next_clean_state(states, i)
             if j is None:
                 break
-            elif states[i].has_same_outcome(states[j]):
-                pass
-            else:
+
+            # Create new pairs within the sequence defined by states i and j, if they have a different result.
+            if not states[i].has_same_outcome(states[j]):
                 new_pairs = self.__create_pairs_between_clean_states(states[i:j+1])
                 pairs.extend(new_pairs)
+            i = j
 
         # Remove pairs that cannot be split.
         pairs = [pair for pair in pairs if pair[0].index + 1 < pair[1].index]
