@@ -1,0 +1,13 @@
+<!-- Content-Security-Policy: img-src 'self'; -->
+<!-- bughog_domain: b.test -->
+<!-- https://issues.chromium.org/issues/40052073 -->
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      url =
+        '<meta http-equiv="content-security-policy" content="default-src *"><img src="https://a.test/report/?bughog_reproduced=OK">';
+      window.open("javascript:'" + url + "'", "_self");
+    </script>
+  </body>
+</html>

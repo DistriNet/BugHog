@@ -1,9 +1,0 @@
-CACHE MANIFEST
-
-FALLBACK:
-/ /s3/xss.html
-
-NETWORK:
-http://*
-https://*
-*

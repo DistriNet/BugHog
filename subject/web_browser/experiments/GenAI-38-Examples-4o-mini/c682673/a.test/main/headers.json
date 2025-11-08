@@ -1,4 +1,0 @@
-[{
-    "key": "Content-Security-Policy",
-    "value": "default-src 'none'; connect-src 'self' http://*:111 http://*/path"
-}]

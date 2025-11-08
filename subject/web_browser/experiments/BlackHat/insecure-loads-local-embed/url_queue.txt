@@ -1,2 +1,0 @@
-http://leak.test/BlackHat/insecure-loads-local-embed/main
-http://leak.test/report/?bughog_sanity_check=OK

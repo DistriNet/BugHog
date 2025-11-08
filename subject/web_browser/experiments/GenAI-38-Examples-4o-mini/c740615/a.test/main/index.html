@@ -1,9 +1,0 @@
-<!-- the following will not execute -->
-<meta http-equiv=Content-Security-Policy
-      content="script-src 'nonce-abcd'">
-<script src=data:,alert(1) nonce="abcd" ></script>
-
-<!-- the following will execute -->
-<meta http-equiv=Content-Security-Policy
-      content="script-src 'nonce-abcd'">
-<script src=data:,alert(1) x="" x="<script" nonce="abcd" ></script>
