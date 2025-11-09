@@ -37,18 +37,10 @@ class EvaluationFramework(ABC):
     def get_poc_file_name(self) -> str:
         pass
 
-    @abstractmethod
-    def get_comment_prefix_delimiter(self) -> str:
-        pass
-
-    def get_comment_suffix_delimiter(self) -> str:
-        return ''
-
     def get_runtime_flags(self, experiment_folder: Folder) -> list[str]:
         """
         Returns the experiment-defined runtime flags.
         """
-
         if args := self.get_bughog_poc_parameter(experiment_folder, 'runtime_flags'):
             return args.split()
         return []
@@ -85,18 +77,8 @@ class EvaluationFramework(ABC):
         """
         Returns the given parameter's value, as defined in the poc file.
         """
-        poc_path = os.path.join(experiment_folder.path, self.get_poc_file_name())
-        with open(poc_path, 'r') as poc:
-            for line in poc:
-                if parameter_value := self._parse_bughog_poc_param_line(line, parameter):
-                    return parameter_value
-        return None
-
-    def _parse_bughog_poc_param_line(self, line: str, parameter: str) -> str | None:
-        prefix = self.get_comment_prefix_delimiter()
-        suffix = self.get_comment_suffix_delimiter()
-        match = re.search(rf'^\s*{prefix}\s*bughog_{parameter}:\s*(.*)\s*{suffix}\s*$', line)
-        return match.group(1).strip() if match else None
+        poc_file = experiment_folder.get_file(self.get_poc_file_name())
+        return poc_file.get_bughog_poc_parameter(parameter)
 
     def get_default_file_content(self, file_type: str) -> bytes:
         """

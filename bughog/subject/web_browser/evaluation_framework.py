@@ -17,16 +17,9 @@ class BrowserEvaluationFramework(EvaluationFramework):
     def get_poc_file_name(self) -> str:
         return 'index.html'
 
-    def get_comment_prefix_delimiter(self) -> str:
-        return '<!--'
-
-    def get_comment_suffix_delimiter(self) -> str:
-        return '-->'
-
     def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
-        index_file_path = os.path.join(experiment_folder.path, 'index.html')
-        if (domain := self.__get_domain(index_file_path)) is None:
-            domain = 'a.test'
+        poc_file = experiment_folder.get_file('index.html')
+        domain = poc_file.get_bughog_poc_parameter('domain') or 'a.test'
         project = experiment_folder.path.split('/')[5]
         experiment = experiment_folder.path.split('/')[6]
         url = f'https://{domain}/{project}/{experiment}/'
@@ -39,10 +32,3 @@ class BrowserEvaluationFramework(EvaluationFramework):
         else:
             with open(default_file_path, 'rb') as file:
                 return file.read()
-
-    @staticmethod
-    def __get_domain(file_path: str) -> str | None:
-        with open(file_path, 'r') as file:
-            content = file.read()
-            match = re.match(r'bughog_domain: (.+)$', content, re.MULTILINE)
-            return match[1].strip() if match else None
