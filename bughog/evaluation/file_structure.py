@@ -21,14 +21,14 @@ class File:
     @property
     def comment_delimiters(self) -> tuple[str,str|None] | None:
         match self.file_type:
-            case 'html':
-                return '<!--', '-->'
+            case 'html' | 'xml':
+                return r'<!--', r'-->'
             case 'css':
-                return '/*', '*/'
+                return r'/\*', r'\*/'
             case 'js':
-                return '//', None
+                return r'//', None
             case 'wat':
-                return ';;', None
+                return r';;', None
             case _:
                 return None
 
@@ -38,6 +38,9 @@ class File:
             suffix = delimiters[1]
             with open(self.path, 'r') as poc:
                 for line in poc:
+                    # Stop looking upon the first non-comment line that also is not the document declaration.
+                    if not re.match(rf'^\s*{prefix}', line) and '<!DOCTYPE' not in line:
+                        break
                     match = re.search(rf'^\s*{prefix}\s*bughog_{name}:\s*(.*)\s*{suffix if suffix else ''}\s*$', line)
                     if match:
                         return match.group(1).strip()
@@ -86,10 +89,30 @@ class Folder:
         return folder
 
     def get_file(self, name: str) -> File:
-        matched_files = [file for file in self.files if file.name == name]
-        if len(matched_files) == 0:
-            raise Exception(f'Could not find {name} in {self.path}')
-        return matched_files[0]
+        matched = [file for file in self.files if file.name == name]
+        if len(matched) == 0:
+            raise Exception(f'Could not find {name} in {self.path}.')
+        return matched[0]
+
+    def create_file(self, name: str, content: bytes):
+        self.__can_create(name)
+        new_file_path = os.path.join(self.path, name)
+        with open(new_file_path, 'bw') as file:
+            file.write(content)
+
+    def get_folder(self, name: str) -> Folder:
+        matched = [file for file in self.subfolders if file.name == name]
+        if len(matched) == 0:
+            raise Exception(f'Could not find folder {name}.')
+        return matched[0]
+
+    def create_folder(self, name: str) -> Folder:
+        self.__can_create(name)
+        new_project_path = os.path.join(self.path, name)
+        os.mkdir(new_project_path)
+        new_folder = Folder(name, os.path.join(self.path, name))
+        self.subfolders.append(new_folder)
+        return new_folder
 
     def get_all_folders_with_tag(self, tag: str) -> list[Folder]:
         all_folders_with_tag = []
@@ -107,6 +130,21 @@ class Folder:
             'subfolders': [subfolder.serialize() for subfolder in self.subfolders],
             'files': [{'name': file.name, 'path': file.path} for file in self.files],
         }
+
+    def folder_exists(self, name: str) -> bool:
+        return os.path.isdir(os.path.join(self.path, name))
+
+    def file_exists(self, name: str) -> bool:
+        return os.path.isfile(os.path.join(self.path, name))
+
+    def __can_create(self, name: str) -> None:
+        if self.folder_exists(name) or self.file_exists(name):
+            raise AttributeError(f"The given file or folder name '{name}' already exists.")
+        if name is None or name == '':
+            raise AttributeError('The file name cannot be empty.')
+        regex = r'^[A-Za-z0-9_\-.]+$'
+        if re.match(regex, name) is None:
+            raise AttributeError(f"The given name '{name}' is invalid. Only letters, numbers, '.', '-' and '_' can be used, and the name should not be empty.")
 
     def __repr__(self):
         return f'Folder(name={self.name}, path={self.path}, subfolders={self.subfolders}, files={self.files})'

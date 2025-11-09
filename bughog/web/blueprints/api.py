@@ -185,7 +185,7 @@ def poc_file_content(subject_type: str, project: str, poc: str, file_name: str, 
             return {'status': 'NOK'}
 
 
-@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/', methods=['POST','DELETE'])
+@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/', methods=['POST', 'DELETE'])
 def add_folder_or_file(subject_type: str, project: str, poc: str):
     if request.json is None:
         return {'status': 'NOK', 'msg': 'No page parameters found'}
@@ -246,12 +246,7 @@ def remove_datapoint():
         params_list = application_logic.evaluation_factory(data, database_params, only_to_plot=True)
         if len(params_list) < 1:
             return {'status': 'NOK', 'msg': 'Could not construct removal parameters.'}
-        state = ShallowState(
-            type,
-            data.get('major_version'),
-            data.get('commit_nb'),
-            data.get('commit_id')
-        )
+        state = ShallowState(type, data.get('major_version'), data.get('commit_nb'), data.get('commit_id'))
         __get_main().remove_datapoint(params_list[0], state)
     except MissingParametersException:
         return {'status': 'NOK', 'msg': 'Could not remove datapoint due to missing parameters'}

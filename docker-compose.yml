@@ -107,6 +107,7 @@ services:
           - sub.a.test
           - sub.sub.a.test
           - b.test
+          - sub.b.test
           - adition.com
     profiles:
       - prod

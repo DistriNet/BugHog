@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -79,17 +78,6 @@ class EvaluationFramework(ABC):
         """
         poc_file = experiment_folder.get_file(self.get_poc_file_name())
         return poc_file.get_bughog_poc_parameter(parameter)
-
-    def get_default_file_content(self, file_type: str) -> bytes:
-        """
-        Returns the default file content upon creation of a new file within an experiment context.
-        """
-        default_file_content_file = os.path.join(self.experiment_root_folder, '_default_files', file_type)
-        if not os.path.isdir(default_file_content_file):
-            logger.warning(f"Could not find default file content for file type '{file_type}'.")
-            return b''
-        with open(default_file_content_file, 'rb') as file:
-            return file.read()
 
     def requires_sanity_check(self) -> bool:
         return True

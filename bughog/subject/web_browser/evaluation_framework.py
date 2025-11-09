@@ -1,5 +1,4 @@
 import os
-import re
 
 from bughog.evaluation.file_structure import Folder
 from bughog.subject.evaluation_framework import EvaluationFramework
@@ -24,11 +23,3 @@ class BrowserEvaluationFramework(EvaluationFramework):
         experiment = experiment_folder.path.split('/')[6]
         url = f'https://{domain}/{project}/{experiment}/'
         return [f'navigate {url}']
-
-    def get_default_file_content(self, file_type: str) -> bytes:
-        default_file_path = os.path.join('/app/subject/web_browser/experiments/default_files/', file_type)
-        if not os.path.isfile(default_file_path):
-            return b''
-        else:
-            with open(default_file_path, 'rb') as file:
-                return file.read()

@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import shutil
 
 from bughog.evaluation.file_structure import Folder
@@ -40,6 +39,8 @@ class Experiments:
     def initialize_experiments(self) -> Folder:
         root_folder = Folder.parse(self.root_folder_path)
         for project in root_folder.subfolders:
+            if project.name == '_default_files':
+                continue
             project.tags.append('project')
             for experiment in project.subfolders:
                 experiment.tags.append('experiment')
@@ -52,11 +53,7 @@ class Experiments:
         return sorted([folder.name for folder in project_folders], key=str.lower)
 
     def create_empty_project(self, project_name: str):
-        self.__is_valid_file_or_folder(project_name)
-        if project_name in [folder.name for folder in self.root_folder.get_all_folders_with_tag('project')]:
-            raise AttributeError(f"The given project name '{project_name}' already exists.")
-        new_project_path = os.path.join(self.root_folder_path, project_name)
-        os.mkdir(new_project_path)
+        self.root_folder.create_folder(project_name)
         self.reload_experiments()
 
     def get_experiments(self, project_name: str) -> list[tuple[str, bool]]:
@@ -101,32 +98,51 @@ class Experiments:
         else:
             raise AttributeError(f'Experiment {poc_name} for {project} already exists.')
 
-    def add_folder_or_file(self, project: str, poc: str, folder_name: str | None, file_name: str):
-        # Validate and create folder
+    def add_folder_or_file(self, project: str, poc: str, folder_name: str | None, file_name: str | None):
+        # Create folder if required.
+        project_folder = self.root_folder.get_folder(project)
+        poc_folder = project_folder.get_folder(poc)
         if folder_name is not None:
-            self.__is_valid_file_or_folder(folder_name)
-            folder_path = self._get_poc_folder_path(project, poc, folder_name)
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
+            if poc_folder.file_exists(folder_name):
+                raise Exception(f'Could not create {folder_name} in {poc_folder.path}, because a file with the same name exists.')
+            elif poc_folder.folder_exists(folder_name):
+                folder = poc_folder.get_folder(folder_name)
+            else:
+                folder = poc_folder.create_folder(folder_name)
+        else:
+            folder = poc_folder
 
-        # Validate and create file
+        # Create file.
         if file_name is not None:
-            self.__is_valid_file_or_folder(file_name)
-            file_path = self._get_poc_file_path(project, poc, folder_name, file_name)
-            if os.path.exists(file_path):
-                raise AttributeError(f"The given file '{file_path}' already exists.")
-            with open(file_path, 'bw') as file:
-                file.write(self.get_default_file_content(file_name))
+            file_content = self.__get_default_file_content(file_name)
+            folder.create_file(file_name, file_content)
 
         self.reload_experiments()
 
-    def remove_folder_or_file(self, project: str, poc: str, folder_name: str | None, file_name: str):
+    def __get_default_file_content(self, file_name: str) -> bytes:
+        """
+        Returns the default file content upon creation of a new file within an experiment context.
+        """
+        if '.' not in file_name:
+            logger.warning(f"Could not determine file type for file '{file_name}' to write default content.")
+            return b''
+        file_type = file_name.split('.')[-1]
+        default_file_content_file = os.path.join(self.root_folder.path, '_default_files', file_type)
+        if not os.path.isfile(default_file_content_file):
+            logger.warning(f"Could not find default file content for file '{file_name}'.")
+            return b''
+        with open(default_file_content_file, 'rb') as file:
+            return file.read()
+
+    def remove_folder_or_file(self, project: str, poc: str, folder_name: str | None, file_name: str | None):
         if file_name is not None:
             file_path = self._get_poc_file_path(project, poc, folder_name, file_name)
             os.remove(file_path)
-        if folder_name is not None:
+        elif folder_name is not None:
             folder_path = self._get_poc_folder_path(project, poc, folder_name)
             shutil.rmtree(folder_path)
+        else:
+            logger.debug(f'No folder or file name was specified for removal in folder {poc}.')
 
     def __get_project_folder(self, project_name: str) -> Folder:
         for project in self.root_folder.subfolders:
@@ -159,24 +175,6 @@ class Experiments:
         else:
             return self.framework.get_default_experiment_script(experiment_folder)
 
-    def get_default_file_content(self, file_name: str) -> bytes:
-        _, file_type = os.path.splitext(file_name)
-        return self.framework.get_default_file_content(file_type)
-
     def reload_experiments(self):
         self.root_folder = self.initialize_experiments()
         logger.info('Experiments are reloaded.')
-
-    @staticmethod
-    def __is_valid_file_or_folder(name: str) -> None:
-        """
-        Checks whether the given strings are a valid names, and raises an exception if not.
-        This is to prevent issues with URL encoding and decoding.
-
-        :param name: File or folder name to be checked.
-        """
-        if name is None or name == '':
-            raise AttributeError('The file name cannot be empty.')
-        regex = r'^[A-Za-z0-9_\-.]+$'
-        if re.match(regex, name) is None:
-            raise AttributeError(f"The given name '{name}' is invalid. Only letters, numbers, '.', '-' and '_' can be used, and the name should not be empty.")
