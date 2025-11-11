@@ -1,9 +1,0 @@
-<head>
-<meta http-equiv="content-security-policy" content="script-src 'self' 'unsafe-inline'">
-</head>
-<script>
-  var doc =
-    "\x3cscript src=\\'https://a.test/report/?leak=c1115045-meta\\';>\x3c/script>";
-  var test = "javascript:'<iframe srcdoc=\"" + doc + "\">'";
-  window.open(test, "_self");
-</script>

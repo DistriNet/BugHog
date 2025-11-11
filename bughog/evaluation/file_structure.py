@@ -53,7 +53,11 @@ class File:
 
 
 class Folder:
-    __files_and_folders_to_ignore = ['.DS_Store']
+    __files_and_folders_to_ignore = [
+        '.DS_Store',
+        '.git',
+        'README.md'
+    ]
 
     def __init__(self, name: str, path: str):
         """
