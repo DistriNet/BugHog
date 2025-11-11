@@ -3,12 +3,12 @@ database/data/
 nginx/ssl/certs/*
 nginx/ssl/keys/*
 
-subject/*/executables/**
+subject/*/executables/*
 
-subject/*/experiments/**
-!subject/*/experiments/_default_files
-!subject/*/experiments/_tests
-!subject/*/experiments/examples
+subject/*/experiments/*
+!subject/*/experiments/_default_files/
+!subject/*/experiments/_tests/
+!subject/*/experiments/examples/
 
 !**/.gitkeep
 **/node_modules
