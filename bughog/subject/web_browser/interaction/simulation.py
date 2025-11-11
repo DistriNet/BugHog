@@ -6,13 +6,13 @@ from pyvirtualdisplay.display import Display
 
 from bughog.evaluation.file_structure import Folder
 from bughog.parameters import EvaluationParameters
-from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
+from bughog.subject.web_browser.executable import BrowserExecutable
 
 # TODO: all pyautogui are imported inside functions because the import needs DISPLAY var, while not all containers need and have that.
 
 class BrowserSimulation(Simulation):
-    def __init__(self, executable: Executable, folder: Folder, params: EvaluationParameters):
+    def __init__(self, executable: BrowserExecutable, folder: Folder, params: EvaluationParameters):
         import pyautogui as gui
         super().__init__(executable, folder, params)
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
@@ -36,7 +36,7 @@ class BrowserSimulation(Simulation):
             'hotkey',
             'sleep',
             'screenshot',
-            'report_leak',
+            'reproduced',
             'assert_file_contains',
             'open_file',
             'open_console',
@@ -111,7 +111,7 @@ class BrowserSimulation(Simulation):
         file_path = os.path.join('/app/logs/screenshots/', f'{project_name}-{experiment_name}-{self.executable.state.name}-{executable_name}.jpg')
         gui.screenshot(file_path)
 
-    def report_leak(self):
+    def reproduced(self):
         self.navigate('https://a.test/report/?bughog_reproduced=ok')
 
     def assert_file_contains(self, filename: str, content: str):
@@ -128,7 +128,7 @@ class BrowserSimulation(Simulation):
         self.navigate(f'file:///root/Downloads/{filename}')
 
     def open_console(self):
-        self.hotkey(*self.executable.get_open_console_hotkey())
+        self.hotkey(*self.executable.open_console_hotkey)
         self.sleep('1.5')
 
 

@@ -11,7 +11,6 @@
 # RELEASE key
 # HOTKEY key1 key2 ...
 # SLEEP seconds         where seconds is a float or an int
-# REPORT_LEAK
 # ASSERT_FILE_CONTAINS file content     if the downloaded file exists and contains the given content as a substring, the evaluation continues
 #                                       otherwise the evaluation terminates and the exact reason is reported
 

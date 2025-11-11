@@ -129,15 +129,11 @@ class ExecutableCache:
                     ),
                     exc_info=futures_with_exception[0].exception(),
                 )
-                ExecutableCache.__remove_commit_executable_files(state_name)
+                ExecutableCache.__remove_commit_executable_files(subject_config.subject_type, subject_config.subject_name, state_name)
                 logger.debug(f'Removed possibly incomplete cached executable files for {state_name}.')
             else:
                 elapsed_time = time.time() - start_time
                 logger.debug(f'Stored executable in {elapsed_time:.2f}s')
-
-    @staticmethod
-    def remove_executable_files(state_name) -> None:
-        ExecutableCache.__remove_commit_executable_files(state_name)
 
     @staticmethod
     def __count_cached_executables(state_type: Optional[str] = None) -> int:
@@ -167,16 +163,24 @@ class ExecutableCache:
         )
         for state_doc in grid_cursor:
             state_name = state_doc['state_name']
-            ExecutableCache.__remove_commit_executable_files(state_name)
+            subject_type = state_doc['subject_type']
+            subject_name = state_doc['subject_name']
+            ExecutableCache.__remove_commit_executable_files(subject_type, subject_name, state_name)
             break
 
     @staticmethod
-    def __remove_commit_executable_files(state_name: str) -> None:
+    def __remove_commit_executable_files(subject_type: str, subject_name: str, state_name: str) -> None:
         """
         Removes the executable files associated with the parameters.
         """
         fs = MongoDB().gridfs
         files_collection = MongoDB().get_collection('fs.files')
 
-        for grid_doc in files_collection.find({'state_name': state_name}):
+        query = {
+            'file_type': 'executable',
+            'state_name': state_name,
+            'subject_type': subject_type,
+            'subject_name': subject_name,
+        }
+        for grid_doc in files_collection.find(query):
             fs.delete(grid_doc['_id'])

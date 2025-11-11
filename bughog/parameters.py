@@ -22,7 +22,7 @@ class EvaluationParameters:
 
     def serialize(self) -> str:
         pickled_bytes = pickle.dumps(self, pickle.HIGHEST_PROTOCOL)
-        return base64.b64encode(pickled_bytes).decode("ascii")
+        return base64.b64encode(pickled_bytes).decode('ascii')
 
     @staticmethod
     def deserialize(pickled_str: str) -> EvaluationParameters:
@@ -53,7 +53,7 @@ class SubjectConfiguration:
 
     @staticmethod
     def from_dict(data: dict) -> SubjectConfiguration:
-        return SubjectConfiguration(data["subject_type"], data["subject_name"], data["subject_setting"], data["cli_options"], data["extensions"])
+        return SubjectConfiguration(data['subject_type'], data['subject_name'], data['subject_setting'], data['cli_options'], data['extensions'])
 
 
 @dataclass(frozen=True)
@@ -70,7 +70,7 @@ class EvaluationRange:
         elif self.commit_nb_range:
             assert self.commit_nb_range[0] <= self.commit_nb_range[1]
         else:
-            raise AttributeError("Evaluation ranges require either major versions or commit numbers")
+            raise AttributeError('Evaluation ranges require either major versions or commit numbers')
 
 
 @dataclass(frozen=True)
@@ -86,7 +86,7 @@ class DatabaseParameters:
     username: str
     password: str
     database_name: str
-    binary_cache_limit: int
+    executable_cache_limit: int
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -94,18 +94,18 @@ class DatabaseParameters:
     @staticmethod
     def from_dict(data: dict) -> DatabaseParameters:
         return DatabaseParameters(
-            data["host"],
-            data["username"],
-            data["password"],
-            data["database_name"],
-            data["binary_cache_limit"],
+            data['host'],
+            data['username'],
+            data['password'],
+            data['database_name'],
+            data['executable_cache_limit'],
         )
 
     def __str__(self) -> str:
-        return f"{self.username}@{self.host}:27017/{self.database_name}"
+        return f'{self.username}@{self.host}:27017/{self.database_name}'
 
     def __repr__(self) -> str:
-        return f"{self.username}@{self.host}:27017/{self.database_name}"
+        return f'{self.username}@{self.host}:27017/{self.database_name}'
 
 
 @dataclass(frozen=True)
@@ -146,29 +146,28 @@ class PlotParameters(EvaluationParameters):
     #    )
 
 
-
 @staticmethod
 def evaluation_factory(kwargs: dict, database_params: DatabaseParameters, only_to_plot=False) -> list[EvaluationParameters]:
-    experiments = set(x for x in kwargs.get("experiments", []) + [kwargs.get("experiment_to_plot")] if x is not None)
+    experiments = set(x for x in kwargs.get('experiments', []) + [kwargs.get('experiment_to_plot')] if x is not None)
     if len(experiments) == 0:
         raise MissingParametersException()
 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     sequence_configuration = SequenceConfiguration(
-        int(kwargs.get("nb_of_containers", 1)),
-        int(kwargs.get("sequence_limit", 50)),
-        kwargs.get("search_strategy"),
+        int(kwargs.get('nb_of_containers', 1)),
+        int(kwargs.get('sequence_limit', 50)),
+        kwargs.get('search_strategy'),
     )
     evaluation_params_list = []
     for experiment in sorted(experiments):
         if only_to_plot and experiment != kwargs.get('experiment_to_plot'):
             continue
         evaluation_range = EvaluationRange(
-            kwargs["project_name"],
+            kwargs['project_name'],
             experiment,
             __get_version_range(kwargs),
             __get_commit_nb_range(kwargs),
-            kwargs.get("only_release_commits", False),
+            kwargs.get('only_release_commits', False),
         )
         evaluation_params = EvaluationParameters(
             subject_configuration,
@@ -182,11 +181,11 @@ def evaluation_factory(kwargs: dict, database_params: DatabaseParameters, only_t
 
 @staticmethod
 def __get_cookie_name(form_data: dict[str, str]) -> str | None:
-    if form_data["check_for"] == "request":
+    if form_data['check_for'] == 'request':
         return None
-    if "cookie_name" in form_data:
-        return form_data["cookie_name"]
-    return "generic"
+    if 'cookie_name' in form_data:
+        return form_data['cookie_name']
+    return 'generic'
 
 
 @staticmethod
@@ -199,8 +198,8 @@ def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
 
 @staticmethod
 def __get_commit_nb_range(form_data: dict[str, str]) -> tuple[int, int] | None:
-    lower_rev_number = form_data.get("lower_commit_nb", None)
-    upper_rev_number = form_data.get("upper_commit_nb", None)
+    lower_rev_number = form_data.get('lower_commit_nb', None)
+    upper_rev_number = form_data.get('upper_commit_nb', None)
     lower_rev_number = int(lower_rev_number) if lower_rev_number else None
     upper_rev_number = int(upper_rev_number) if upper_rev_number else None
     if lower_rev_number is None or upper_rev_number is None:
