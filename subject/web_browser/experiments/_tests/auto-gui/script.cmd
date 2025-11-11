@@ -1,10 +1,10 @@
-NAVIGATE https://a.test/Support/AutoGUI/
+NAVIGATE https://a.test/_tests/auto-gui/
 
 OPEN_CONSOLE
 
 SCREENSHOT click1
 CLICK one
-WRITE AutoGUI
+WRITE OK
 HOTKEY ctrl a
 HOTKEY ctrl c
 

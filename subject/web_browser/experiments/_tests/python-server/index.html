@@ -1,0 +1,11 @@
+<!-- bughog_expected_reproducing_versions: all -->
+<!-- bughog_domain: a.test -->
+<html>
+    <body>
+        <script>
+            (async () => {
+                const res = await fetch('https://a.test/_tests/python-server/server.py?leaked_secret');
+            })();
+        </script>
+    </body>
+</html>

@@ -1,6 +1,0 @@
-[
-    {
-        "key": "Set-Cookie",
-        "value": "my_name=secret; Max-Age=120"
-    }
-]

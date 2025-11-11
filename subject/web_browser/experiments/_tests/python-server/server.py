@@ -1,9 +1,9 @@
 from flask import Request
 from typing import Callable
 
-def main(req: Request, report_leak: Callable[[], None]):
+def main(req: Request, reproduced: Callable[[], None]):
     if "leaked_secret" in req.url:
-        report_leak()
+        reproduced()
 
     return {
         "agent": req.headers.get("User-Agent"),
