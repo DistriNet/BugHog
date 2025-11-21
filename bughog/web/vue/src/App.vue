@@ -284,10 +284,14 @@ export default {
             if (process.env.NODE_ENV === "development") {
               console.log("Development mode: number of containers set to 1.");
               this.evalParams.nb_of_containers = 1;
-            } else if ("cpu_count" in res.data) {
-              const nb_of_containers = Math.max(cpu_count - 1, 1);
-              console.log(`Number of number of containers set to ${nb_of_containers}`);
-              this.evalParams.nb_of_containers = nb_of_containers;
+            } else if (this.evalParams.nb_of_containers === null) {
+              if ("cpu_count" in res.data) {
+                const nb_of_containers = Math.max(cpu_count - 1, 1);
+                console.log(`Number of number of containers set to ${nb_of_containers}`);
+                this.evalParams.nb_of_containers = nb_of_containers;
+              } else {
+                this.evalParams.nb_of_containers = 1;
+              }
             }
           }
         })

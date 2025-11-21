@@ -1,5 +1,16 @@
 import { reactive, watch } from 'vue';
 
+const persisted_general_params = [
+  'nb_of_containers',
+  'only_release_commits',
+  'sequence_limit',
+];
+
+const persisted_subject_type_specific_params = [
+  'project_name',
+  'subject_name',
+];
+
 const DEFAULT_EVAL_PARAMS = {
   subject_type: null,
   subject_name: null,
@@ -12,36 +23,63 @@ const DEFAULT_EVAL_PARAMS = {
   lower_commit_nb: null,
   upper_commit_nb: null,
   only_release_commits: true,
-  nb_of_containers: 8,
+  nb_of_containers: null,
   sequence_limit: 50,
   target_mech_id: null,
   search_strategy: 'comp_search',
   experiment_to_plot: null,
-}
+};
 
 function loadPersistedParams() {
-  const selected_subject_type = localStorage.getItem('selected_subject_type');
-  var eval_params = localStorage.getItem(`eval_params_${selected_subject_type}`);
-  if (selected_subject_type === null || eval_params === null) {
-    console.log(`No selected subject type.`)
-    return { ...DEFAULT_EVAL_PARAMS };
-  } else if (eval_params === null) {
-    console.log(`Loaded stored selected subject type ${selected_subject_type}.`);
-    return { ...DEFAULT_EVAL_PARAMS, ...{ 'subject_type': selected_subject_type } }
-  } else {
-    eval_params = JSON.parse(eval_params);
-    return { ...DEFAULT_EVAL_PARAMS, ...eval_params, ...{ 'subject_type': selected_subject_type } };
+  var loaded_eval_params = {};
+
+  // Load general params.
+  let param_value;
+  for (const param_name of persisted_general_params) {
+    if (process.env.NODE_ENV === "development") {
+      param_value = localStorage.getItem(`dev_${param_name}`);
+    } else {
+      param_value = localStorage.getItem(param_name);
+    }
+    if (param_value !== null) {
+      loaded_eval_params[param_name] = param_value;
+    }
   }
+
+  // Load subject type specific params.
+  const selected_subject_type = localStorage.getItem('selected_subject_type');
+  if (selected_subject_type === null) {
+    console.debug(`No selected subject type.`);
+    return { ...DEFAULT_EVAL_PARAMS, ...loaded_eval_params };
+  }
+
+  const stored_eval_params_raw = localStorage.getItem(`eval_params_${selected_subject_type}`);
+  if (stored_eval_params_raw === null) {
+    console.debug(`No eval params stored for ${selected_subject_type}.`)
+    return { ...DEFAULT_EVAL_PARAMS, 'subject_type': selected_subject_type, ...loaded_eval_params };
+  }
+
+  const stored_eval_params = JSON.parse(stored_eval_params_raw);
+  console.debug(`Loading eval params for ${selected_subject_type}.`)
+  return { ...DEFAULT_EVAL_PARAMS, ...stored_eval_params, 'subject_type': selected_subject_type, ...loaded_eval_params };
 }
 
 export function useEvalParams() {
   var evalParams = reactive(loadPersistedParams());
 
   watch(evalParams, (new_params) => {
-    const to_persist = [
-      'subject_name',
-      'project_name',
-    ]
+    // Store general params.
+    for (const param_name of persisted_general_params) {
+      if (localStorage.getItem(param_name) !== new_params[param_name]) {
+        if (process.env.NODE_ENV === "development") {
+          localStorage.setItem(`dev_${param_name}`, new_params[param_name]);
+        } else {
+          localStorage.setItem(param_name, new_params[param_name]);
+        }
+      }
+    }
+
+    // Store subject type specific params.
     const old_selected_subject_type = localStorage.getItem('selected_subject_type');
     var old_params = localStorage.getItem(`eval_params_${new_params.subject_type}`);
 
@@ -49,7 +87,7 @@ export function useEvalParams() {
       return;
     } else if (old_params === null) {
       const default_params = Object.fromEntries(
-        Object.entries(DEFAULT_EVAL_PARAMS).filter(([key]) => to_persist.includes(key))
+        Object.entries(DEFAULT_EVAL_PARAMS).filter(([key]) => persisted_subject_type_specific_params.includes(key))
       );
       Object.assign(evalParams, default_params);
       localStorage.setItem(`eval_params_${new_params.subject_type}`, JSON.stringify(default_params))
@@ -61,13 +99,13 @@ export function useEvalParams() {
       console.log(`Updating stored selected subject type from ${old_selected_subject_type} to ${new_params.subject_type}.`);
       localStorage.setItem('selected_subject_type', new_params.subject_type);
       if (old_params !== null) {
-        to_persist.forEach(key => {
+        persisted_subject_type_specific_params.forEach(key => {
           evalParams[key] = old_params[key];
         });
       }
     } else {
       var params_to_store = {}
-      to_persist.forEach(key => {
+      persisted_subject_type_specific_params.forEach(key => {
         if (new_params[key] !== old_params[key]) {
           console.log(`Updating stored ${key} from ${old_params[key]} to ${new_params[key]}`);
         }
