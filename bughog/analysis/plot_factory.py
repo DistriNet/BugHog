@@ -1,8 +1,12 @@
+import logging
+
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.parameters import EvaluationParameters
 from bughog.subject import factory
 from bughog.subject.state_oracle import StateOracle
+
+logger = logging.getLogger(__name__)
 
 
 class PlotFactory:
@@ -47,12 +51,25 @@ class PlotFactory:
         for doc in docs:
             result_variables = set((variables[0], variables[1]) for variables in doc['result']['variables'])
 
-            commit_nb = doc['state']['commit_nb']
-            commit_id = doc['state']['commit_id']
-            if state_oracle:
-                commit_url = state_oracle.get_commit_url(commit_nb, commit_id)
-            else:
+            commit_nb = doc['state'].get('commit_nb')
+            commit_id = doc['state'].get('commit_id')
+
+            # TODO: for some reason commit ids sometimes seem to be absent from state docs.
+            if commit_nb is None and commit_id is None:
+                logger.error('Skipping state doc with unknown commit number and commit id.')
+                continue
+            elif commit_nb is None:
+                # Commit number is essential for placing the datapoint on the Gantt chart.
+                logger.error(f'Skipping state doc with unknown commit number (commit id: {commit_id}).')
+                continue
+            elif commit_id is None:
+                logger.error(f'Including state doc with unknown commit id (commit number: {commit_nb}), without supplying commit url.')
                 commit_url = None
+            else:
+                if state_oracle:
+                    commit_url = state_oracle.get_commit_url(commit_nb, commit_id)
+                else:
+                    commit_url = None
 
             new_doc = {
                 'commit_nb': commit_nb,
