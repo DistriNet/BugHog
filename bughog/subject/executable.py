@@ -127,7 +127,7 @@ class Executable(ABC):
         Executables are stored here before staging.
         I.e., public executables are downloaded and artisanal executables are copied to this folder.
         """
-        return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{self.state.name}')
+        return os.path.join('/dev/shm/executables/', f'{self.config.subject_name}-{self.state.name}')
 
     def is_in_temporary_storage(self) -> bool:
         path = self.temporary_storage_folder

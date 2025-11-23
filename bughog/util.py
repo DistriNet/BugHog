@@ -164,7 +164,7 @@ def download_and_extract(urls: list[str], dst_folder_path: str) -> bool:
     for url in urls:
         logger.debug(f"Attempting to download archive from '{url}'.")
         tmp_file_name = urlparse(url).path.split('/')[-1]
-        tmp_file_path = os.path.join('/tmp', tmp_file_name)
+        tmp_file_path = os.path.join('/dev/shm', tmp_file_name)
         if os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
         session = __get_session()
