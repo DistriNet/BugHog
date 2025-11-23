@@ -30,6 +30,17 @@ const DEFAULT_EVAL_PARAMS = {
   experiment_to_plot: null,
 };
 
+function getFromLocalStorage(param_name) {
+  var param_value = localStorage.getItem(param_name);
+  // LocalStorage only stores strings, so we will convert stringified booleans to actual booleans.
+  if (param_value === 'true') {
+    return true;
+  } else if (param_value === 'false') {
+    return false;
+  }
+  return param_value;
+}
+
 function loadPersistedParams() {
   var loaded_eval_params = {};
 
@@ -37,9 +48,9 @@ function loadPersistedParams() {
   let param_value;
   for (const param_name of persisted_general_params) {
     if (process.env.NODE_ENV === "development") {
-      param_value = localStorage.getItem(`dev_${param_name}`);
+      param_value = getFromLocalStorage(`dev_${param_name}`);
     } else {
-      param_value = localStorage.getItem(param_name);
+      param_value = getFromLocalStorage(param_name)
     }
     if (param_value !== null) {
       loaded_eval_params[param_name] = param_value;
