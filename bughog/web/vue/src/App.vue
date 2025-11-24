@@ -122,6 +122,8 @@ export default {
       this.get_projects(() => {
         if (this.projects.length === 1) {
           this.evalParams.project_name = this.projects[0];
+        } else {
+          this.evalParams.project_name = null;
         }
       });
       this.selected.experiment = null;
