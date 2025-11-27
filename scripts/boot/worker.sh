@@ -7,5 +7,5 @@ source /app/scripts/boot/setup_environment.sh
 rm -f /tmp/Xvfb.pid
 service xvfb start
 
-uv sync
+uv sync --no-dev --locked
 exec python3 /app/bughog/worker.py "$@"
