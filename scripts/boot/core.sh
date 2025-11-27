@@ -12,7 +12,7 @@ rm -f /tmp/Xvfb.pid
 rm -f /tmp/.X1-lock
 service xvfb start
 
-uv sync
+uv sync --no-dev --locked
 
 if [[ "$DEVELOPMENT" == "1" ]]; then
     exec sleep infinity;
