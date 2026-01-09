@@ -41,7 +41,7 @@ class WorkerManager:
 
     def __run_container(self, params: EvaluationParameters, state: State, blocking_wait=True) -> None:
         while blocking_wait and self.get_nb_of_running_worker_containers() >= self.max_nb_of_containers:
-            time.sleep(5)
+            time.sleep(1)
         container_id = self.container_id_pool.get()
         container_name = f'bh_worker_{container_id}'
 

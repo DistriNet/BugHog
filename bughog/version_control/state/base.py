@@ -13,9 +13,9 @@ from bughog.subject.state_oracle import StateOracle
 @dataclass(frozen=True)
 class ShallowState:
     type: str
-    major_version: int|None
-    commit_nb: int|None
-    commit_id: str|None
+    major_version: int | None
+    commit_nb: int | None
+    commit_id: str | None
 
     @property
     def dict(self) -> dict:
@@ -60,7 +60,11 @@ class State(ABC):
         if not self.has_result() or not other.has_result():
             return False
         else:
-            return ExperimentResult.poc_is_reproduced(self.result_variables) == ExperimentResult.poc_is_reproduced(other.result_variables) and ExperimentResult.poc_is_dirty(self.result_variables) == ExperimentResult.poc_is_dirty(other.result_variables)
+            return ExperimentResult.poc_is_reproduced(self.result_variables) == ExperimentResult.poc_is_reproduced(
+                other.result_variables
+            ) and ExperimentResult.poc_is_dirty(self.result_variables) == ExperimentResult.poc_is_dirty(
+                other.result_variables
+            )
 
     @property
     def name(self) -> str:
@@ -117,11 +121,14 @@ class State(ABC):
 
         subject_class = factory.get_subject(subject_type, subject_name)
         oracle = subject_class.state_oracle
+        commit_nb = data.get('commit_nb')
+        commit_id = data.get('commit_id')
+        major_version = data.get('major_version')
         match data['type']:
             case 'commit':
-                return CommitState(oracle, commit_nb=data.get('commit_nb'), commit_id=data.get('commit_id'))
+                return CommitState(oracle, commit_nb=commit_nb, commit_id=commit_id)
             case 'release':
-                return ReleaseState(oracle, release_version=data['major_version'])
+                return ReleaseState(oracle, release_version=major_version, commit_nb=commit_nb, commit_id=commit_id)
             case _:
                 raise Exception(f'Unknown state type: {data["type"]}')
 

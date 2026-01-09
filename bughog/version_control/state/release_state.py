@@ -7,17 +7,16 @@ from bughog.version_control.state_not_found import StateNotFound
 
 
 class ReleaseState(State):
-    def __init__(self, oracle: StateOracle, release_version: int):
+    def __init__(
+        self, oracle: StateOracle, release_version: int, commit_nb: int | None = None, commit_id: str | None = None
+    ):
         super().__init__(oracle)
         self.release_version = release_version
-        self._commit_nb = self.__get_commit_nb()
-        self.commit_id = self.__get_commit_id()
-
-    def __get_commit_nb(self) -> int:
-        return self.oracle.find_commit_nb_of_release(self.release_version)
-
-    def __get_commit_id(self) -> str:
-        return self.oracle.find_commit_id_of_release(self.release_version)
+        if commit_nb is None or commit_id is None:
+            self._commit_nb, self.commit_id = self.oracle.find_commit_of_release(self.release_version)
+        else:
+            self._commit_nb = commit_nb
+            self.commit_id = commit_id
 
     @staticmethod
     def get_name(index: int) -> str:
@@ -59,12 +58,7 @@ class ReleaseState(State):
                 offset += 1
 
     def to_shallow_state(self) -> ShallowState:
-        return ShallowState(
-            'release',
-            self.release_version,
-            self.commit_nb,
-            self.commit_id
-        )
+        return ShallowState('release', self.release_version, self.commit_nb, self.commit_id)
 
     def __str__(self):
         return f'VersionState(version: {self.release_version}, rev: {self.commit_nb})'

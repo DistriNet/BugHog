@@ -4,7 +4,6 @@ import logging
 import sys
 import threading
 
-import requests
 from bughog import util
 from bughog.evaluation.experiments import SUPPORTED_DOMAINS
 from flask import Blueprint, Request, make_response, render_template, request, url_for
@@ -152,6 +151,9 @@ def python_evaluation(project: str, experiment: str, file_name: str):
             "content": request.data.decode("utf-8"),
         }
 
-        requests.post(f"http://{remote_ip}:5001/report/", json=response_data, timeout=5)
+        def send_report_to_collector():
+            util.post_request(f'http://{remote_ip}:5001/report/', response_data)
+
+        threading.Thread(target=send_report_to_collector).start()
 
     return module.main(request, reproduced)

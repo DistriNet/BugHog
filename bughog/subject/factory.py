@@ -1,13 +1,16 @@
-from functools import lru_cache
 import os
+from functools import lru_cache
 
 from bughog.evaluation.experiments import Experiments
 from bughog.parameters import EvaluationParameters
 from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework
 from bughog.subject.js_engine.v8.subject import V8Subject
+from bughog.subject.js_engine.v8_sandbox.subject import V8SandboxSubject
 from bughog.subject.subject import Subject
-from bughog.subject.wasm_runtime.evaluation_framework import WasmRuntimeEvaluationFramework
+from bughog.subject.wasm_runtime.evaluation_framework import (
+    WasmRuntimeEvaluationFramework,
+)
 from bughog.subject.wasm_runtime.wasmtime.subject import WasmtimeSubject
 from bughog.subject.web_browser.chromium.subject import Chromium
 from bughog.subject.web_browser.evaluation_framework import BrowserEvaluationFramework
@@ -17,7 +20,8 @@ subjects = {
     'js_engine': {
         'evaluation_framework': JSEngineEvaluationFramework,
         'subjects': [
-            V8Subject()
+            V8Subject(),
+            V8SandboxSubject()
         ]
     },
     'wasm_runtime': {

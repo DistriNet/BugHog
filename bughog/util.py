@@ -101,24 +101,23 @@ def request_html(url: str):
         raise ResourceNotFound from e
 
 
-@functools.lru_cache(maxsize=128)
-def request_json(url: str, token: Optional[str] = None) -> list | dict:
+def request_json(url: str, params: dict | None = None, token: str | None = None) -> list | dict:
     session = __get_session(token=token)
     logger.debug(f'Requesting {url}')
     try:
-        with session.get(url, timeout=60, stream=True) as resp:
+        with session.get(url, params=params, timeout=60, stream=True) as resp:
             if resp.status_code >= 400:
                 raise ResourceNotFound(url)
             return resp.json()
-    except RequestException as e:
+    except Exception as e:
         raise ResourceNotFound from e
 
 
-def request_final_url(url: str) -> str:
+def request_final_url(url: str, params: dict | None = None) -> str:
     session = __get_session()
     logger.debug(f'Requesting {url}')
     try:
-        resp = session.get(url, timeout=60, stream=True)
+        resp = session.get(url, params=params, timeout=60, stream=True)
         if resp.status_code >= 400:
             raise ResourceNotFound(url)
         return resp.url

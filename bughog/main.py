@@ -3,7 +3,6 @@ import os
 import time
 
 import bughog.database.mongo.container as mongodb_container
-import bughog.version_control.revision_parser.bughog as bughog_commit_pos
 from bughog.configuration import Global, Loggers
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
@@ -16,7 +15,6 @@ from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bughog.subject import factory
-from bughog.subject.web_browser.state_cache import PublicBrowserStateCache
 from bughog.version_control.state.base import ShallowState
 from bughog.version_control.state_factory import StateFactory
 from bughog.web.clients import Clients
@@ -35,13 +33,13 @@ class Main:
 
         self.db_connection_params = Global.get_database_params()
         self.connect_to_database(self.db_connection_params)
-        PublicBrowserStateCache.update()
-        bughog_commit_pos.update_commit_pos_data()
         factory.initialize_all_subject_folders()
 
         logger.info('BugHog is ready!')
         if os.getenv('GITHUB_TOKEN') is None:
-            logger.warning('GITHUB_TOKEN was not configured in ./config/.env. This might result in failed API requests.')
+            logger.warning(
+                'GITHUB_TOKEN was not configured in ./config/.env. This might result in failed API requests.'
+            )
 
     def connect_to_database(self, db_connection_params: DatabaseParameters) -> None:
         try:
@@ -61,8 +59,19 @@ class Main:
                 if self.stop_gracefully or self.stop_forcefully:
                     break
                 self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'active')
-                self.__update_state(is_running=True, reason='user', status='running', queue=self.eval_queue)
-                self.run_single_evaluation(eval_params, worker_manager)
+                self.__update_state(
+                    is_running=True,
+                    reason='user',
+                    status='running',
+                    queue=self.eval_queue,
+                )
+                try:
+                    self.run_single_evaluation(eval_params, worker_manager)
+                except Exception:
+                    logger.error(
+                        f'Could not initiate evaluation for {eval_params.subject_configuration.subject_name}. Skipping.',
+                        exc_info=True,
+                    )
 
         except Exception as e:
             logger.critical('A critical error occurred', exc_info=True)
@@ -94,7 +103,9 @@ class Main:
             experiment_name = eval_params.evaluation_range.experiment_name
             search_strategy = self.create_sequence_strategy(eval_params)
 
-            logger.info(f"Starting evaluation for experiment '{experiment_name}' with '{subject.name}', iteration {i}/{nb_of_iterations}.")
+            logger.info(
+                f"Starting evaluation for experiment '{experiment_name}' with '{subject.name}', iteration {i}/{nb_of_iterations}."
+            )
             try:
                 while (self.stop_gracefully or self.stop_forcefully) is False:
                     # Update search strategy with new potentially new results
@@ -107,11 +118,14 @@ class Main:
             except SequenceFinished:
                 worker_manager.wait_until_all_evaluations_are_done()
 
-                # Retry all tests with a dirty result once.
-                self.retry_dirty_tests(eval_params, worker_manager)
+                # Retry all tests with a dirty result once. Only once for JS engine subjects.
+                if eval_params.subject_configuration.subject_type != 'js_engine' or i == 1:
+                    self.retry_dirty_tests(eval_params, worker_manager)
 
                 iteration_time = round(time.time() - start_time)
-                logger.debug(f'Last experiment has finished for iteration {i}/{nb_of_iterations}. This iteration took {iteration_time}s.')
+                logger.debug(
+                    f'Last experiment has finished for iteration {i}/{nb_of_iterations}. This iteration took {iteration_time}s.'
+                )
 
         self.state['reason'] = 'finished'
         self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'done')
@@ -206,7 +220,12 @@ class Main:
     def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
         self.eval_queue = []
         for eval_params in eval_params_list:
-            self.eval_queue.append({'experiment': eval_params.evaluation_range.experiment_name, 'state': 'pending'})
+            self.eval_queue.append(
+                {
+                    'experiment': eval_params.evaluation_range.experiment_name,
+                    'state': 'pending',
+                }
+            )
 
     def __update_eval_queue(self, experiment: str, state: str) -> None:
         for eval in self.eval_queue:

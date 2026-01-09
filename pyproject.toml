@@ -63,8 +63,7 @@ exclude = [
     "venv",
 ]
 
-# Don't break long lines. VS Code vertical lines nudge towards shorter lines.
-line-length = 999
+line-length = 120
 indent-width = 4
 
 [tool.ruff.lint]
