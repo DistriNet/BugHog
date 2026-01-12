@@ -27,6 +27,7 @@
 				"python.defaultInterpreterPath": "/app/.venv/bin/python"
 			},
 			"extensions": [
+				"astral-sh.ty",
 				"charliermarsh.ruff",
 				"ms-python.debugpy",
 				"ms-python.python",

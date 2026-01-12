@@ -2,82 +2,94 @@ import logging
 import logging.handlers
 import os
 import sys
+from functools import lru_cache
+
+from rich.logging import RichHandler
 
 from bughog.database.mongo import container
 from bughog.parameters import DatabaseParameters
 
 logger = logging.getLogger(__name__)
+custom_page_folder = '/app/experiments/pages'
 
 
-class Global:
-    __database_params = None
-    custom_page_folder = '/app/experiments/pages'
+def get_available_domains() -> list[str]:
+    return [
+        'a.test',
+        'sub.a.test',
+        'sub.sub.a.test',
+        'b.test',
+        'sub.b.test',
+        'leak.test',
+        'adition.com',
+    ]
 
-    @staticmethod
-    def get_available_domains() -> list[str]:
-        return [
-            'a.test',
-            'sub.a.test',
-            'sub.sub.a.test',
-            'b.test',
-            'sub.b.test',
-            'leak.test',
-            'adition.com',
-        ]
 
-    @staticmethod
-    def check_required_env_parameters() -> bool:
-        fatal = False
-        # HOST_PWD
-        if (host_pwd := os.getenv('HOST_PWD')) in ['', None]:
-            logger.fatal(
-                'The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up".'
-            )
-            fatal = True
-        else:
-            logger.debug(f'HOST_PWD={host_pwd}')
+def check_required_env_parameters() -> bool:
+    fatal = False
+    # HOST_PWD
+    if (host_pwd := os.getenv('HOST_PWD')) in ['', None]:
+        logger.fatal(
+            'The "HOST_PWD" variable is not set. If you\'re using sudo, you might have to pass it explicitly, for example "sudo HOST_PWD=$PWD docker compose up".'
+        )
+        fatal = True
+    else:
+        logger.debug(f'HOST_PWD={host_pwd}')
 
-        # BUGHOG_VERSION
-        if (bughog_version := os.getenv('BUGHOG_VERSION')) in ['', None]:
-            logger.fatal('"BUGHOG_VERSION" variable is not set.')
-            fatal = True
-        else:
-            logger.info(f'Starting BugHog with tag "{bughog_version}"')
+    # BUGHOG_VERSION
+    if (bughog_version := os.getenv('BUGHOG_VERSION')) in ['', None]:
+        logger.fatal('"BUGHOG_VERSION" variable is not set.')
+        fatal = True
+    else:
+        logger.info(f'Starting BugHog with tag "{bughog_version}"')
 
-        return not fatal
+    return not fatal
 
-    @staticmethod
-    def get_database_params() -> DatabaseParameters:
-        if Global.__database_params:
-            return Global.__database_params
 
-        required_database_params = ['BCI_MONGO_HOST', 'BCI_MONGO_USERNAME', 'BCI_MONGO_DATABASE', 'BCI_MONGO_PASSWORD']
-        missing_database_params = [param for param in required_database_params if os.getenv(param) in ['', None]]
-        executable_cache_limit = int(os.getenv('BCI_EXECUTABLE_CACHE_LIMIT', 0))
-        if missing_database_params:
-            logger.info(f'Could not find database parameters {missing_database_params}, using database container...')
-            Global.__database_params = container.run(executable_cache_limit)
-        else:
-            Global.__database_params = DatabaseParameters(
-                os.getenv('BCI_MONGO_HOST'),
-                os.getenv('BCI_MONGO_USERNAME'),
-                os.getenv('BCI_MONGO_PASSWORD'),
-                os.getenv('BCI_MONGO_DATABASE'),
-                executable_cache_limit,
-            )
-            logger.info(f"Found database environment variables '{Global.__database_params}'")
-        return Global.__database_params
+# Singleton pattern with caching
+@lru_cache(maxsize=1)
+def get_database_params() -> DatabaseParameters:
+    try:
+        executable_cache_limit = int(os.getenv('BUGHOG_EXECUTABLE_CACHE_LIMIT', '0'))
+    except ValueError:
+        logger.warning("Invalid 'BUGHOG_EXECUTABLE_CACHE_LIMIT' provided; defaulting to 0.")
+        executable_cache_limit = 0
 
-    @staticmethod
-    def get_tag() -> str:
-        """
-        Returns the Docker image tag of BugHog.
-        This should never be empty.
-        """
-        bughog_version = os.getenv('BUGHOG_VERSION', None)
-        if bughog_version is None or bughog_version == '':
-            raise ValueError('BUGHOG_VERSION is not set')
-        return bughog_version
+    required_database_params = [
+        'BUGHOG_MONGO_HOST',
+        'BUGHOG_MONGO_USERNAME',
+        'BUGHOG_MONGO_DATABASE',
+        'BUGHOG_MONGO_PASSWORD',
+    ]
+    env_vars = {key: os.getenv(key) for key in required_database_params}
+    missing_database_params = [key for key, val in env_vars.items() if not val]
+    if missing_database_params:
+        logger.info(f'Could not find database parameters {missing_database_params}. Using database container...')
+        return container.run(executable_cache_limit)
+
+    safe_env_vars = env_vars.copy()
+    safe_env_vars['BUGHOG_MONGO_PASSWORD'] = '*'
+    logger.info(f"Found database environment variables '{safe_env_vars}'.")
+
+    return DatabaseParameters(
+        env_vars['BUGHOG_MONGO_HOST'] or '',
+        env_vars['BUGHOG_MONGO_USERNAME'] or '',
+        env_vars['BUGHOG_MONGO_PASSWORD'] or '',
+        env_vars['BUGHOG_MONGO_DATABASE'] or '',
+        executable_cache_limit,
+    )
+
+
+@staticmethod
+def get_tag() -> str:
+    """
+    Returns the Docker image tag of BugHog.
+    This should never be empty.
+    """
+    bughog_version = os.getenv('BUGHOG_VERSION', None)
+    if bughog_version is None or bughog_version == '':
+        raise ValueError('BUGHOG_VERSION is not set')
+    return bughog_version
 
 
 class CustomHTTPHandler(logging.handlers.HTTPHandler):
@@ -94,63 +106,78 @@ class CustomHTTPHandler(logging.handlers.HTTPHandler):
 
 
 class Loggers:
-    formatter = logging.Formatter(
+    file_formatter = logging.Formatter(
         fmt='[%(asctime)s] [%(levelname)s] %(name)s: %(message)s', datefmt='%d-%m-%Y %H:%M:%S'
     )
+    console_fmt = '%(message)s'
     memory_handler = logging.handlers.MemoryHandler(capacity=100, flushLevel=logging.ERROR)
 
     @staticmethod
     def configure_loggers():
         hostname = os.getenv('HOSTNAME')
 
-        # Configure bci_logger
-        bci_logger = logging.getLogger('bughog')
-        bci_logger.setLevel(logging.DEBUG)
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.DEBUG)
+        if root_logger.handlers:
+            root_logger.handlers.clear()
+
+        rich_handler = RichHandler(
+            rich_tracebacks=True, markup=True, show_path=False, show_time=True, show_level=True, enable_link_path=False
+        )
+
+        rich_handler.setLevel(logging.DEBUG)
+        rich_handler.setFormatter(logging.Formatter(Loggers.console_fmt))
+        root_logger.addHandler(rich_handler)
 
         # Configure stream handler
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(Loggers.formatter)
-        bci_logger.addHandler(stream_handler)
+        # stream_handler = logging.StreamHandler()
+        # stream_handler.setLevel(logging.DEBUG)
+        # stream_handler.setFormatter(Loggers.file_formatter)
+        # root_logger.addHandler(stream_handler)
 
         # Configure file handler
-        file_handler = logging.handlers.RotatingFileHandler(f'/app/logs/{hostname}.log', mode='a', backupCount=3, maxBytes=8*1024*1024)
+        os.makedirs('/app/logs', exist_ok=True)
+        file_handler = logging.handlers.RotatingFileHandler(
+            f'/app/logs/{hostname}.log', mode='a', backupCount=3, maxBytes=8 * 1024 * 1024
+        )
         file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(Loggers.formatter)
-        bci_logger.addHandler(file_handler)
+        file_handler.setFormatter(Loggers.file_formatter)
+        root_logger.addHandler(file_handler)
 
         # Configure http handler for workers
         if hostname != 'bh_core':
-            http_handler = CustomHTTPHandler('core:5000', '/api/log/', method='POST', secure=False)
-            http_handler.setLevel(logging.INFO)
-            http_handler.setFormatter(Loggers.formatter)
-            bci_logger.addHandler(http_handler)
+            try:
+                # Ensure CustomHTTPHandler is defined
+                http_handler = CustomHTTPHandler('core:5000', '/api/log/', method='POST', secure=False)
+                http_handler.setLevel(logging.INFO)
+                http_handler.setFormatter(Loggers.file_formatter)
+                root_logger.addHandler(http_handler)
+            except NameError:
+                pass
 
         # Configure memory handler
         Loggers.memory_handler.setLevel(logging.INFO)
-        Loggers.memory_handler.setFormatter(Loggers.formatter)
-        bci_logger.addHandler(Loggers.memory_handler)
+        Loggers.memory_handler.setFormatter(Loggers.file_formatter)
+        root_logger.addHandler(Loggers.memory_handler)
+
+        # Silence noisy libraries
+        logging.getLogger('pymongo').setLevel(logging.WARNING)
+        logging.getLogger('urllib3').setLevel(logging.WARNING)
+        logging.getLogger('werkzeug').disabled = True
 
         # Log uncaught exceptions
-        def handle_exception(exc_type, exc_value, exc_traceback):
-            if issubclass(exc_type, KeyboardInterrupt):
-                sys.__excepthook__(exc_type, exc_value, exc_traceback)
-                return
-            bci_logger.critical('Uncaught exception', exc_info=(exc_type, exc_value, exc_traceback))
+        sys.excepthook = lambda t, v, tb: root_logger.critical('Uncaught', exc_info=(t, v, tb))
 
-        sys.excepthook = handle_exception
-
-        bci_logger.debug('Loggers initialized')
+        root_logger.info('Loggers initialized')
 
     @staticmethod
     def get_logs() -> list[str]:
-        return list(
-            map(
-                lambda x: Loggers.format_to_user_log(x.__dict__),
-                Loggers.memory_handler.buffer,
-            )
-        )
+        logs = []
+        for record in Loggers.memory_handler.buffer:
+            formatted_msg = Loggers.file_formatter.format(record)
+            logs.append(formatted_msg)
+        return logs
 
     @staticmethod
     def format_to_user_log(log: dict) -> str:
-        return f'[{log["asctime"]}] [{log["levelname"]}] {log["name"]}: {log["msg"]}'
+        return f'[{log.get("asctime", "?")}] [{log.get("levelname", "?")}] {log.get("name", "?")}: {log.get("msg", "")}'

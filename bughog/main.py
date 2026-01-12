@@ -3,7 +3,7 @@ import os
 import time
 
 import bughog.database.mongo.container as mongodb_container
-from bughog.configuration import Global, Loggers
+from bughog import configuration
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
 from bughog.parameters import (
@@ -31,7 +31,7 @@ class Main:
 
         self.eval_queue = []
 
-        self.db_connection_params = Global.get_database_params()
+        self.db_connection_params = configuration.get_database_params()
         self.connect_to_database(self.db_connection_params)
         factory.initialize_all_subject_folders()
 
@@ -69,7 +69,7 @@ class Main:
                     self.run_single_evaluation(eval_params, worker_manager)
                 except Exception:
                     logger.error(
-                        f'Could not initiate evaluation for {eval_params.subject_configuration.subject_name}. Skipping.',
+                        f'Could not finish evaluation for {eval_params.subject_configuration.subject_name}.',
                         exc_info=True,
                     )
 
@@ -203,7 +203,7 @@ class Main:
             if arg == 'db_info' or all:
                 update['db_info'] = MongoDB().get_info()
             if arg == 'logs' or all:
-                update['logs'] = Loggers.get_logs()
+                update['logs'] = configuration.Loggers.get_logs()
             if arg == 'state' or all:
                 update['state'] = self.state
         Clients.push_info(ws, update)

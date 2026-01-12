@@ -6,8 +6,8 @@ import threading
 from flask import Blueprint, current_app, redirect, request
 
 import bughog.parameters as application_logic
+from bughog import configuration
 from bughog.app import sock
-from bughog.configuration import Global, Loggers
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.integration_tests import evaluation_configurations, verify_results
 from bughog.main import Main
@@ -47,7 +47,7 @@ def check_readiness():
         # _ = ____get_main()
     except Exception as e:
         logger.critical(e)
-        return {'status': 'NOK', 'msg': 'BugHog is not ready', 'info': {'log': Loggers.get_logs()}}
+        return {'status': 'NOK', 'msg': 'BugHog is not ready', 'info': {'log': configuration.Loggers.get_logs()}}
 
 
 @api.after_request
@@ -71,7 +71,7 @@ def start_evaluation():
 
     data = request.json.copy()
     try:
-        database_params = Global.get_database_params()
+        database_params = configuration.get_database_params()
         params = application_logic.evaluation_factory(data, database_params)
         __start_thread(__get_main().run, args=[params])
         return {'status': 'OK'}
@@ -166,7 +166,10 @@ def poc(subject_type: str, project: str, poc: str):
 
 
 @api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/<string:file_name>/', methods=['GET', 'POST'])
-@api.route('/poc/<string:subject_type>/<string:project>/<string:poc>/<string:file_name>/<string:folder_name>/', methods=['GET', 'POST'])
+@api.route(
+    '/poc/<string:subject_type>/<string:project>/<string:poc>/<string:file_name>/<string:folder_name>/',
+    methods=['GET', 'POST'],
+)
 def poc_file_content(subject_type: str, project: str, poc: str, file_name: str, folder_name: str | None = None):
     if request.method == 'GET':
         return {
@@ -178,7 +181,9 @@ def poc_file_content(subject_type: str, project: str, poc: str, file_name: str, 
             return {'status': 'NOK', 'msg': 'No content to update file with'}
         data = request.json.copy()
         content = data['content']
-        success = factory.create_experiments(subject_type).update_poc_file(project, poc, folder_name, file_name, content)
+        success = factory.create_experiments(subject_type).update_poc_file(
+            project, poc, folder_name, file_name, content
+        )
         if success:
             return {'status': 'OK'}
         else:
@@ -211,7 +216,7 @@ def add_folder_or_file(subject_type: str, project: str, poc: str):
 
 @api.route('/poc/domain/', methods=['GET'])
 def get_available_domains():
-    return {'status': 'OK', 'domains': Global.get_available_domains()}
+    return {'status': 'OK', 'domains': configuration.get_available_domains()}
 
 
 @api.route('/poc/<string:subject_type>/<string:project>/', methods=['POST'])
@@ -241,7 +246,7 @@ def remove_datapoint():
         return {'status': 'NOK', 'msg': 'Received dataformat is not a dictionary.'}
     if (type := data.get('type')) not in ['release', 'commit']:
         return {'status': 'NOK', 'msg': 'Type argument should be release or commit.'}
-    database_params = Global.get_database_params()
+    database_params = configuration.get_database_params()
     try:
         params_list = application_logic.evaluation_factory(data, database_params, only_to_plot=True)
         if len(params_list) < 1:
@@ -261,7 +266,9 @@ def integration_tests_continue():
         all_experiments = factory.create_experiments(subject_type)
         experiments = all_experiments.get_experiments(verify_results.TEST_PROJECT_NAME)
         elegible_experiments = [experiment[0] for experiment in experiments if experiment[1]]
-        new_eval_parameters_list = evaluation_configurations.get_eval_parameters_list(subject_type, elegible_experiments)
+        new_eval_parameters_list = evaluation_configurations.get_eval_parameters_list(
+            subject_type, elegible_experiments
+        )
         if clean_slate == 'yes':
             MongoDB().remove_all_data_for(new_eval_parameters_list)
         eval_parameters_list.extend(new_eval_parameters_list)

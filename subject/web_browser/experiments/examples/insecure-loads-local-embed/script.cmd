@@ -1,1 +1,1 @@
-NAVIGATE http://a.test/BlackHat/insecure-loads-local-embed/
+NAVIGATE http://a.test/examples/insecure-loads-local-embed/

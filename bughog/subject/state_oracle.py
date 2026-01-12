@@ -1,7 +1,9 @@
-import os
 import re
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Literal, Optional
+
+from bughog.subject.artisanal_executable_manager import artisanal_executable_manager
+from bughog.version_control.conversion import bughog_service
 
 
 class StateOracle(ABC):
@@ -17,19 +19,15 @@ class StateOracle(ABC):
         pass
 
     @abstractmethod
-    def find_commit_id(self, commit_nb: int) -> str:
+    def find_commit_id(self, commit_nb: int) -> str | None:
         pass
 
     @abstractmethod
-    def find_commit_nb_of_release(self, release_version: int) -> int:
+    def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
         pass
 
     @abstractmethod
-    def find_commit_id_of_release(self, release_version: int) -> str:
-        pass
-
-    @abstractmethod
-    def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
+    def get_commit_url(self, commit_nb: int, commit_id: str | None) -> str | None:
         pass
 
     @abstractmethod
@@ -53,37 +51,77 @@ class StateOracle(ABC):
         return re.match(r'[0-9]{1,7}', str(commit_nb)) is not None
 
     @staticmethod
-    def get_full_version_from_release_tag(release_tag: str) -> str|None:
+    def get_full_version_from_release_tag(release_tag: str) -> str | None:
         if match := re.search(r'\d+\.\d+\.\d+', release_tag):
             return match[0]
         return None
 
+    """
+    Executables
+    """
+
+    def get_nearest_state_with_executable(
+        self, state_index: int, lower_bound: int, upper_bound: int, state_type: Literal['release', 'commit']
+    ) -> int | None:
+        nearest_with_public_executable = self.get_nearest_state_with_public_executable(
+            state_index, lower_bound, upper_bound, state_type
+        )
+        nearest_with_artisanal_executable = artisanal_executable_manager.get_nearest_state_with_artisanal_executable(
+            self.subject_type, self.subject_name, state_type, state_index, lower_bound, upper_bound
+        )
+
+        if nearest_with_public_executable is not None and nearest_with_artisanal_executable is not None:
+            if abs(state_index - nearest_with_public_executable) < abs(state_index - nearest_with_artisanal_executable):
+                return nearest_with_public_executable
+            else:
+                return nearest_with_artisanal_executable
+
+        if nearest_with_public_executable is not None:
+            return nearest_with_public_executable
+        elif nearest_with_artisanal_executable is not None:
+            return nearest_with_artisanal_executable
+        else:
+            return None
+
     # Public executables
 
     @abstractmethod
-    def has_public_release_executable(self, major_version: int) -> bool:
+    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
         pass
 
     @abstractmethod
-    def get_release_executable_download_urls(self, major_version: int) -> list[str]:
+    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
         pass
 
-    @abstractmethod
-    def has_public_commit_executable(self, commit_nb: int) -> bool:
-        pass
+    def get_nearest_state_with_public_executable(
+        self, state_index: int, lower_bound: int, upper_bound: int, state_type: Literal['release', 'commit']
+    ) -> int | None:
+        if self._only_artisanal:
+            return None
 
-    @abstractmethod
-    def get_commit_executable_download_urls(self, commit_nb: int) -> list[str]:
-        pass
+        if state_type == 'commit':
+            commit_info = bughog_service.find_nearest_commit_with_executable(
+                self.subject_name, state_index, lower_bound, upper_bound
+            )
+            if commit_info is None:
+                return None
+            return commit_info.get('nb')
+        elif state_type == 'release':
+            # Every version within the absolute lower and upper bound should be available.
+            return state_index
+        else:
+            raise ValueError(f'Unknown state type: {state_type}')
 
     # Artisanal executables
 
-    def get_artisanal_executable_folder(self, state_name: str) -> str:
-        return f'/app/subject/{self.subject_type}/executables/{self.subject_name}/{state_name}'
+    def get_artisanal_executable_folder(self, state_index: int, state_type: Literal['release', 'commit']) -> str | None:
+        return artisanal_executable_manager.get_executable_folder(
+            self.subject_type, self.subject_name, state_type, state_index
+        )
 
-    def has_artisanal_executable(self, state_name: str) -> bool:
-        executable_folder = self.get_artisanal_executable_folder(state_name)
-        return os.path.isdir(executable_folder)
+    def has_artisanal_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
+        executable_folder = self.get_artisanal_executable_folder(state_index, state_type)
+        return executable_folder is not None
 
     # Helper functions
 
@@ -102,13 +140,13 @@ class StateOracle(ABC):
         candidates = []
         for tag in all_release_tags:
             v = StateOracle.get_full_version_from_release_tag(tag)
-            if v is None or not v.startswith(f"{major_release}."):
+            if v is None or not v.startswith(f'{major_release}.'):
                 continue
             parts = tuple(int(p) for p in v.split('.'))
             candidates.append((parts, tag))
 
         if not candidates:
-            raise ValueError(f"Could not find earliest tag for major {major_release}.")
+            raise ValueError(f'Could not find earliest tag for major {major_release}.')
 
         candidates.sort()
         return candidates[0][1]

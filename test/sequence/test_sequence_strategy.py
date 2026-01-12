@@ -15,29 +15,48 @@ class TestSequenceStrategy(unittest.TestCase):
 
     @staticmethod
     def get_states(indexes: list[int], is_available, outcome_func, error_func, pending_func) -> list[State]:
-        return [TestSequenceStrategy.create_state(index, is_available, outcome_func, error_func, pending_func) for index in indexes]
+        return [
+            TestSequenceStrategy.create_state(index, is_available, outcome_func, error_func, pending_func)
+            for index in indexes
+        ]
 
     @staticmethod
-    def create_state_factory(is_available: Callable, evaluated_indexes: Optional[list[int]] = None, outcome_func: Optional[Callable] = None, error_func: Optional[Callable] = None, pending_func: Optional[Callable] = None) -> StateFactory:
+    def create_state_factory(
+        is_available: Callable,
+        evaluated_indexes: Optional[list[int]] = None,
+        outcome_func: Optional[Callable] = None,
+        error_func: Optional[Callable] = None,
+        pending_func: Optional[Callable] = None,
+    ) -> StateFactory:
         eval_params = MagicMock(spec=EvaluationParameters)
         eval_params.evaluation_range = MagicMock(spec=EvaluationRange)
         eval_params.evaluation_range.major_version_range = [0, 99]
 
         factory = MagicMock(spec=StateFactory)
         factory.__eval_params = eval_params
-        factory.create_state = lambda index: TestSequenceStrategy.create_state(index, is_available, outcome_func, error_func, pending_func)
+        factory.create_state = lambda index: TestSequenceStrategy.create_state(
+            index, is_available, outcome_func, error_func, pending_func
+        )
         first_state = TestSequenceStrategy.create_state(0, is_available, outcome_func, error_func, pending_func)
         last_state = TestSequenceStrategy.create_state(99, is_available, outcome_func, error_func, pending_func)
         factory.boundary_states = (first_state, last_state)
 
         if evaluated_indexes:
-            factory.create_evaluated_states = lambda: TestSequenceStrategy.get_states(evaluated_indexes, lambda _: True, outcome_func, error_func, pending_func)
+            factory.create_evaluated_states = lambda: TestSequenceStrategy.get_states(
+                evaluated_indexes, lambda _: True, outcome_func, error_func, pending_func
+            )
         else:
             factory.create_evaluated_states = lambda: []
         return factory
 
     @staticmethod
-    def create_state(index, is_available: Callable, outcome_func: Optional[Callable], error_func: Optional[Callable], pending_func: Optional[Callable]) -> State:
+    def create_state(
+        index,
+        is_available: Callable,
+        outcome_func: Optional[Callable],
+        error_func: Optional[Callable],
+        pending_func: Optional[Callable],
+    ) -> State:
         state = MagicMock(spec=State)
         state.index = index
         state.has_available_executable = lambda: is_available(index)
@@ -58,7 +77,7 @@ class TestSequenceStrategy(unittest.TestCase):
 
         state.__eq__ = State.__eq__
         state.__repr__ = State.__repr__
-        state.get_previous_and_next_state_with_executable = lambda: State.get_previous_and_next_state_with_executable(state)
+        state.find_nearest_state_with_executable = MagicMock(side_effect=NotImplementedError)
         return state
 
     @staticmethod
@@ -86,19 +105,25 @@ class TestSequenceStrategy(unittest.TestCase):
     def test_find_closest_state_with_available_binary_1(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.always_has_binary)
         sequence_strategy = SequenceStrategy(state_factory, 0)
-        state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
+        state = sequence_strategy._find_closest_state_with_available_binary(
+            state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)), False
+        )
         assert state is not None
         assert state.index == 5
 
     def test_find_closest_state_with_available_binary_2(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
         sequence_strategy = SequenceStrategy(state_factory, 0)
-        state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)))
+        state = sequence_strategy._find_closest_state_with_available_binary(
+            state_factory.create_state(5), (state_factory.create_state(0), state_factory.create_state(10)), False
+        )
         assert state is not None
         assert state.index == 4
 
     def test_find_closest_state_with_available_binary_3(self):
         state_factory = TestSequenceStrategy.create_state_factory(TestSequenceStrategy.only_has_binaries_for_even)
         sequence_strategy = SequenceStrategy(state_factory, 0)
-        state = sequence_strategy._find_closest_state_with_available_binary(state_factory.create_state(1), (state_factory.create_state(0), state_factory.create_state(2)))
+        state = sequence_strategy._find_closest_state_with_available_binary(
+            state_factory.create_state(1), (state_factory.create_state(0), state_factory.create_state(2)), False
+        )
         assert state is None

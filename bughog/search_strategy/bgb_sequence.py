@@ -66,7 +66,7 @@ class BiggestGapBisectionSequence(SequenceStrategy):
             return None
         best_splitter_index = first_state.index + (last_state.index - first_state.index) // 2
         target_state = self._state_factory.create_state(best_splitter_index)
-        return self._find_closest_state_with_available_binary(target_state, (first_state, last_state))
+        return self._find_closest_state_with_available_binary(target_state, (first_state, last_state), False)
 
     def _state_is_in_unavailability_gap(self, state: State) -> bool:
         """

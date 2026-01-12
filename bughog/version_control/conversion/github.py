@@ -14,33 +14,6 @@ from bughog.version_control.state_not_found import StateNotFound
 logger = logging.getLogger(__name__)
 
 
-def find_commit_id(owner: str, repo: str, commit_nb: int) -> str:
-    ref_commit_nb = __get_reference_commit_nb(owner, repo)
-    diff = ref_commit_nb - commit_nb
-    if diff < 0:
-        raise AttributeError(f'Given commit number {commit_nb} is larger than reference {ref_commit_nb}.')
-
-    commits_per_page = 100
-    page = diff // commits_per_page + 2
-    while True:
-        url = f'https://api.github.com/repos/{owner}/{repo}/commits?page={page}&per_page={commits_per_page}'
-        resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))
-        if not isinstance(resp, list):
-            raise Exception(f'Request to {url} returned {resp}.')
-
-        page -= 1
-        for commit in reversed(resp):
-            commit_message = commit.get('commit', {}).get('message', '')
-            parsed_commit_nb = __parse_commit_nb(commit_message)
-            if parsed_commit_nb is None:
-                continue
-            elif commit_nb == parsed_commit_nb:
-                return commit.get('sha')
-            elif commit_nb < parsed_commit_nb:
-                raise StateNotFound('commit id', f'commit number {commit_nb}')
-        logger.debug(f'Could not find commit number {commit_nb} at {url}')
-
-
 def find_commit_nb(owner: str, repo: str, commit_id: str) -> int:
     url = f'https://api.github.com/repos/{owner}/{repo}/commits/{commit_id}'
     resp = util.request_json(url, token=os.getenv('GITHUB_TOKEN'))

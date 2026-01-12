@@ -1,6 +1,6 @@
 import os
 
-from bughog.configuration import Global
+from bughog import configuration
 from bughog.integration_tests import verify_results
 from bughog.parameters import (
     EvaluationParameters,
@@ -21,7 +21,9 @@ def get_default_configuration(subject_type: str, subject_name: str) -> SubjectCo
     )
 
 
-def get_default_evaluation_range(subject_type: str, subject_name: str, experiment: str, only_releases: bool) -> EvaluationRange:
+def get_default_evaluation_range(
+    subject_type: str, subject_name: str, experiment: str, only_releases: bool
+) -> EvaluationRange:
     min_version, max_version = factory.get_subject_availability(subject_type, subject_name)
     return EvaluationRange(
         verify_results.TEST_PROJECT_NAME,
@@ -41,8 +43,10 @@ def get_default_sequence_config(sequence_limit: int) -> SequenceConfiguration:
     )
 
 
-def get_default_evaluation_parameters(subject_type: str, subject_name: str, experiment: str, sequence_limit: int = 100, only_releases: bool = True) -> EvaluationParameters:
-    database_params = Global.get_database_params()
+def get_default_evaluation_parameters(
+    subject_type: str, subject_name: str, experiment: str, sequence_limit: int = 100, only_releases: bool = True
+) -> EvaluationParameters:
+    database_params = configuration.get_database_params()
     return EvaluationParameters(
         get_default_configuration(subject_type, subject_name),
         get_default_evaluation_range(subject_type, subject_name, experiment, only_releases),

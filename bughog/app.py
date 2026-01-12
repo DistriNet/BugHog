@@ -1,10 +1,11 @@
 import logging
+import secrets
 import signal
 
 from flask import Flask
 from flask_sock import Sock
 
-from bughog.configuration import Global, Loggers
+from bughog import configuration
 from bughog.main import Main
 
 sock = Sock()
@@ -14,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 def create_app():
     try:
-        Loggers.configure_loggers()
+        configuration.Loggers.configure_loggers()
 
-        if not Global.check_required_env_parameters():
+        if not configuration.check_required_env_parameters():
             raise Exception('Not all required environment variables are available')
 
         # Instantiate main object and add to global flask context
@@ -28,9 +29,8 @@ def create_app():
         from bughog.web.blueprints.test import test
 
         app = Flask(__name__)
-        # We don't store anything sensitive in the session, so we can use a simple secret key
         app.config['main'] = main
-        app.secret_key = 'secret_key'
+        app.secret_key = secrets.token_hex(32)
 
         app.register_blueprint(api)
         app.register_blueprint(exp)

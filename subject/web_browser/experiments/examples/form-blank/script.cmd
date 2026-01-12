@@ -1,2 +1,2 @@
-NAVIGATE https://leak.test/BlackHat/form-blank/
+NAVIGATE https://leak.test/examples/form-blank/
 CLICK one

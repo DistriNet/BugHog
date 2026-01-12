@@ -4,8 +4,8 @@ import threading
 
 from simple_websocket import Server
 
+from bughog import configuration
 from bughog.analysis.plot_factory import PlotFactory
-from bughog.configuration import Global
 from bughog.parameters import MissingParametersException, evaluation_factory
 from bughog.subject import factory
 
@@ -41,7 +41,7 @@ class Clients:
             'subject_name',
             'version_range',
             'project_name',
-            'experiment_to_plot'
+            'experiment_to_plot',
         ]
         if all([new_params.get(param) is not None for param in required_params_for_results]):
             Clients.push_results(ws_client)
@@ -61,7 +61,7 @@ class Clients:
                 return
             params['experiments'] = [params['experiment_to_plot']]
             try:
-                eval_params = evaluation_factory(params, Global.get_database_params())
+                eval_params = evaluation_factory(params, configuration.get_database_params())
                 if len(eval_params) < 1:
                     return
                 plot_params = eval_params[0].to_plot_parameters(params['experiment_to_plot'])

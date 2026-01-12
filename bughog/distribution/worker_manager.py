@@ -7,8 +7,7 @@ from queue import Queue
 import docker
 import docker.errors
 
-from bughog import worker
-from bughog.configuration import Global
+from bughog import configuration, worker
 from bughog.parameters import EvaluationParameters
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
@@ -116,10 +115,9 @@ class WorkerManager:
                 if container is not None:
                     container.remove()
             except docker.errors.APIError:
-                logger.warning("Error received while removing container, likely because it was already being removed.")
+                logger.warning('Error received while removing container, likely because it was already being removed.')
             finally:
                 self.container_id_pool.put(container_id)
-
 
         thread = threading.Thread(target=start_container_thread)
         thread.start()
@@ -153,15 +151,15 @@ class WorkerManager:
         """
         Returns the worker image's reference.
         """
-        subject_type_ref = f'bughog/worker-{subject_type}:{Global.get_tag()}'
+        subject_type_ref = f'bughog/worker-{subject_type}:{configuration.get_tag()}'
         if self.__pull_worker_image(subject_type_ref):
             return subject_type_ref
 
-        subject_name_ref = f'bughog/worker-{subject_name}:{Global.get_tag()}'
+        subject_name_ref = f'bughog/worker-{subject_name}:{configuration.get_tag()}'
         if self.__pull_worker_image(subject_name_ref):
             return subject_name_ref
 
-        return f'bughog/worker:{Global.get_tag()}'
+        return f'bughog/worker:{configuration.get_tag()}'
 
     def __pull_worker_image(self, image_ref: str) -> bool:
         try:
@@ -171,4 +169,3 @@ class WorkerManager:
             return False
         except docker.errors.APIError:
             return False
-

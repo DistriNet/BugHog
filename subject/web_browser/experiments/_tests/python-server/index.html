@@ -3,9 +3,9 @@
 <html>
     <body>
         <script>
-            (async () => {
-                const res = await fetch('https://a.test/_tests/python-server/server.py?leaked_secret');
-            })();
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://a.test/_tests/python-server/server.py?leaked_secret', true);
+            xhr.send();
         </script>
     </body>
 </html>

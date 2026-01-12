@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class SequenceStrategy:
-    def __init__(self, state_factory: StateFactory, limit: int, considered_states: Optional[list[State]] = None) -> None:
+    def __init__(
+        self, state_factory: StateFactory, limit: int, considered_states: Optional[list[State]] = None
+    ) -> None:
         """
         Initializes the sequence strategy.
 
@@ -63,27 +65,33 @@ class SequenceStrategy:
 
     def __create_available_boundary_states(self) -> tuple[State, State]:
         first_state, last_state = self._state_factory.boundary_states
-        available_first_state = self._find_closest_state_with_available_binary(first_state, (first_state, last_state))
-        available_last_state = self._find_closest_state_with_available_binary(last_state, (first_state, last_state))
+        available_first_state = self._find_closest_state_with_available_binary(first_state, (first_state, last_state), True)
+        available_last_state = self._find_closest_state_with_available_binary(last_state, (first_state, last_state), True)
         if available_first_state is None or available_last_state is None:
-            raise AttributeError(f"Could not find boundary states for '{self._lower_state.index}' and '{self._upper_state.index}'")
+            raise AttributeError(
+                f"Could not find boundary states for '{self._lower_state.index}' and '{self._upper_state.index}'"
+            )
         return available_first_state, available_last_state
 
-    def _find_closest_state_with_available_binary(self, target: State, boundaries: tuple[State, State]) -> State | None:
+    def _find_closest_state_with_available_binary(
+        self, target: State, boundaries: tuple[State, State], inclusive: bool
+    ) -> State | None:
         """
-        Finds the closest state with an available binary **strictly** within the given boundaries.
+        Finds the closest state with an available binary **strictly** within the given boundaries (exclusive).
         """
         if target.has_available_executable():
             return target
 
+        # Some states offer search support, we try that first.
         try:
-            if state := self.__get_closest_available_state(target, boundaries):
-                return state
-            else:
-                return None
-        except FunctionalityNotAvailable:
+            index = target.find_nearest_state_with_executable(boundaries, inclusive)
+            if index is not None:
+                return self._state_factory.create_state(index)
+            return None
+        except NotImplementedError:
             pass
 
+        # Second option: manual search.
         def index_has_available_executable(index: int) -> Optional[State]:
             state = self._state_factory.create_state(index)
             if state.has_available_executable():
@@ -109,24 +117,6 @@ class SequenceStrategy:
 
             diff += 2
         return None
-
-    def __get_closest_available_state(self, target: State, boundaries: tuple[State, State]) -> State | None:
-        """
-        Return the closest state with an available binary.
-        """
-        try:
-            states = target.get_previous_and_next_state_with_executable()
-            states = [state for state in states if state is not None]
-            ordered_states = sorted(states, key=lambda x: abs(target.commit_nb - x.commit_nb))
-
-            for state in ordered_states:
-                if boundaries[0].commit_nb < state.commit_nb < boundaries[1].commit_nb:
-                    return state
-
-            return None
-
-        except NotImplementedError as e:
-            raise FunctionalityNotAvailable() from e
 
 
 class SequenceFinished(Exception):

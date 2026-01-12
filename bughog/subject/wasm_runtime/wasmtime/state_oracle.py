@@ -1,33 +1,34 @@
 import re
+from typing import Literal
 
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
-from bughog.version_control.revision_parser import bughog, github
+from bughog.version_control.conversion import bughog_service, github
 
 
 class WasmtimeStateOracle(StateOracle):
     """
     State oracle for Wasmtime.
     """
+    def __init__(self, subject_type: str, subject_name: str) -> None:
+        super().__init__(subject_type, subject_name, only_artisanal=True)
 
     @Cache.cache_in_db('wasm_runtime', 'wasmtime')
     def find_commit_nb(self, commit_id: str) -> int:
-        return bughog.get_commit_nb('wasmtime', commit_id)
+        return bughog_service.find_commit_nb('wasmtime', commit_id)
 
     @Cache.cache_in_db('wasm_runtime', 'wasmtime')
-    def find_commit_id(self, commit_nb: int) -> str:
-        return bughog.get_commit_id('wasmtime', commit_nb)
+    def find_commit_id(self, commit_nb: int) -> str | None:
+        return bughog_service.find_commit_id('wasmtime', commit_nb)
 
     @Cache.cache_in_db('wasm_runtime', 'wasmtime')
-    def find_commit_nb_of_release(self, release_version: int) -> int:
-        commit_id = self.find_commit_id_of_release(release_version)
-        return self.find_commit_nb(commit_id)
-
-    @Cache.cache_in_db('wasm_runtime', 'wasmtime')
-    def find_commit_id_of_release(self, release_version: int) -> str:
+    def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
+        # TODO: make more efficient, possibly by adding functionality to bughog service
         all_release_tags = self.__get_all_release_tags()
         major_release_tag = self._get_earliest_tag_with_major(all_release_tags, release_version)
-        return bughog.get_commit_id_of_release('wasmtime', major_release_tag)
+        commit_id = github.find_commit_id_from_tag('bytecodealliance', 'wasmtime', major_release_tag)
+        commit_nb = self.find_commit_nb(commit_id)
+        return commit_nb, commit_id
 
     def get_most_recent_major_release_version(self) -> int:
         all_release_tags = self.__get_all_release_tags()
@@ -46,17 +47,16 @@ class WasmtimeStateOracle(StateOracle):
     Online executables
     """
 
-    def get_commit_url(self, commit_nb: int, commit_id: str) -> str:
+    def get_commit_url(self, commit_nb: int, commit_id: str | None) -> str | None:
+        if commit_id is None:
+            return None
         return f'https://github.com/bytecodealliance/wasmtime/commit/{commit_id}'
 
-    def has_public_release_executable(self, major_version: int) -> bool:
+    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
         return False
 
-    def get_release_executable_download_urls(self, major_version: int) -> list[str]:
+    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
         return []
 
-    def has_public_commit_executable(self, commit_nb: int) -> bool:
-        return False
-
-    def get_commit_executable_download_urls(self, commit_nb: int) -> list[str]:
-        raise Exception('Only artisanal executables are available.')
+    def get_nearest_commit_with_executable(self, target_commit_nb: int, lower_bound: int, upper_bound: int) -> int | None:
+        NotImplementedError()

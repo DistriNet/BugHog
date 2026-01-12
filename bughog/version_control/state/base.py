@@ -4,7 +4,7 @@ import base64
 import pickle
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.subject.state_oracle import StateOracle
@@ -77,7 +77,7 @@ class State(ABC):
 
     @property
     @abstractmethod
-    def type(self) -> str:
+    def type(self) -> Literal['release', 'commit']:
         pass
 
     @property
@@ -128,6 +128,8 @@ class State(ABC):
             case 'commit':
                 return CommitState(oracle, commit_nb=commit_nb, commit_id=commit_id)
             case 'release':
+                if major_version is None:
+                    raise ValueError('major_version is required for release states.')
                 return ReleaseState(oracle, release_version=major_version, commit_nb=commit_nb, commit_id=commit_id)
             case _:
                 raise Exception(f'Unknown state type: {data["type"]}')
@@ -147,13 +149,20 @@ class State(ABC):
         pass
 
     def has_artisanal_executable(self) -> bool:
-        return self.oracle.has_artisanal_executable(self.name)
+        return self.oracle.has_artisanal_executable(self.index, self.type)
 
-    def get_artisanal_executable_folder(self) -> str:
-        return self.oracle.get_artisanal_executable_folder(self.name)
+    def get_artisanal_executable_folder(self) -> str | None:
+        return self.oracle.get_artisanal_executable_folder(self.index, self.type)
 
-    def get_previous_and_next_state_with_executable(self) -> tuple[State, State]:
-        raise NotImplementedError(f'This function is not implemented for {self}')
+    def find_nearest_state_with_executable(self, boundaries: tuple[State, State], inclusive: bool) -> int | None:
+        if inclusive:
+            lower_index = boundaries[0].index
+            upper_index = boundaries[1].index
+        else:
+            lower_index = boundaries[0].index + 1
+            upper_index = boundaries[1].index - 1
+
+        return self.oracle.get_nearest_state_with_executable(self.index, lower_index, upper_index, self.type)
 
     @abstractmethod
     def to_shallow_state(self) -> ShallowState:

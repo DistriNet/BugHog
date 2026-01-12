@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.state.base import ShallowState, State
@@ -23,7 +23,7 @@ class ReleaseState(State):
         return f'v_{index}'
 
     @property
-    def type(self) -> str:
+    def type(self) -> Literal['release']:
         return 'release'
 
     @property
@@ -39,10 +39,10 @@ class ReleaseState(State):
         return None
 
     def has_public_executable(self) -> bool:
-        return self.oracle.has_public_release_executable(self.release_version)
+        return self.oracle.has_public_executable(self.release_version, self.type)
 
     def get_executable_source_urls(self) -> list[str]:
-        return self.oracle.get_release_executable_download_urls(self.release_version)
+        return self.oracle.get_executable_download_urls(self.release_version, self.type)
 
     def convert_to_commit_state(self) -> CommitState:
         try:

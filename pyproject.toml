@@ -13,6 +13,7 @@ dependencies = [
     "pymongo==4.12.1",
     "pyvirtualdisplay==3.0",
     "requests==2.32.3",
+    "rich>=14.2.0",
     "xlib==0.21",
 ]
 
