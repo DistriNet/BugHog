@@ -90,10 +90,14 @@ class MongoDB:
         if 'fs.files' not in self._db.list_collection_names():
             # Create the 'fs.files' collection with indexes
             self._db.create_collection('fs.files')
-            self._db['fs.files'].create_index(['state_type', 'subject_type', 'subject_name', 'state_name'], unique=False)
+            self._db['fs.files'].create_index(
+                ['state_type', 'subject_type', 'subject_name', 'state_name', 'relative_file_path'], unique=True
+            )
         if 'fs.chunks' not in self._db.list_collection_names():
             # Create the 'fs.chunks' collection with zstd compression
-            self._db.create_collection('fs.chunks', storageEngine={'wiredTiger': {'configString': 'block_compressor=zstd'}})
+            self._db.create_collection(
+                'fs.chunks', storageEngine={'wiredTiger': {'configString': 'block_compressor=zstd'}}
+            )
             self._db['fs.chunks'].create_index(['files_id', 'n'], unique=True)
 
         # Commit cache
@@ -270,7 +274,9 @@ class MongoDB:
         """
         Returns the data collection, of which the name is formatted as '{subject_type}_{subject_name}'.
         """
-        collection_name = f'{eval_params.subject_configuration.subject_type}_{eval_params.subject_configuration.subject_name}'
+        collection_name = (
+            f'{eval_params.subject_configuration.subject_type}_{eval_params.subject_configuration.subject_name}'
+        )
         return self.get_collection(collection_name, create_if_not_found=True)
 
     def get_binary_availability_collection(self, subject_config: SubjectConfiguration) -> Collection:
@@ -323,7 +329,15 @@ class MongoDB:
         docs = collection.aggregate(
             [
                 {'$match': query},
-                {'$project': {'_id': False, 'state': True, 'subject_version': True, 'dirty': True, 'result.variables': True}},
+                {
+                    '$project': {
+                        '_id': False,
+                        'state': True,
+                        'subject_version': True,
+                        'dirty': True,
+                        'result.variables': True,
+                    }
+                },
                 {'$sort': {'state.commit_nb': 1}},
             ]
         )
