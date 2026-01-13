@@ -45,6 +45,7 @@ class WorkerManager:
         container_name = f'bh_worker_{container_id}'
 
         def start_container_thread():
+            # TODO: Add timeout. Logs show that sometimes containers hang forever upon executable download.
             if (host_pwd := os.getenv('HOST_PWD', None)) is None:
                 raise AttributeError('Could not find HOST_PWD environment var')
             try:

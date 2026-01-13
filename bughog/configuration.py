@@ -161,6 +161,7 @@ class Loggers:
         root_logger.addHandler(Loggers.memory_handler)
 
         # Silence noisy libraries
+        logging.getLogger('docker').setLevel(logging.WARNING)
         logging.getLogger('pymongo').setLevel(logging.WARNING)
         logging.getLogger('urllib3').setLevel(logging.WARNING)
         logging.getLogger('werkzeug').disabled = True
