@@ -87,8 +87,8 @@ class WorkerManager:
                         os.path.join(host_pwd, 'subject') + ':/app/subject:rw',
                         os.path.join(host_pwd, 'logs') + ':/app/logs:rw',
                         os.path.join(host_pwd, 'nginx/ssl') + ':/etc/nginx/ssl:ro',
-                        '/dev/shm:/dev/shm',
                     ],
+                    tmpfs={'/tmp': 'exec,size=1536M,mode=1777'},
                 )
                 result = container.wait()
                 if result['StatusCode'] != 0:

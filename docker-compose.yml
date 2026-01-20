@@ -28,7 +28,8 @@ services:
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw
-      - /dev/shm:/dev/shm:rw
+    tmpfs:
+      /tmp:exec,size=1536M,mode=1777
     profiles:
       - never_start
 
