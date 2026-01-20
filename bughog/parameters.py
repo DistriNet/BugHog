@@ -6,7 +6,7 @@ import pickle
 from dataclasses import asdict, dataclass
 from typing import Optional
 
-from bughog.exceptions import MissingParametersException
+from bughog.exceptions import MissingParametersError
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ def evaluation_factory(
 ) -> list[EvaluationParameters]:
     experiments = set(x for x in kwargs.get('experiments', []) + [kwargs.get('experiment_to_plot')] if x is not None)
     if len(experiments) == 0:
-        raise MissingParametersException()
+        raise MissingParametersError()
 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     sequence_configuration = SequenceConfiguration(

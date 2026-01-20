@@ -5,6 +5,7 @@ import sys
 from bughog.configuration import Loggers
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.evaluation import Evaluation
+from bughog.exceptions import SystemError, UserError
 from bughog.parameters import EvaluationParameters
 from bughog.version_control.state.base import State
 
@@ -42,6 +43,8 @@ def run(params: EvaluationParameters, state: State):
     evaluation = Evaluation(params.subject_configuration.subject_type)
     try:
         evaluation.evaluate(params, state, is_worker=True)
+    except (UserError, SystemError) as e:
+        raise e
     except Exception:
         logger.fatal('An exception occurred during evaluation', exc_info=True)
         logging.shutdown()

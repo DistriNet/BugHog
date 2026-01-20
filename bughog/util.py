@@ -17,6 +17,8 @@ from urllib.parse import urlparse
 from requests import RequestException, Session
 from requests.adapters import HTTPAdapter, Retry
 
+from bughog.exceptions import OutOfMemoryError
+
 logger = logging.getLogger(__name__)
 
 
@@ -47,7 +49,13 @@ def safe_move_dir(src_path, dst_path):
 
 
 def copy_folder(src_path, dst_path):
-    shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+    try:
+        shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+    except Exception as e:
+        if 'No space left on device' in str(e):
+            logger.error(f'Out of memory while copying folder from {src_path} to {dst_path}.')
+            raise OutOfMemoryError('No space left on device. Restarting BugHog might help.') from e
+        raise e
 
 
 def remove_all_in_folder(folder_path: str, except_files: Optional[list[str]] = None) -> None:
@@ -81,7 +89,7 @@ def rmtree(src_path):
 
 
 def read_web_report(file_name):
-    report_folder = "/reports"
+    report_folder = '/reports'
     path = os.path.join(report_folder, file_name)
     if not os.path.isfile(path):
         raise ResourceNotFound(path)
@@ -131,20 +139,18 @@ def post_request(url: str, json: dict) -> None:
     try:
         session.post(url, json=json)
     except RequestException:
-        logger.warning(f"Could not propagate request to collector at {url}.")
+        logger.warning(f'Could not propagate request to collector at {url}.')
 
 
 def __get_session(token: Optional[str] = None, max_retries: int = 3, backoff_factor: int = 2) -> Session:
     session = Session()
     if token:
-        session.headers.update({
-            'Authorization': f'Bearer {token}'
-        })
+        session.headers.update({'Authorization': f'Bearer {token}'})
 
     retries = Retry(
         total=max_retries,
         backoff_factor=backoff_factor,
-        status_forcelist=tuple(range(500,600)),
+        status_forcelist=tuple(range(500, 600)),
         allowed_methods={'GET'},
     )
     adapter = HTTPAdapter(max_retries=retries)
@@ -174,7 +180,7 @@ def download_and_extract(urls: list[str], dst_folder_path: str) -> bool:
                 with open(tmp_file_path, 'wb') as file:
                     shutil.copyfileobj(resp.raw, file)
         except RequestException:
-            logger.debug("Download failed.")
+            logger.debug('Download failed.')
             continue
 
         logger.debug(f"Extracting downloaded archive '{tmp_file_path}'.")
@@ -228,6 +234,7 @@ def ensure_folder_exists(func):
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
         return path
+
     return wrapper
 
 

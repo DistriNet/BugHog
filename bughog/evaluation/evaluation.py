@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 
 from bughog.database.mongo.mongodb import MongoDB
@@ -23,7 +22,9 @@ class Evaluation:
 
     def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
         if MongoDB().has_result(params, state.to_shallow_state()):
-            logger.warning(f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping.")
+            logger.warning(
+                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
+            )
             return
 
         subject = factory.get_subject_from_params(params)
@@ -57,14 +58,13 @@ class Evaluation:
             MongoDB().store_result(params, result)
         except Exception as e:
             executable.status = ExecutableStatus.EXPERIMENT_FAILED
-            if is_worker:
-                raise e
-            else:
-                logger.error('An error occurred during experiment', exc_info=True)
+            raise e
         finally:
             executable.post_experiment_cleanup()
 
-    def conduct_experiment(self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]) -> ExperimentResult:
+    def conduct_experiment(
+        self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]
+    ) -> ExperimentResult:
         is_dirty = False
         tries_left = 3
         collector.start()
@@ -89,7 +89,9 @@ class Evaluation:
         raw_results, result_variables = collector.collect_results()
 
         # Perform sanity check if not reproduced and potential in-poc sanity check did not succeed
-        if self.experiments.framework.requires_sanity_check() and (intermediary_variables is None or ExperimentResult.poc_is_dirty(intermediary_variables)):
+        if self.experiments.framework.requires_sanity_check() and (
+            intermediary_variables is None or ExperimentResult.poc_is_dirty(intermediary_variables)
+        ):
             collector.start()
             executable.pre_try_setup()
             try:
@@ -105,7 +107,9 @@ class Evaluation:
 
         elapsed_time = time.time() - start_time
         logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s with {tries_left} tries left.')
-        return ExperimentResult(executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty)
+        return ExperimentResult(
+            executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty
+        )
 
     def stop_gracefully(self):
         self.should_stop = True

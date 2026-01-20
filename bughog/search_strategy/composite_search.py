@@ -1,12 +1,13 @@
 from typing import Optional
+
 from bughog.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.sequence_strategy import SequenceFinished
-from bughog.version_control.state_factory import StateFactory
 from bughog.version_control.state.base import State
+from bughog.version_control.state_factory import StateFactory
 
 
-class CompositeSearch():
+class CompositeSearch:
     def __init__(self, state_factory: StateFactory, sequence_limit: int) -> None:
         self.sequence_strategy = BiggestGapBisectionSequence(state_factory, limit=sequence_limit)
         self.search_strategy: Optional[BiggestGapBisectionSearch] = None

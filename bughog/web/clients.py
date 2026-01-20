@@ -7,7 +7,7 @@ from simple_websocket import Server
 
 from bughog import configuration
 from bughog.analysis.plot_factory import PlotFactory
-from bughog.parameters import MissingParametersException, evaluation_factory
+from bughog.parameters import MissingParametersError, evaluation_factory
 from bughog.subject import factory
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class Clients:
                         }
                     )
                 )
-            except MissingParametersException:
+            except MissingParametersError:
                 logger.error('Could not update plot due to missing parameters.')
 
     @staticmethod
@@ -127,7 +127,7 @@ class Clients:
             Clients.push_experiments(ws_client)
 
     @staticmethod
-    def push_notification_to_all(message: str, type: Literal['info', 'error']):
+    def push_notification_to_all(message: str, type: Literal['info', 'error'] = 'info'):
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
             ws_client.send(json.dumps({'notification': {'message': message, 'type': type}}))

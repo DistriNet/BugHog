@@ -10,7 +10,7 @@ from bughog.app import sock
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.integration_tests import evaluation_configurations, verify_results
 from bughog.main import Main
-from bughog.parameters import MissingParametersException
+from bughog.parameters import MissingParametersError
 from bughog.subject import factory
 from bughog.subject.factory import get_all_subject_availability
 from bughog.version_control.state.base import ShallowState
@@ -62,7 +62,7 @@ def start_evaluation():
         params = application_logic.evaluation_factory(data, database_params)
         run_eval_thread(__get_main(), params)
         return {'status': 'OK'}
-    except MissingParametersException:
+    except MissingParametersError:
         return {'status': 'NOK', 'msg': 'Could not start evaluation due to missing parameters.'}
 
 
@@ -238,7 +238,7 @@ def remove_datapoint():
             return {'status': 'NOK', 'msg': 'Could not construct removal parameters.'}
         state = ShallowState(type, data.get('major_version'), data.get('commit_nb'), data.get('commit_id'))
         __get_main().remove_datapoint(params_list[0], state)
-    except MissingParametersException:
+    except MissingParametersError:
         return {'status': 'NOK', 'msg': 'Could not remove datapoint due to missing parameters'}
     return {'status': 'OK'}
 

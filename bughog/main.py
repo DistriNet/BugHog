@@ -6,7 +6,7 @@ import bughog.database.mongo.container as mongodb_container
 from bughog import configuration
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
-from bughog.exceptions import UserError
+from bughog.exceptions import SystemError, UserError
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
@@ -68,21 +68,15 @@ class Main:
                 )
                 try:
                     self.run_single_evaluation(eval_params, worker_manager)
-                except UserError as e:
+                except (UserError, SystemError) as e:
                     raise e
                 except Exception:
                     logger.error(
                         f'Could not finish evaluation for {eval_params.subject_configuration.subject_name}.',
                         exc_info=True,
                     )
-        except UserError as e:
-            logger.warning(f'Evaluation stopped because of a user error: {e}')
-            raise e
-        except Exception as e:
-            logger.critical('A critical error occurred', exc_info=True)
-            raise e
-        finally:
-            # Gracefully exit
+
+            # Exit handling
             if self.stop_gracefully:
                 logger.info('Gracefully stopping experiment queue due to user end signal...')
                 self.state['reason'] = 'user'
@@ -92,7 +86,14 @@ class Main:
                 worker_manager.forcefully_stop_all_running_containers()
             else:
                 logger.info('Gracefully stopping experiment queue since last experiment started.')
-            # MongoDB.disconnect()
+
+        except (UserError, SystemError) as e:
+            logger.error(f'Evaluation stopped because of a user or system error: {e}')
+            raise e
+        except Exception as e:
+            logger.critical('A critical error occurred', exc_info=True)
+            raise e
+        finally:
             logger.info('Waiting for remaining experiments to stop...')
             worker_manager.wait_until_all_evaluations_are_done()
             logger.info('BugHog has finished the evaluation!')
@@ -134,6 +135,7 @@ class Main:
 
         self.state['reason'] = 'finished'
         self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'done')
+        Clients.push_notification_to_all(f'Evaluation of {experiment_name} has finished.')
 
     def retry_dirty_tests(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
         dirty_states = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
@@ -141,13 +143,18 @@ class Main:
             logger.info('No tests are associated with a dirty result.')
             return
 
-        logger.info(f'Retrying {nb_of_dirty_states} tests with a dirty result...')
+        experiment = eval_params.evaluation_range.experiment_name
+        message = f'Retrying {nb_of_dirty_states} tests with a dirty result for {experiment}.'
+        logger.info(message)
+
+        Clients.push_notification_to_all(message)
         for dirty_state in dirty_states:
             if self.stop_gracefully or self.stop_forcefully:
                 return
             MongoDB().remove_datapoint(eval_params, dirty_state.to_shallow_state())
             worker_manager.start_experiment(eval_params, dirty_state)
         worker_manager.wait_until_all_evaluations_are_done()
+
         dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
         logger.info(f'Dirty test results reduced from {nb_of_dirty_states} to {len(dirty_states_after_retry)}.')
 
@@ -174,6 +181,7 @@ class Main:
             self.stop_gracefully = True
             self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
             logger.info('Received user signal to gracefully stop.')
+            Clients.push_notification_to_all('Waiting for all experiments to stop. No new experiments will be started.')
         else:
             logger.info('Received user signal to gracefully stop, but no evaluation is running.')
 
