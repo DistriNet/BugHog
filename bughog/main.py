@@ -133,6 +133,7 @@ class Main:
                     f'Last experiment has finished for iteration {i}/{nb_of_iterations}. This iteration took {iteration_time}s.'
                 )
 
+        worker_manager.wait_until_all_evaluations_are_done()
         self.state['reason'] = 'finished'
         self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'done')
         Clients.push_notification_to_all(f'Evaluation of {experiment_name} has finished.')

@@ -20,7 +20,9 @@ class LogCollector(BaseCollector):
 
     def parse_data(self):
         data = set()
-        regex = r'bughog_(.+)=(.+)'
+        # Only consider lines matching the pattern bughog_<var>=<val>.
+        # Here, <var> and <val> can contain alphanumeric characters and underscores.
+        regex = r'bughog_([a-zA-Z0-9_-]+)=([a-zA-Z0-9_-]+)'
         with open(self.log_path, 'r+') as log_file:
             self.data['logs'] = [line.strip() for line in log_file.readlines()]
         regex_match_lists = [re.findall(regex, line) for line in self.data['logs'] if re.search(regex, line)]
