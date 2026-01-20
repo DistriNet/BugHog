@@ -69,7 +69,10 @@ class Main:
                 try:
                     self.run_single_evaluation(eval_params, worker_manager)
                 except (UserError, SystemError) as e:
-                    raise e
+                    # If we are running integration tests, we want to just continue with other subjects.
+                    unique_subjects = set([eval_params.subject_configuration.subject_name for eval_params in eval_params_list])
+                    if len(unique_subjects) == 1:
+                        raise e
                 except Exception:
                     logger.error(
                         f'Could not finish evaluation for {eval_params.subject_configuration.subject_name}.',
@@ -192,6 +195,7 @@ class Main:
             self.__update_state(is_running=True, reason='user', status='waiting_to_stop')
             WorkerManager.forcefully_stop_all_running_containers()
             logger.info('Received user signal to forcefully stop.')
+            Clients.push_notification_to_all('Forcefully stopping all experiments. Sit tight!')
         else:
             logger.info('Received user signal to forcefully stop, but no evaluation is running.')
 

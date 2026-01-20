@@ -74,7 +74,7 @@ def __get_verification_function(eval_framework: EvaluationFramework, experiment_
     param_value = eval_framework.get_bughog_poc_parameter(experiment_folder, param_name)
 
     if param_value is None:
-        logger.error(f'Skipping {experiment_folder.name}, because "{param_name}" was not defined.')
+        logger.warning(f'Skipping {experiment_folder.name}, because "{param_name}" was not defined.')
         return None
 
     match param_value:
@@ -88,7 +88,7 @@ def __get_verification_function(eval_framework: EvaluationFramework, experiment_
                 if type(reproducing_ranges) is list[tuple[int,int]]:
                     return __create_complex_verification_function(reproducing_ranges)
 
-    logger.error(f'Skipping {experiment_folder.name}, because could not parse given "{param_name}".')
+    logger.warning(f'Skipping {experiment_folder.name}, because could not parse given "{param_name}".')
     return None
 
 

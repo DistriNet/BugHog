@@ -75,10 +75,8 @@ class WorkerManager:
                     self.worker_image_ref,
                     name=container_name,
                     hostname=container_name,
-                    shm_size='2gb',
                     network='bh_net',
                     mem_limit='4g',  # To prevent one container from consuming multiple gigs of memory (was the case for a Firefox evaluation)
-                    mem_reservation='2g',
                     detach=True,
                     labels=['bh_worker'],
                     command=[params.serialize(), state.serialize()],
@@ -88,7 +86,7 @@ class WorkerManager:
                         os.path.join(host_pwd, 'logs') + ':/app/logs:rw',
                         os.path.join(host_pwd, 'nginx/ssl') + ':/etc/nginx/ssl:ro',
                     ],
-                    tmpfs={'/tmp': 'exec,size=1536M,mode=1777'},
+                    tmpfs={'/tmp': 'exec,size=2g,mode=1777'},
                 )
                 result = container.wait()
                 if result['StatusCode'] != 0:
