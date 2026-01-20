@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bughog.database.mongo.mongodb import MongoDB
+from bughog.exceptions import UserError
 from bughog.parameters import EvaluationParameters
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.state.base import State
@@ -39,6 +40,12 @@ class StateFactory:
         Create the boundary state objects for the evaluation range.
         """
         eval_range = self.__eval_params.evaluation_range
+
+        # Check whether the user provided enough artisanal binaries for subject types that only rely on those.
+        state_type = 'release' if eval_range.only_release_commits else 'commit'
+        if self.__oracle.only_artisanal and self.__oracle.count_artisanal_executables(state_type) < 2:
+            raise UserError(f'Not enough artisanal {state_type} executables provided for {self.__oracle.subject_name}.')
+
         if eval_range.major_version_range:
             first_state = self.__create_release_state(eval_range.major_version_range[0])
             last_state = self.__create_release_state(eval_range.major_version_range[1])
@@ -48,13 +55,13 @@ class StateFactory:
             return first_state, last_state
         elif eval_range.commit_nb_range:
             if eval_range.only_release_commits:
-                raise ValueError("Release revisions are not allowed in this evaluation range")
+                raise ValueError('Release revisions are not allowed in this evaluation range')
             return (
                 self.__create_commit_state(eval_range.commit_nb_range[0]),
                 self.__create_commit_state(eval_range.commit_nb_range[1]),
             )
         else:
-            raise ValueError("No evaluation range specified")
+            raise ValueError('No evaluation range specified')
 
     def create_evaluated_states(self) -> list[State]:
         """

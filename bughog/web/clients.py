@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+from typing import Literal
 
 from simple_websocket import Server
 
@@ -124,3 +125,9 @@ class Clients:
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
             Clients.push_experiments(ws_client)
+
+    @staticmethod
+    def push_notification_to_all(message: str, type: Literal['info', 'error']):
+        Clients.__remove_disconnected_clients()
+        for ws_client in Clients.__clients.keys():
+            ws_client.send(json.dumps({'notification': {'message': message, 'type': type}}))

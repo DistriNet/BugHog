@@ -1,7 +1,7 @@
 import bisect
 import logging
 import os
-from typing import Literal, Iterator
+from typing import Iterator, Literal
 
 logger = logging.getLogger(__name__)
 BASE_EXECUTABLE_FOLDER = '/app/subject'
@@ -50,6 +50,12 @@ class ArtisanalExecutableManager:
         folder_name = f'{prefix}_{index}'
         path = os.path.join(self._get_subject_base_dir(subject_type, subject_name), folder_name)
         return path if os.path.isdir(path) else None
+
+    def count_executables(self, subject_type: str, subject_name: str, state_type: Literal['release', 'commit']) -> int:
+        """
+        Returns the number of existing executable folders for a specific subject.
+        """
+        return len(list(self.get_all_executable_indices(subject_type, subject_name, state_type)))
 
     def get_all_executable_indices(
         self, subject_type: str, subject_name: str, state_type: Literal['release', 'commit']

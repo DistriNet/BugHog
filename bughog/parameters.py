@@ -6,6 +6,8 @@ import pickle
 from dataclasses import asdict, dataclass
 from typing import Optional
 
+from bughog.exceptions import MissingParametersException
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +55,9 @@ class SubjectConfiguration:
 
     @staticmethod
     def from_dict(data: dict) -> SubjectConfiguration:
-        return SubjectConfiguration(data['subject_type'], data['subject_name'], data['subject_setting'], data['cli_options'], data['extensions'])
+        return SubjectConfiguration(
+            data['subject_type'], data['subject_name'], data['subject_setting'], data['cli_options'], data['extensions']
+        )
 
 
 @dataclass(frozen=True)
@@ -147,7 +151,9 @@ class PlotParameters(EvaluationParameters):
 
 
 @staticmethod
-def evaluation_factory(kwargs: dict, database_params: DatabaseParameters, only_to_plot=False) -> list[EvaluationParameters]:
+def evaluation_factory(
+    kwargs: dict, database_params: DatabaseParameters, only_to_plot=False
+) -> list[EvaluationParameters]:
     experiments = set(x for x in kwargs.get('experiments', []) + [kwargs.get('experiment_to_plot')] if x is not None)
     if len(experiments) == 0:
         raise MissingParametersException()
@@ -205,7 +211,3 @@ def __get_commit_nb_range(form_data: dict[str, str]) -> tuple[int, int] | None:
     if lower_rev_number is None or upper_rev_number is None:
         return None
     return (lower_rev_number, upper_rev_number) if lower_rev_number is not None else None
-
-
-class MissingParametersException(Exception):
-    pass

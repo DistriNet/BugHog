@@ -16,7 +16,8 @@
     "flowbite": "^1.8.1",
     "oh-vue-icons": "^1.0.0-rc3",
     "vue": "^3.2.47",
-    "vue-multiselect": "^2.1.9"
+    "vue-multiselect": "^2.1.9",
+    "vue3-toastify": "^0.2.8"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.6.2",

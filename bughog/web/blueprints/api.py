@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import threading
 
 from flask import Blueprint, current_app, redirect, request
 
@@ -16,22 +15,10 @@ from bughog.subject import factory
 from bughog.subject.factory import get_all_subject_availability
 from bughog.version_control.state.base import ShallowState
 from bughog.web.clients import Clients
+from bughog.web.evaluation_thread import run_eval_thread
 
 logger = logging.getLogger(__name__)
 api = Blueprint('api', __name__, url_prefix='/api')
-
-THREAD = None
-
-
-def __start_thread(func, args=None):
-    global THREAD
-    if args is None:
-        args = []
-    if THREAD and THREAD.is_alive():
-        raise AttributeError()
-    else:
-        THREAD = threading.Thread(target=func, args=args)
-        THREAD.start()
 
 
 def __get_main() -> Main:
@@ -73,12 +60,10 @@ def start_evaluation():
     try:
         database_params = configuration.get_database_params()
         params = application_logic.evaluation_factory(data, database_params)
-        __start_thread(__get_main().run, args=[params])
+        run_eval_thread(__get_main(), params)
         return {'status': 'OK'}
     except MissingParametersException:
-        return {'status': 'NOK', 'msg': 'Could not start evaluation due to missing parameters'}
-    except AttributeError:
-        return {'status': 'NOK', 'msg': 'Evaluation thread is already running'}
+        return {'status': 'NOK', 'msg': 'Could not start evaluation due to missing parameters.'}
 
 
 @api.route('/evaluation/stop/', methods=['POST'])
@@ -272,5 +257,5 @@ def integration_tests_continue():
         if clean_slate == 'yes':
             MongoDB().remove_all_data_for(new_eval_parameters_list)
         eval_parameters_list.extend(new_eval_parameters_list)
-    __start_thread(__get_main().run, args=[eval_parameters_list])
+    run_eval_thread(__get_main(), eval_parameters_list)
     return redirect('/test/')

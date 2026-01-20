@@ -5,6 +5,7 @@ import axios from 'axios';
 import 'vue-multiselect/dist/vue-multiselect.min.css';
 import { useDarkMode } from './composables/useDarkMode';
 import { useEvalParams } from './composables/useEvalParams';
+import { toast } from 'vue3-toastify';
 
 import Slider from '@vueform/slider';
 import EvaluationStatus from './components/evaluation_status.vue';
@@ -213,6 +214,16 @@ export default {
       });
       websocket.addEventListener("message", (e) => {
         const data = JSON.parse(e.data);
+        if (data.hasOwnProperty("notification")) {
+          const notification_msg = data.notification.message;
+          const notification_type = data.notification.type;
+          if (notification_type === 'info') {
+            toast.info(notification_msg);
+          }
+          if (notification_type === 'error') {
+            toast.error(notification_msg);
+          }
+        }
         if (data.hasOwnProperty("update")) {
           if (data.update.hasOwnProperty("plot_data")) {
             const revision_data = data.update.plot_data.revision_data;
@@ -309,7 +320,9 @@ export default {
       axios.post(path, payload)
         .then((res) => {
           if (res.data.status === "NOK") {
-            alert(res.data.msg);
+            toast.error(res.data.msg, {
+              position: toast.POSITION.TOP_RIGHT
+            });
           }
         })
         .catch((error) => {

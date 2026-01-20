@@ -6,6 +6,7 @@ import bughog.database.mongo.container as mongodb_container
 from bughog import configuration
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
+from bughog.exceptions import UserError
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
@@ -67,12 +68,16 @@ class Main:
                 )
                 try:
                     self.run_single_evaluation(eval_params, worker_manager)
+                except UserError as e:
+                    raise e
                 except Exception:
                     logger.error(
                         f'Could not finish evaluation for {eval_params.subject_configuration.subject_name}.',
                         exc_info=True,
                     )
-
+        except UserError as e:
+            logger.warning(f'Evaluation stopped because of a user error: {e}')
+            raise e
         except Exception as e:
             logger.critical('A critical error occurred', exc_info=True)
             raise e
@@ -161,7 +166,7 @@ class Main:
         elif search_strategy == 'comp_search':
             strategy = CompositeSearch(state_factory, sequence_limit)
         else:
-            raise AttributeError("Unknown search strategy option '%s'" % search_strategy)
+            raise UserError(f"Unknown search strategy option '{search_strategy}'")
         return strategy
 
     def activate_stop_gracefully(self):

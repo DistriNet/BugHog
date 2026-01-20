@@ -10,7 +10,7 @@ class StateOracle(ABC):
     def __init__(self, subject_type, subject_name, only_artisanal=False) -> None:
         self.subject_type = subject_type
         self.subject_name = subject_name
-        self._only_artisanal = only_artisanal
+        self.only_artisanal = only_artisanal
 
     # Commit / revision logic
 
@@ -96,7 +96,7 @@ class StateOracle(ABC):
     def get_nearest_state_with_public_executable(
         self, state_index: int, lower_bound: int, upper_bound: int, state_type: Literal['release', 'commit']
     ) -> int | None:
-        if self._only_artisanal:
+        if self.only_artisanal:
             return None
 
         if state_type == 'commit':
@@ -113,6 +113,9 @@ class StateOracle(ABC):
             raise ValueError(f'Unknown state type: {state_type}')
 
     # Artisanal executables
+
+    def count_artisanal_executables(self, state_type: Literal['release', 'commit']) -> int:
+        return artisanal_executable_manager.count_executables(self.subject_type, self.subject_name, state_type)
 
     def get_artisanal_executable_folder(self, state_index: int, state_type: Literal['release', 'commit']) -> str | None:
         return artisanal_executable_manager.get_executable_folder(
