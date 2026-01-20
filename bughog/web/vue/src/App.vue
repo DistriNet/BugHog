@@ -149,6 +149,17 @@ export default {
       this.evalParams.experiment_to_plot = null;
       this.selected.experiment = null;
     },
+    "evalParams.experiments": function (experiments) {
+      if (experiments.length === 1) {
+        this.evalParams.experiment_to_plot = experiments[0];
+        this.propagate_new_params()
+      }
+      else if (this.evalParams.experiment_to_plot) {
+        if (!experiments.includes(this.evalParams.experiment_to_plot)) {
+          this.evalParams.experiment_to_plot = null;
+        }
+      }
+    },
     "cli_options_str": function (val) {
       if (val !== "") {
         this.evalParams.cli_options = val.trim().split(" ");
