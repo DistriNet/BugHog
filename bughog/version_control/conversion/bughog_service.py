@@ -1,16 +1,18 @@
-from typing import Any
+import logging
 from functools import lru_cache
 from os import getenv
-import logging
-from urllib.parse import urljoin
+from typing import Any
+from urllib.parse import urljoin, urlparse
 
 from bughog.util import ResourceNotFound, request_json
 
 logger = logging.getLogger(__name__)
-# TODO: include default value
-# TODO: support HTTPS
-SERVICE_API = getenv('BUGHOG_SERVICE_API')
-BASE_URL = urljoin(f'http://{SERVICE_API}', '/v1/repos/')
+
+SERVICE_API = getenv('BUGHOG_SERVICE_API', 'https://api.bughog.distrinet-research.be/')
+if not urlparse(SERVICE_API).scheme:
+    SERVICE_API = f'https://{SERVICE_API}'
+
+BASE_URL = urljoin(SERVICE_API, '/v1/repos/')
 LRU_CACHE_SIZE = 1024
 
 
@@ -63,7 +65,9 @@ def find_nearest_commit_with_executable(
 
 
 @lru_cache(maxsize=LRU_CACHE_SIZE)
-def find_version_commit(subject_name: str, major_version: int, has_public_executable: bool | None = None) -> tuple[int, str]:
+def find_version_commit(
+    subject_name: str, major_version: int, has_public_executable: bool | None = None
+) -> tuple[int, str]:
     """
     We return the earliest commit associated with the given major version.
     This way, the function will remain consistent as new commits associated with the same version are pushed.
