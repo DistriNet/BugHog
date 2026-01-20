@@ -21,6 +21,9 @@ class ArtisanalExecutableManager:
         """
         Loads all available artisanal executables.
         """
+        if not os.path.isdir(BASE_EXECUTABLE_FOLDER):
+            return {}
+
         executables = {}
         for subject_type in os.listdir(BASE_EXECUTABLE_FOLDER):
             type_path = os.path.join(BASE_EXECUTABLE_FOLDER, subject_type, 'executables')
