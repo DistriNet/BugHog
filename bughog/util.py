@@ -24,16 +24,24 @@ logger = logging.getLogger(__name__)
 
 def safe_move_file(src_path, dst_path):
     if not os.path.isfile(src_path):
-        raise AttributeError("src path is not a file: '%s'" % src_path)
-    if not os.path.exists(os.path.dirname(dst_path)):
-        os.makedirs(dst_path)
-    shutil.copyfile(src_path, dst_path)
-    os.remove(src_path)
+        raise AttributeError(f'src path is not a file: {src_path}')
+
+    dst_dir = os.path.dirname(dst_path)
+    if not os.path.exists(dst_dir):
+        os.makedirs(dst_dir)
+
+    try:
+        os.replace(src_path, dst_path)
+    except OSError as e:
+        if e.errno == 28 or 'No space left' in str(e):
+            logger.error(f'Out of resources while moving file from {src_path} to {dst_path}.')
+            raise OutOfMemoryError('No space left on device. Restarting BugHog might help.') from e
+        raise e
 
 
 def safe_move_dir(src_path, dst_path):
     if not os.path.isdir(src_path):
-        raise AttributeError("src path is not a directory: '%s'" % src_path)
+        raise AttributeError(f'src path is not a directory: {src_path}')
     if not os.path.exists(dst_path):
         os.makedirs(dst_path)
     for file_or_dir in os.listdir(src_path):
@@ -169,7 +177,7 @@ def download_and_extract(urls: list[str], dst_folder_path: str) -> bool:
     for url in urls:
         logger.debug(f"Attempting to download archive from '{url}'.")
         tmp_file_name = urlparse(url).path.split('/')[-1]
-        tmp_file_path = os.path.join('/tmp', tmp_file_name)
+        tmp_file_path = os.path.join('/memory', tmp_file_name)
         if os.path.exists(tmp_file_path):
             os.remove(tmp_file_path)
         session = __get_session()

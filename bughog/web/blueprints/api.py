@@ -259,3 +259,16 @@ def integration_tests_continue():
         eval_parameters_list.extend(new_eval_parameters_list)
     run_eval_thread(__get_main(), eval_parameters_list)
     return redirect('/test/')
+
+
+@api.route('/cache/executables/delete', methods=['POST'])
+def remove_cached_executables():
+    subject_type = request.form.get('subject_type')
+    subject_name = request.form.get('subject_name')
+    state_name = request.form.get('state_name')
+
+    if not subject_type or not subject_name or not state_name:
+        return {'status': 'NOK', 'msg': 'Missing parameters.'}
+
+    __get_main().remove_cached_executable(subject_type, subject_name, state_name)
+    return {'status': 'OK'}

@@ -22,6 +22,7 @@ else
         --workers 1 \
         --threads 100 \
         --bind '0.0.0.0:5000' \
+        --graceful-timeout 2 \
         --access-logfile /app/logs/gunicorn_access.log \
         --log-file /app/logs/gunicorn.log \
         --log-level info

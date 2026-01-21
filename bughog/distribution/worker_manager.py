@@ -86,7 +86,7 @@ class WorkerManager:
                         os.path.join(host_pwd, 'logs') + ':/app/logs:rw',
                         os.path.join(host_pwd, 'nginx/ssl') + ':/etc/nginx/ssl:ro',
                     ],
-                    tmpfs={'/tmp': 'exec,size=2g,mode=1777'},
+                    tmpfs={'/memory': 'exec,size=3g,mode=1777'},
                 )
                 result = container.wait()
                 if result['StatusCode'] != 0:
@@ -122,7 +122,7 @@ class WorkerManager:
         thread.start()
         logger.info(f"Container '{container_name}' started experiments for '{state}'")
         # Sleep to avoid all workers downloading executables at once, clogging up all IO.
-        time.sleep(3)
+        time.sleep(.1)
 
     def get_nb_of_running_worker_containers(self):
         return len(self.get_runnning_containers())

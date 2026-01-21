@@ -129,7 +129,7 @@ class ExecutableCache:
                     ),
                     exc_info=futures_with_exception[0].exception(),
                 )
-                ExecutableCache.__remove_commit_executable_files(subject_config.subject_type, subject_config.subject_name, state_name)
+                ExecutableCache.remove_commit_executable_files(subject_config.subject_type, subject_config.subject_name, state_name)
                 logger.debug(f'Removed possibly incomplete cached executable files for {state_name}.')
             else:
                 elapsed_time = time.time() - start_time
@@ -165,14 +165,16 @@ class ExecutableCache:
             state_name = state_doc['state_name']
             subject_type = state_doc['subject_type']
             subject_name = state_doc['subject_name']
-            ExecutableCache.__remove_commit_executable_files(subject_type, subject_name, state_name)
+            ExecutableCache.remove_commit_executable_files(subject_type, subject_name, state_name)
             break
 
     @staticmethod
-    def __remove_commit_executable_files(subject_type: str, subject_name: str, state_name: str) -> None:
+    def remove_commit_executable_files(subject_type: str, subject_name: str, state_name: str) -> None:
         """
         Removes the executable files associated with the parameters.
         """
+        logger.info(f'Removing cached executable files for {subject_type}. {subject_name}. {state_name}.')
+
         fs = MongoDB().gridfs
         files_collection = MongoDB().get_collection('fs.files')
 
@@ -183,4 +185,5 @@ class ExecutableCache:
             'subject_name': subject_name,
         }
         for grid_doc in files_collection.find(query):
+            logger.debug(f'Removing cached executable file: {grid_doc["relative_file_path"]}')
             fs.delete(grid_doc['_id'])

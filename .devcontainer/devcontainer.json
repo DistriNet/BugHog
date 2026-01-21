@@ -36,7 +36,7 @@
 		}
 	},
 
-	"postCreateCommand": "uv sync --dev --locked"
+	"postCreateCommand": "uv sync --dev --locked",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -45,7 +45,7 @@
 	// "forwardPorts": [],
 
 	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-	// "shutdownAction": "none",
+	"shutdownAction": "stopCompose",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

@@ -127,7 +127,7 @@ class Executable(ABC):
         Executables are stored here before staging.
         I.e., public executables are downloaded and artisanal executables are copied to this folder.
         """
-        return os.path.join('/tmp/executables/', f'{self.config.subject_name}-{self.state.name}')
+        return os.path.join('/memory/executables/', f'{self.config.subject_name}-{self.state.name}')
 
     def is_in_temporary_storage(self) -> bool:
         path = self.temporary_storage_folder
@@ -136,7 +136,7 @@ class Executable(ABC):
     @property
     @util.ensure_folder_exists
     def staging_folder(self) -> str:
-        return os.path.join('/tmp/staging/', f'{self.config.subject_name}-{str(self.state.name)}')
+        return os.path.join('/memory/staging/', f'{self.config.subject_name}-{str(self.state.name)}')
 
     @property
     def executable_path(self) -> str:

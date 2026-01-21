@@ -4,6 +4,7 @@ import time
 
 import bughog.database.mongo.container as mongodb_container
 from bughog import configuration
+from bughog.database.mongo.executable_cache import ExecutableCache
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
 from bughog.exceptions import SystemError, UserError
@@ -70,7 +71,9 @@ class Main:
                     self.run_single_evaluation(eval_params, worker_manager)
                 except (UserError, SystemError) as e:
                     # If we are running integration tests, we want to just continue with other subjects.
-                    unique_subjects = set([eval_params.subject_configuration.subject_name for eval_params in eval_params_list])
+                    unique_subjects = set(
+                        [eval_params.subject_configuration.subject_name for eval_params in eval_params_list]
+                    )
                     if len(unique_subjects) == 1:
                         raise e
                 except Exception:
@@ -229,6 +232,9 @@ class Main:
     def remove_datapoint(self, params: EvaluationParameters, state: ShallowState) -> None:
         MongoDB().remove_datapoint(params, state)
         Clients.push_results_to_all()
+
+    def remove_cached_executable(self, subject_type: str, subject_name: str, state_name: str) -> None:
+        ExecutableCache.remove_commit_executable_files(subject_type, subject_name, state_name)
 
     def __update_state(self, **kwargs) -> None:
         for key, value in kwargs.items():
