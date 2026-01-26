@@ -24,14 +24,12 @@ services:
       - BUGHOG_VERSION=${BUGHOG_VERSION}
     volumes:
       - ./config:/app/config:ro
-      - ./browser/binaries/chromium/artisanal:/app/browser/binaries/chromium/artisanal:rw
-      - ./browser/binaries/firefox/artisanal:/app/browser/binaries/firefox/artisanal:rw
-      - ./experiments:/app/experiments:rw
-      - ./browser/extensions:/app/browser/extensions:ro
+      - ./subject:/app/subject:rw
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
       - /var/run/docker.sock:/var/run/docker.sock:rw
-      - /dev/shm:/dev/shm:rw
+    tmpfs:
+      /memory:exec,size=3g,mode=1777
     profiles:
       - never_start
 
@@ -44,9 +42,6 @@ services:
     hostname: bh_core
     ports:
       - "5000:5000"
-    build:
-      context: .
-      target: dev
     image: bh_core_dev
     environment:
       - "DEVELOPMENT=1"
@@ -98,8 +93,8 @@ services:
     restart: always
     volumes:
       - ./nginx/ssl/:/etc/nginx/ssl/:ro
-      - ./experiments/pages/:/www/data/pages/:ro
-      - ./experiments/res/:/www/data/res/:ro
+      - ./subject/web_browser/experiments/:/www/data/poc/:ro
+      - ./subject/web_browser/resources/:/www/data/res/:ro
       - ./logs/:/logs/:rw
       - ./logs/screenshots/:/www/data/screenshots/:ro
     ports:
@@ -113,6 +108,7 @@ services:
           - sub.a.test
           - sub.sub.a.test
           - b.test
+          - sub.b.test
           - adition.com
     profiles:
       - prod
@@ -138,11 +134,11 @@ services:
         aliases:
           - node
     volumes:
-      - ./bci/web/vue/public:/app/public:rw
-      - ./bci/web/vue/src:/app/src:rw
-      - ./bci/web/vue/postcss.config.js:/app/postcss.config.js:rw
-      - ./bci/web/vue/tailwind.config.js:/app/tailwind.config.js:rw
-      - ./bci/web/vue/vite.config.js:/app/vite.config.js:rw
+      - ./bughog/web/vue/public:/app/public:rw
+      - ./bughog/web/vue/src:/app/src:rw
+      - ./bughog/web/vue/postcss.config.js:/app/postcss.config.js:rw
+      - ./bughog/web/vue/tailwind.config.js:/app/tailwind.config.js:rw
+      - ./bughog/web/vue/vite.config.js:/app/vite.config.js:rw
     command: ["npm", "run", "dev", "--", "--host"]
     profiles:
       - dev

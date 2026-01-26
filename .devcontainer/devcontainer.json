@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
-	"name": "Development",
+	"name": "bughog-devcontainer",
 
 	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
 	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
@@ -14,12 +14,20 @@
 	"service": "core_dev",
 	"runServices": ["node_dev", "nginx_dev"],
 
+	"containerEnv": {
+		"UV_PROJECT_ENVIRONMENT": "/app/.venv"
+	},
+
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
 	"workspaceFolder": "/app",
 	"customizations": {
 		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "/app/.venv/bin/python"
+			},
 			"extensions": [
+				"astral-sh.ty",
 				"charliermarsh.ruff",
 				"ms-python.debugpy",
 				"ms-python.python",
@@ -28,8 +36,7 @@
 		}
 	},
 
-	// Install pip requirements
-	"postCreateCommand": "pip install -r requirements.txt"
+	"postCreateCommand": "uv sync --dev --locked",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -38,7 +45,7 @@
 	// "forwardPorts": [],
 
 	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-	// "shutdownAction": "none",
+	"shutdownAction": "stopCompose",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

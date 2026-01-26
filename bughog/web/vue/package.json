@@ -1,0 +1,29 @@
+{
+  "name": "app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vueform/slider": "^2.1.10",
+    "@vueuse/core": "^13.9.0",
+    "ace-builds": "^1.43.4",
+    "axios": "^1.12.2",
+    "flowbite": "^1.8.1",
+    "oh-vue-icons": "^1.0.0-rc3",
+    "vue": "^3.2.47",
+    "vue-multiselect": "^2.1.9",
+    "vue3-toastify": "^0.2.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.6.2",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "vite": "^4.5.14"
+  }
+}

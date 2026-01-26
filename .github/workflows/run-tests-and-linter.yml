@@ -3,68 +3,65 @@ on: [push]
 jobs:
   pytest:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Cache Python dependencies
-        id: cache-pip
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-python-dependencies
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements_dev.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
+          enable-cache: true
+
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements_dev.txt
-          pip install genbadge[all]
-      - name: Test with pytest
-        run: |
-          pytest --ignore=test/availability
+        run: uv sync --dev --locked
+
+      - name: Run pytest
+        run: uv run pytest --ignore=test/availability
+
       - name: Generate badge
         run: |
-          genbadge tests -i junit.xml -o pytest.svg
-          genbadge coverage -i coverage.xml -o coverage.svg
-      - name: Upload tests badge as artifact
+          uv run genbadge tests -i junit.xml -o pytest.svg
+          uv run genbadge coverage -i coverage.xml -o coverage.svg
+
+      - name: Upload test badge
         uses: actions/upload-artifact@v4
         with:
           name: pytest
           path: pytest.svg
           overwrite: true
-      - name: Upload coverage badge as artifact
+
+      - name: Upload coverage badge
         uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: coverage.svg
           overwrite: true
 
+
   flake8:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.11"
+          enable-cache: true
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 genbadge[all]
+          uv sync --dev --locked
+
       - name: Lint with flake8
         run: |
-          flake8 --exit-zero --output-file flake8.txt
+          uv run flake8 --exit-zero --output-file flake8.txt
+
       - name: Generate badge
         run: |
-          genbadge flake8 -i flake8.txt -o flake8.svg
-      - name: Upload badge with GitHub pages
+          uv run genbadge flake8 -i flake8.txt -o flake8.svg
+
+      - name: Upload badge
         uses: actions/upload-artifact@v4
         with:
           name: flake8

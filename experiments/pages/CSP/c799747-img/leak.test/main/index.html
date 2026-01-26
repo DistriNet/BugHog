@@ -1,7 +1,0 @@
-<script nonce="test">
-  var attackerControlledString =
-    "<img src=https://a.test/report/?leak=c799747-img />";
-  var blob = new Blob([attackerControlledString], { type: "text/html" });
-  var url = URL.createObjectURL(blob);
-  location.href = url;
-</script>

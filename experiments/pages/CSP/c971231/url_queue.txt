@@ -1,2 +1,0 @@
-http://leak.test/CSP/c971231/main
-https://a.test/report/?leak=baseline

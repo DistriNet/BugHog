@@ -1,6 +1,0 @@
-[
-  {
-    "key": "Content-Security-Policy",
-    "value": "script-src a.test/CSP/c661852/helper"
-  }
-]

@@ -1,0 +1,83 @@
+import logging
+import os
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from bughog.evaluation.file_structure import Folder
+
+logger = logging.getLogger(__name__)
+
+
+class EvaluationFramework(ABC):
+    def __init__(self, subject_type: str) -> None:
+        self.experiment_root_folder = os.path.join('./subject/', subject_type, 'experiments')
+        if not os.path.isdir(self.experiment_root_folder):
+            raise AttributeError(f"Could not open '{self.experiment_root_folder}'.")
+
+    @abstractmethod
+    def experiment_is_runnable(self, experiment_folder: Folder) -> bool:
+        pass
+
+    @abstractmethod
+    def get_default_experiment_script(self, experiment_folder: Folder) -> list[str]:
+        """
+        Returns the default script, which is used when no 'script.cmd' is present in the experiment's folder.
+        """
+        pass
+
+    @abstractmethod
+    def fill_empty_experiment_with_default(self, path: str):
+        """
+        Populates an empty experiment with default folders and files.
+        """
+        pass
+
+    @abstractmethod
+    def get_poc_file_name(self) -> str:
+        pass
+
+    def get_runtime_flags(self, experiment_folder: Folder) -> list[str]:
+        """
+        Returns the experiment-defined runtime flags.
+        """
+        if args := self.get_bughog_poc_parameter(experiment_folder, 'runtime_flags'):
+            return args.split()
+        return []
+
+    def get_runtime_env_vars(self, experiment_folder: Folder) -> list[str]:
+        """
+        Returns the experiment-defined environment variables.
+        """
+        if args := self.get_bughog_poc_parameter(experiment_folder, 'env_vars'):
+            return args.split()
+        return []
+
+    def get_runtime_args(self, experiment_folder: Folder) -> list[str]:
+        """
+        Returns the experiment-defined executable arguments.
+        """
+        if args := self.get_bughog_poc_parameter(experiment_folder, 'runtime_args'):
+            return args.split()
+        return []
+
+    def get_expected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
+        """
+        Returns the experiment-defined expected output regex.
+        """
+        return self.get_bughog_poc_parameter(experiment_folder, 'expected_output')
+
+    def get_unexpected_output_regex(self, experiment_folder: Folder) -> Optional[str]:
+        """
+        Returns the experiment-defined unexpected output regex.
+        """
+        return self.get_bughog_poc_parameter(experiment_folder, 'unexpected_output')
+
+    def get_bughog_poc_parameter(self, experiment_folder: Folder, parameter: str) -> Optional[str]:
+        """
+        Returns the given parameter's value, as defined in the poc file.
+        """
+        poc_file = experiment_folder.get_file(self.get_poc_file_name())
+        return poc_file.get_bughog_poc_parameter(parameter)
+
+    def requires_sanity_check(self) -> bool:
+        return True

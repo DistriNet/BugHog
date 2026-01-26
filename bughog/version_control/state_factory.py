@@ -1,0 +1,82 @@
+from __future__ import annotations
+
+from bughog.database.mongo.mongodb import MongoDB
+from bughog.exceptions import UserError
+from bughog.parameters import EvaluationParameters
+from bughog.subject.state_oracle import StateOracle
+from bughog.version_control.state.base import State
+from bughog.version_control.state.commit_state import CommitState
+from bughog.version_control.state.release_state import ReleaseState
+
+
+class StateFactory:
+    def __init__(self, state_oracle: StateOracle, eval_params: EvaluationParameters) -> None:
+        """
+        Create a state factory object with the given evaluation parameters and boundary indices.
+
+        :param eval_params: The evaluation parameters.
+        """
+        self.__oracle = state_oracle
+        self.__eval_params = eval_params
+        self.boundary_states = self.__create_boundary_states()
+
+    def create_state(self, index: int) -> State:
+        """
+        Create a state object associated with the given index.
+        The given index represents:
+        - A major version number if `self.eval_params.evaluation_range.major_version_range` is True.
+        - A revision number otherwise.
+
+        :param index: The index of the state.
+        """
+        eval_range = self.__eval_params.evaluation_range
+        if eval_range.only_release_commits:
+            return self.__create_release_state(index)
+        else:
+            return self.__create_commit_state(index)
+
+    def __create_boundary_states(self) -> tuple[State, State]:
+        """
+        Create the boundary state objects for the evaluation range.
+        """
+        eval_range = self.__eval_params.evaluation_range
+
+        # Check whether the user provided enough artisanal binaries for subject types that only rely on those.
+        state_type = 'release' if eval_range.only_release_commits else 'commit'
+        if self.__oracle.only_artisanal and self.__oracle.count_artisanal_executables(state_type) < 2:
+            raise UserError(f'Not enough artisanal {state_type} executables provided for {self.__oracle.subject_name}.')
+
+        if eval_range.major_version_range:
+            first_state = self.__create_release_state(eval_range.major_version_range[0])
+            last_state = self.__create_release_state(eval_range.major_version_range[1])
+            if not eval_range.only_release_commits:
+                first_state = first_state.convert_to_commit_state()
+                last_state = last_state.convert_to_commit_state()
+            return first_state, last_state
+        elif eval_range.commit_nb_range:
+            if eval_range.only_release_commits:
+                raise ValueError('Release revisions are not allowed in this evaluation range')
+            return (
+                self.__create_commit_state(eval_range.commit_nb_range[0]),
+                self.__create_commit_state(eval_range.commit_nb_range[1]),
+            )
+        else:
+            raise ValueError('No evaluation range specified')
+
+    def create_evaluated_states(self) -> list[State]:
+        """
+        Create evaluated state objects within the evaluation range where the result is fetched from the database.
+        """
+        return MongoDB().get_evaluated_states(self.__eval_params, self.boundary_states)
+
+    def __create_release_state(self, index: int) -> ReleaseState:
+        """
+        Create a version state object associated with the given index.
+        """
+        return ReleaseState(self.__oracle, index)
+
+    def __create_commit_state(self, index: int) -> CommitState:
+        """
+        Create a revision state object associated with the given index.
+        """
+        return CommitState(self.__oracle, commit_nb=index)

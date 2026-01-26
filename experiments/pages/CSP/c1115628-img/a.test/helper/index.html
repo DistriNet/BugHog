@@ -1,8 +1,0 @@
-<!DOCTYPE html>
-<script>
-  var payload =
-    "<!doctype html><img src='https://a.test/report/?leak=c1115628-img' \/>";
-  parent.location = URL.createObjectURL(
-    new Blob([payload], { type: "text/html" })
-  );
-</script>

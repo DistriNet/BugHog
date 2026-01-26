@@ -1,0 +1,18 @@
+<!-- https://issues.chromium.org/issues/40060319 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/res/bughog.css">
+    <script src="/res/bughog.js"></script>
+</head>
+<body>
+    <script>
+        window.addEventListener("load", function () {
+            document.cookie = "=__Host-test=a";
+            if (document.cookie.includes("__Host-test=a")) {
+                reproduced();
+            }
+        });
+    </script>
+</body>
+</html>

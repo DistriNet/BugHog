@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Integration tests
+{% endblock %}
+
+{% block head %}
+<style>
+    form {
+        margin: .5em;
+    }
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        padding: .5em;
+    }
+    .green {
+        background-color: lightgreen;
+    }
+    .red {
+        background-color: lightcoral;
+    }
+    .orange {
+        background-color: orange;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Integration tests</h2>
+
+    <form action="/api/test/continue/?clean_slate=yes" method="post">
+        <input type="submit" value="Run all integration tests">
+    </form>
+    <form action="/api/test/continue/" method="post">
+        <input type="submit" value="Continue integration tests">
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Experiment</th>
+                <th>Subject</th>
+                <th>Success</th>
+                <th>Fail</th>
+                <th>Errors</th>
+                <th>Ratio</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for subject_type, result_list in verification_results.items() %}
+            <tr>
+                <td colspan="6" style="background: #ddd; font-weight: bold;">
+                    Subject Type: {{ subject_type }}
+                </td>
+            </tr>
+            {% for result in result_list %}
+                <tr class="{{ 'green' if result['success_ratio'] == 100 else 'red' if result['success_ratio'] < 80 else 'orange' }}">
+                    <td>{{ result['experiment_name'] }}</td>
+                    <td>{{ result['subject_name'] }}</td>
+                    <td>{{ result['nb_of_success_results'] }}</td>
+                    <td>{{ result['nb_of_fail_results'] }}</td>
+                    <td>{{ result['nb_of_error_results'] }}</td>
+                    <td>{{ result['success_ratio'] }} %</td>
+                </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section>
+    <h2>Advanced</h2>
+    <form action="/api/cache/executables/delete" method="POST" target="hidden_result_frame">
+        <div>
+            <label for="subject_type">Subject Type:</la>
+            <input type="text" id="subject_type" name="subject_type" placeholder="e.g. web_browser" required>
+        </div>
+
+        <div>
+            <label for="subject_name">Subject Name:</la>
+            <input type="text" id="subject_name" name="subject_name" placeholder="e.g. chromium" required>
+        </div>
+
+        <div>
+            <label for="state_name">State Name:</label>
+            <input type="text" id="state_name" name="state_name" placeholder="e.g. v_20" required>
+        </div>
+
+        <input type="hidden" name="_method" value="DELETE">
+        <div>
+            <button type="submit">
+                Remove cached executables
+            </button>
+        </div>
+    </form>
+
+    <iframe name="hidden_result_frame" style="display:none;"></iframe>
+</section>
+{% endblock %}

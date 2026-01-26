@@ -2,8 +2,8 @@
 
 source /app/scripts/boot/setup_environment.sh
 
-chmod -R 777 /app/browser/binaries/chromium/artisanal
-chmod -R 777 /app/browser/binaries/firefox/artisanal
+chmod -R 777 /app/subject/web_browser/executable/chromium/artisanal
+chmod -R 777 /app/subject/web_browser/executable/firefox/artisanal
 
 /app/scripts/boot/generate_certs.sh
 /app/scripts/boot/manage_certs.sh
@@ -12,14 +12,17 @@ rm -f /tmp/Xvfb.pid
 rm -f /tmp/.X1-lock
 service xvfb start
 
+uv sync --no-dev --locked
+
 if [[ "$DEVELOPMENT" == "1" ]]; then
     exec sleep infinity;
 else
-    exec gunicorn 'bci.app:create_app()' \
+    exec gunicorn 'bughog.app:create_app()' \
         --name core \
         --workers 1 \
         --threads 100 \
         --bind '0.0.0.0:5000' \
+        --graceful-timeout 2 \
         --access-logfile /app/logs/gunicorn_access.log \
         --log-file /app/logs/gunicorn.log \
         --log-level info
