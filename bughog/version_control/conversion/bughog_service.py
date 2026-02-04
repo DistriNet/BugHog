@@ -22,6 +22,10 @@ def find_commit_info(subject_name: str, commit_nb: str) -> dict[str, Any]:
     return __fetch_dict(url)
 
 
+def find_latest_commit_info(subject_name: str) -> dict[str, Any]:
+    return find_commit_info(subject_name, 'latest')
+
+
 @lru_cache(maxsize=LRU_CACHE_SIZE)
 def find_commit_nb(subject_name: str, commit_id: str) -> int:
     url = urljoin(BASE_URL, f'{subject_name}/commits/{commit_id}')

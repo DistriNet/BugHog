@@ -50,8 +50,14 @@ class StateFactory:
             first_state = self.__create_release_state(eval_range.major_version_range[0])
             last_state = self.__create_release_state(eval_range.major_version_range[1])
             if not eval_range.only_release_commits:
+                # Only commits will be considered.
                 first_state = first_state.convert_to_commit_state()
-                last_state = last_state.convert_to_commit_state()
+                if self.__oracle.get_most_recent_major_release_version() == last_state.index:
+                    # If the upper boundary is the most recent major release, we simply set the latest commit as upper boundary.
+                    last_commit = self.__oracle.get_most_recent_commit_nb()
+                    last_state = self.__create_commit_state(last_commit)
+                else:
+                    last_state = last_state.convert_to_commit_state()
             return first_state, last_state
         elif eval_range.commit_nb_range:
             if eval_range.only_release_commits:

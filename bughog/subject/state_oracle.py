@@ -34,6 +34,9 @@ class StateOracle(ABC):
     def get_most_recent_major_release_version(self) -> int:
         pass
 
+    def get_most_recent_commit_nb(self) -> int:
+        return bughog_service.find_latest_commit_info(self.subject_name).get('nb')
+
     @staticmethod
     def is_valid_commit_id(commit_id: str) -> bool:
         """
