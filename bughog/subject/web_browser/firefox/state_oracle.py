@@ -18,6 +18,9 @@ class FirefoxStateOracle(StateOracle):
     def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
         return bughog_service.find_version_commit('firefox', release_version)
 
+    def get_oldest_supported_release_version(self) -> int:
+        return 20
+
     def get_most_recent_major_release_version(self) -> int:
         return bughog_service.find_latest_major_version('firefox')
 

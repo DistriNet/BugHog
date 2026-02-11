@@ -30,6 +30,9 @@ class WasmtimeStateOracle(StateOracle):
         commit_nb = self.find_commit_nb(commit_id)
         return commit_nb, commit_id
 
+    def get_oldest_supported_release_version(self) -> int:
+        return 1
+
     def get_most_recent_major_release_version(self) -> int:
         all_release_tags = self.__get_all_release_tags()
         truncated_tags = [self.get_full_version_from_release_tag(tag) for tag in all_release_tags]

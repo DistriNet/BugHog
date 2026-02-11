@@ -59,13 +59,6 @@ class Subject(ABC):
         """
         pass
 
-    @abstractmethod
-    def get_availability(self) -> dict:
-        """
-        Returns availability data (supported minimum and maximum release version) of this subject.
-        """
-        pass
-
     @staticmethod
     @abstractmethod
     def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> Simulation:
@@ -95,3 +88,17 @@ class Subject(ABC):
         Returns the paths of the assets folder associated with this subject.
         """
         return os.path.join('/app/subject', self.type, self.name)
+
+    def get_availability(self) -> dict:
+        oldest_major_version = self.state_oracle.get_oldest_supported_release_version()
+        newest_major_version = self.state_oracle.get_most_recent_major_release_version()
+
+        oldest_commit_number = self.state_oracle.find_commit_of_release(oldest_major_version)[0]
+        newest_commit_number = self.state_oracle.find_commit_of_release(newest_major_version)[0]
+        return {
+            'name': self.name,
+            'min_version': oldest_major_version,
+            'max_version': newest_major_version,
+            'min_commit': oldest_commit_number,
+            'max_commit': newest_commit_number,
+        }

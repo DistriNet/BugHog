@@ -31,6 +31,10 @@ class StateOracle(ABC):
         pass
 
     @abstractmethod
+    def get_oldest_supported_release_version(self) -> int:
+        pass
+
+    @abstractmethod
     def get_most_recent_major_release_version(self) -> int:
         pass
 

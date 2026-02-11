@@ -47,6 +47,9 @@ class V8StateOracle(StateOracle):
 
     # Public executables
 
+    def get_oldest_supported_release_version(self) -> int:
+        return 6
+
     def get_most_recent_major_release_version(self) -> int:
         all_release_tags = self.__get_all_release_tags()
         major_versions = set(int(tag.split('.')[0]) for tag in all_release_tags)
