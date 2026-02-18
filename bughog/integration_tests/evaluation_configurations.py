@@ -26,8 +26,6 @@ def get_default_evaluation_range(
 ) -> EvaluationRange:
     min_version, max_version = factory.get_subject_availability(subject_type, subject_name)
     return EvaluationRange(
-        verify_results.TEST_PROJECT_NAME,
-        experiment,
         (min_version, max_version),
         None,
         only_releases,
@@ -48,6 +46,8 @@ def get_default_evaluation_parameters(
 ) -> EvaluationParameters:
     database_params = configuration.get_database_params()
     return EvaluationParameters(
+        verify_results.TEST_PROJECT_NAME,
+        experiment,
         get_default_configuration(subject_type, subject_name),
         get_default_evaluation_range(subject_type, subject_name, experiment, only_releases),
         get_default_sequence_config(sequence_limit),

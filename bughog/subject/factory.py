@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 
 from bughog.evaluation.experiments import Experiments
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import SubjectConfiguration
 from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework
 from bughog.subject.js_engine.v8.subject import V8Subject
@@ -17,19 +17,8 @@ from bughog.subject.web_browser.evaluation_framework import BrowserEvaluationFra
 from bughog.subject.web_browser.firefox.subject import Firefox
 
 subjects = {
-    'js_engine': {
-        'evaluation_framework': JSEngineEvaluationFramework,
-        'subjects': [
-            V8Subject(),
-            V8SandboxSubject()
-        ]
-    },
-    'wasm_runtime': {
-        'evaluation_framework': WasmRuntimeEvaluationFramework,
-        'subjects': [
-            WasmtimeSubject()
-        ]
-    },
+    'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject(), V8SandboxSubject()]},
+    'wasm_runtime': {'evaluation_framework': WasmRuntimeEvaluationFramework, 'subjects': [WasmtimeSubject()]},
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,
         'subjects': [
@@ -86,15 +75,15 @@ def get_all_subject_availability() -> list[dict]:
 
 
 @staticmethod
-def get_subject_availability(subject_type: str, subject_name: str) -> tuple[int,int]:
+def get_subject_availability(subject_type: str, subject_name: str) -> tuple[int, int]:
     subject_availability = get_subject(subject_type, subject_name).get_availability()
     return subject_availability['min_version'], subject_availability['max_version']
 
 
 @staticmethod
-def get_subject_from_params(params: EvaluationParameters) -> Subject:
-    subject_type = params.subject_configuration.subject_type
-    subject_name = params.subject_configuration.subject_name
+def get_subject_from_params(config: SubjectConfiguration) -> Subject:
+    subject_type = config.subject_type
+    subject_name = config.subject_name
     return get_subject(subject_type, subject_name)
 
 

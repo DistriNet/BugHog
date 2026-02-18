@@ -93,14 +93,16 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
         this.active_folder = folder_name;
         if (file_name === null) {
           console.log("Clearing PoC editor.");
-          this.editor.setValue("");
-          this.editor.clearSelection();
-          this.active_file.name = null;
-          this.active_file.content = null;
-          this.active_poc.name = null;
-          this.active_poc.active_domain = null;
-          this.active_poc.active_path = null;
-          this.active_poc.tree = null;
+          if (this.editor !== null) {
+            this.editor.setValue("");
+            this.editor.clearSelection();
+            this.active_file.name = null;
+            this.active_file.content = null;
+            this.active_poc.name = null;
+            this.active_poc.active_domain = null;
+            this.active_poc.active_path = null;
+            this.active_poc.tree = null;
+          }
         } else {
           axios.get(this.file_api_path)
           .then((res) => {
@@ -274,10 +276,13 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
           "readOnly": val === null
         });
       },
-      "poc": function(val) {
-        this.set_active_file(null, null);
-        this.active_poc.name = val;
-        this.update_poc_tree();
+      "poc": {
+        immediate: true,
+        handler: function (val) {
+          this.set_active_file(null, null);
+          this.active_poc.name = val;
+          this.update_poc_tree();
+        }
       },
       "project": function() {
         this.set_active_file(null, null);

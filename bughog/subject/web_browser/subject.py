@@ -4,7 +4,7 @@ from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.logs import LogCollector
 from bughog.evaluation.collectors.requests import RequestCollector
 from bughog.evaluation.file_structure import Folder
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.subject.executable import Executable
 from bughog.subject.subject import Subject
 from bughog.subject.web_browser.interaction.simulation import BrowserSimulation
@@ -19,7 +19,7 @@ class WebBrowser(Subject, ABC):
         return 'web_browser'
 
     @staticmethod
-    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> BrowserSimulation:
+    def create_simulation(executable: Executable, context: Folder, params: ExperimentParameters) -> BrowserSimulation:
         return BrowserSimulation(executable, context, params)
 
     @staticmethod

@@ -1,7 +1,7 @@
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.logs import LogCollector
 from bughog.evaluation.file_structure import Folder
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.subject.executable import Executable
 from bughog.subject.subject import Subject
 from bughog.subject.wasm_runtime.simulation import WasmRuntimeSimulation
@@ -13,7 +13,9 @@ class WasmRuntime(Subject):
         return 'wasm_runtime'
 
     @staticmethod
-    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> WasmRuntimeSimulation:
+    def create_simulation(
+        executable: Executable, context: Folder, params: ExperimentParameters
+    ) -> WasmRuntimeSimulation:
         return WasmRuntimeSimulation(executable, context, params)
 
     @staticmethod

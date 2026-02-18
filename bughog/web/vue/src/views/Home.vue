@@ -1,0 +1,752 @@
+<script>
+import '@vueform/slider/themes/default.css';
+import { useDebounceFn } from '@vueuse/core';
+import axios from 'axios';
+import 'vue-multiselect/dist/vue-multiselect.min.css';
+import { useDarkMode } from '../composables/useDarkMode';
+import { useEvalParams } from '../composables/useEvalParams';
+import { useServerInfo } from '../composables/useServerInfo';
+import { useWebSocket } from '../composables/useWebSocket';
+import { toast } from 'vue3-toastify';
+
+import Banner from '../components/banner.vue';
+import EvaluationControls from '../components/evaluation-controls.vue';
+import EvaluationStatus from '../components/evaluation-status.vue';
+import Gantt from "../components/gantt.vue";
+import PocEditor from "../components/poc-editor.vue";
+import SectionHeader from "../components/section-header.vue";
+import Slider from '@vueform/slider';
+import Tooltip from "../components/tooltip.vue";
+import { useSubjectAvailability } from '../composables/useSubjectAvailability';
+
+export default {
+  components: {
+    Banner,
+    EvaluationStatus,
+    EvaluationControls,
+    Gantt,
+    PocEditor,
+    SectionHeader,
+    Slider,
+    Tooltip,
+  },
+  setup() {
+    const { darkMode } = useDarkMode()
+    const { evalParams, resetEvalParams } = useEvalParams()
+    const { serverInfo, updateServerInfo, bannerMessage } = useServerInfo();
+    const { subject_availability } = useSubjectAvailability(() => {
+      evalParams.version_range = subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name);
+    });
+    const socketHandlers = {
+        onOpen: () => {},
+        onMessage: () => {}
+    };
+    const { send: sendWithSocket, isConnected } = useWebSocket({
+      autoConnect: true,
+      onOpen: (ws) => {
+        socketHandlers.onOpen(ws);
+      },
+      onMessage: (data) => {
+        socketHandlers.onMessage(data);
+      }
+    });
+    return {
+      darkMode,
+      evalParams,
+      resetEvalParams,
+      subject_availability,
+
+      server_info: serverInfo,
+      updateServerInfo,
+
+      sendWithSocket,
+      isConnected,
+      registerSocketHandlers: (handlers) => {
+        socketHandlers.onOpen = handlers.onOpen;
+        socketHandlers.onMessage = handlers.onMessage;
+      }
+    }
+  },
+  data() {
+    return {
+      timer: null,
+      projects: [],
+      subject_settings: [],
+      cli_options_str: "",
+      previous_cli_options_list: [],
+      experiments: [],
+      select_all_experiments: false,
+      results: {
+        nb_of_evaluations: 0,
+      },
+      selected: {
+        experiment: null,
+      },
+      dialog: {
+        new_experiment_name: null,
+        new_project_name: null
+      },
+      target_mech_id_input: null,
+      target_mech_id: null,
+      fatal_error: null,
+      hide_advanced_evaluation_options: true,
+      hide_advanced_subject_options: true,
+      hide_logs: true,
+      hide_poc_editor: true,
+      system: null,
+      available_domains: null,
+    }
+  },
+  computed: {
+    "banner_message": function () {
+      if (this.fatal_error) {
+        return `A fatal error has occurred! Please, check the logs below...`
+      }
+      if (this.server_info.db_info.connected) {
+        return `Connected to MongoDB at ${this.server_info.db_info.host}`;
+      } else {
+        return `Connecting to database...`;
+      }
+    },
+    "computed_slider_merge": function () {
+      const version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, this.evalParams.subject_name);
+      return Math.ceil((version_range[1] - version_range[0]) / 7);
+    }
+  },
+  watch: {
+    "selected.experiment": function (val) {
+      if (val !== null) {
+        this.hide_poc_editor = false;
+      }
+    },
+    "target_mech_id_input": function (val) {
+      if (val === null || val === "") {
+        this.evalParams.target_mech_id = this.evalParams.experiment_to_plot;
+      } else {
+        this.evalParams.target_mech_id = val;
+      }
+    },
+    "evalParams.experiment_to_plot": function (val) {
+      if (val === null) {
+        console.log("Clearing plot.");
+        this.$refs.gantt.clear_plot();
+      }
+      if (this.target_mech_id_input === null || this.target_mech_id_input === "") {
+        this.evalParams.target_mech_id = val;
+      }
+    },
+    "evalParams.subject_type": function (val) {
+      console.log(`Setting subject type to '${val}'`);
+      const subject_names = this.subject_availability.get_available_subject_names_for_type(val);
+      if (subject_names !== null && subject_names.length > 0) {
+        this.evalParams.subject_name = subject_names[0];
+      }
+      this.get_projects(() => {
+        if (this.projects.length === 1) {
+          this.evalParams.project_name = this.projects[0];
+        } else {
+          this.evalParams.project_name = null;
+        }
+      });
+      this.selected.experiment = null;
+    },
+    "evalParams.subject_name": function (subject_name) {
+      if (subject_name === null) {
+        console.log("Unsetting subject");
+      } else {
+        console.log("Setting subject: " + subject_name)
+        this.evalParams.version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, subject_name);
+      }
+    },
+    "evalParams.project_name": function (project_name) {
+      if (project_name === null) {
+        console.log("Unsetting project name.");
+        this.experiments = [];
+      } else {
+        console.log(`Setting project name to '${project_name}'`);
+      }
+      this.evalParams.experiments = [];
+      this.select_all_experiments = false;
+      this.evalParams.experiment_to_plot = null;
+      this.selected.experiment = null;
+    },
+    "evalParams.experiments": function (experiments) {
+      if (experiments.length === 1) {
+        this.evalParams.experiment_to_plot = experiments[0];
+        this.propagate_new_params()
+      }
+      else if (this.evalParams.experiment_to_plot) {
+        if (!experiments.includes(this.evalParams.experiment_to_plot)) {
+          this.evalParams.experiment_to_plot = null;
+        }
+      }
+    },
+    "cli_options_str": function (val) {
+      if (val !== "") {
+        this.evalParams.cli_options = val.trim().split(" ");
+      } else {
+        this.evalParams.cli_options = [];
+      }
+    },
+    "select_all_experiments": function (val) {
+      if (this.select_all_experiments === true) {
+        this.evalParams.experiments = this.experiments
+          .filter(tuple => tuple[1]) // Only select enabled checkboxes
+          .map(tuple => tuple[0]);;
+      } else {
+        this.evalParams.experiments = [];
+      }
+    },
+  },
+  created: function () {
+    this.registerSocketHandlers({
+      onOpen: () => {
+        this.sendWithSocket({ get: ['all'] });
+        this.propagate_new_params();
+      },
+      onMessage: (data) => {
+        this.onSocketMessage(data);
+      }
+    });
+
+    this.propagate_new_params = useDebounceFn(() => {
+      console.log('<- Propagating parameter change ->');
+      const eval_params = JSON.parse(JSON.stringify(this.evalParams));
+     this.sendWithSocket({new_params: eval_params});
+    }, 50);
+
+    if (this.isConnected) {
+      this.sendWithSocket({ get: ['all'] });
+    }
+
+    this.get_projects();
+    const path = `/api/poc/domain/`;
+    axios.get(path)
+    .then((res) => {
+      if (res.data.status === "OK") {
+        this.available_domains = res.data.domains;
+      }
+    })
+    this.timer = setInterval(() => {
+      if (this.projects.length == 0 && this.evalParams.subject_type !== null) {
+        this.get_projects();
+      }
+      if (this.system == null) {
+        this.get_system_info();
+      }
+      this.fetch_server_info(["logs"]);
+    }, 2000);
+  },
+  mounted: function () {
+    setTimeout(function () {
+      log_section.scrollTo({ "top": log_section.scrollHeight, "behavior": "auto" });
+    },
+      500
+    );
+  },
+  methods: {
+    onSocketMessage(data) {
+      if (data.hasOwnProperty("update")) {
+        if (data.update.hasOwnProperty("plot_data")) {
+          const revision_data = data.update.plot_data.revision_data;
+          const version_data = data.update.plot_data.version_data;
+          this.$refs.gantt.update_plot(this.evalParams.subject_name, revision_data, version_data);
+          this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+        }
+        if (data.update.hasOwnProperty("experiments")) {
+          this.experiments = data.update.experiments;
+        }
+        if (data.update.hasOwnProperty("previous_cli_options")) {
+          this.previous_cli_options_list = data.update.previous_cli_options;
+        }
+        else {
+          this.updateServerInfo(data.update);
+        }
+      }
+    },
+    fetch_server_info(info_types) {
+      this.sendWithSocket({
+        "get": info_types
+      });
+    },
+    get_projects(cb) {
+      if (this.evalParams.subject_type === null || this.evalParams.subject_type === undefined) {
+        console.warn('Could not get projects because the subject type is not defined.');
+        return;
+      }
+      const path = `/api/poc/${this.evalParams.subject_type}/`;
+      axios.get(path)
+        .then((res) => {
+          if (res.data.status == "OK") {
+            this.projects = res.data.projects;
+            if (cb !== undefined) {
+              cb();
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    },
+    get_system_info() {
+      const path = `/api/system/`;
+      axios.get(path)
+        .then((res) => {
+          if (res.data.status == "OK") {
+            this.system = res.data;
+            const cpu_count = res.data["cpu_count"];
+            console.log(`${cpu_count} CPU cores detected by backend.`)
+            if (process.env.NODE_ENV === "development") {
+              console.log("Development mode: number of containers set to 1.");
+              this.evalParams.nb_of_containers = 1;
+            } else if (this.evalParams.nb_of_containers === null) {
+              if ("cpu_count" in res.data) {
+                const nb_of_containers = Math.max(cpu_count - 1, 1);
+                console.log(`Number of number of containers set to ${nb_of_containers}`);
+                this.evalParams.nb_of_containers = nb_of_containers;
+              } else {
+                this.evalParams.nb_of_containers = 1;
+              }
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    },
+    submit_form() {
+      const path = `/api/evaluation/start/`;
+      const payload = {
+        ...this.evalParams,
+      };
+      axios.post(path, payload)
+        .then((res) => {
+          if (res.data.status === "NOK") {
+            toast.error(res.data.msg, {
+              position: toast.POSITION.TOP_RIGHT
+            });
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    },
+    stop(forcefully) {
+      const path = `/api/evaluation/stop/`;
+      const data = {};
+      if (forcefully) {
+        data["forcefully"] = true;
+      }
+      axios.post(path, data)
+        .then((res) => {
+
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    },
+    fetch_results(url) {
+      return axios.put(url, JSON.stringify(this.evalParams), {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+    },
+    create_new_experiment() {
+      const url = `/api/poc/${this.evalParams.subject_type}/${this.evalParams.project_name}/`;
+      axios.post(url, {'poc_name': this.dialog.new_experiment_name})
+      .then((res) => {
+        if (res.data.status === "OK") {
+          this.dialog.new_experiment_name = null;
+        } else {
+          alert(res.data.msg);
+        }
+      })
+      .catch((error) => {
+        console.error('Could not create new experiment');
+      });
+    },
+    async create_new_project() {
+      try {
+        const url = `/api/poc/${this.evalParams.subject_type}/`;
+        const new_project_name = this.dialog.new_project_name;
+
+        const res = await axios.post(url, {'project_name': new_project_name});
+
+        if (res.data.status === "OK") {
+          this.dialog.new_project_name = null;
+          const initial_project_count = this.projects.length;
+          let tries_left = 3;
+
+          while (tries_left > 0 && this.projects.length === initial_project_count) {
+            tries_left--;
+
+            await new Promise((resolve) => {
+              this.get_projects(() => {
+                if (this.projects.length > initial_project_count) {
+                  console.log(`Setting new project: ${new_project_name}`);
+                  this.evalParams.project_name = new_project_name;
+                  this.propagate_new_params();
+                }
+                resolve();
+              });
+            });
+            await new Promise((r) => setTimeout(r, 200))
+          }
+          if (this.projects.length === initial_project_count) {
+            console.warn('New project not detected after retries');
+          }
+        } else {
+          alert(res.data.msg);
+        }
+      } catch (error) {
+        console.error('Could not create new project', error);
+      }
+    }
+  },
+  beforeDestroy() {
+    clearInterval(this.timer);
+  }
+}
+</script>
+
+<template>
+  <div id="option-board" class="grid grid-rows-[4rem,50rem,auto,auto] grid-cols-[18rem,58rem] content-start gap-3 justify-center h-screen">
+
+    <!-- Banner -->
+    <Banner
+      :fatal_error="fatal_error"
+      :banner_message="banner_message"
+      :subject_availability="subject_availability"
+      v-model="evalParams"
+      @params-changed="propagate_new_params"
+      @toggle-dark-mode="darkMode = $event"
+    />
+
+    <!-- Subject settings and experiments -->
+    <div class="row-start-2 row-span-1 gap-3 flex flex-col">
+      <!-- Subject settings -->
+      <div class="form-section">
+        <section-header section="eval_range"></section-header>
+
+        <!-- Subject --><div class="form-subsection">
+    <h2 class="form-subsection-title">Subject</h2>
+    <div class="flex flex-row justify-center mx-5">
+      <div v-for="subject_name in subject_availability.get_available_subject_names_for_type(this.evalParams.subject_type)" :key="subject_name" class="radio-item flex-auto">
+        <input type="radio" :id="subject_name" name="subject" :value="subject_name" v-model="evalParams.subject_name" @change="propagate_new_params" />
+        <label :for="subject_name">{{ subject_name }}</label>
+      </div>
+    </div>
+  </div>
+
+        <div class="form-subsection">
+          <h2 class="form-subsection-title">Subject version range</h2>
+          <div class="flex flex-wrap">
+            <div class="w-5/6 m-auto pt-12">
+              <Slider
+                ref="version_slider"
+                v-model="evalParams.version_range"
+                :lazy=true
+                :min="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[0]"
+                :max="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[1]"
+                :merge="computed_slider_merge"
+                :disabled=false
+                class="slider"
+                @change="propagate_new_params"
+              />
+            </div>
+            <div class="pt-5 checkbox-item">
+              <input
+                v-model="this.evalParams.only_release_commits"
+                :true-value="false"
+                :false-value="true"
+                type="checkbox">
+              <label>Deep search
+                <tooltip tooltip="deep_search"></tooltip>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Experiments -->
+      <div class="form-section flex flex-col grow h-0">
+        <section-header section="experiments" class="w-1/2"></section-header>
+        <div class="flex mb-2 mr-1">
+          <select id="project_dropdown" v-model="this.evalParams.project_name" @change="propagate_new_params" >
+            <option disabled value="">Select a project</option>
+            <option v-for="project in projects">{{ project }}</option>
+          </select>
+          <button class="button ml-2" onclick="create_project_dialog.showModal()">
+            +
+          </button>
+        </div>
+        <div class="h-0 grow overflow-y-auto overflow-x-hidden">
+          <ul class="horizontal-select">
+            <li>
+              <div class="bg-gray-100 dark:bg-gray-800">
+                <input id="select_all_experiments" type="checkbox" class="ml-1" v-model="this.select_all_experiments">
+                <label for="vue-checkbox-list" class="flex group w-full">
+                  <div class="pl-0 w-full">
+                    <p class="truncate w-0 grow">
+                      Select all experiments
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-500">
+                      ({{ experiments.length }})
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </li>
+            <li v-for="tuple in experiments" :key="tuple[0]">
+              <div>
+                <input v-model="this.evalParams.experiments" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
+                <label for="vue-checkbox-list" class="flex group w-full">
+                  <div class="pl-0 w-full">
+                    <div v-if="!tuple[1]" class="text-red-500 font-bold">
+                      !
+                    </div>
+                    <p class="truncate w-0 grow">
+                      {{ tuple[0] }}
+                    </p>
+                  </div>
+                  <div role="button" @click="this.selected.experiment=tuple[0]" class="invisible w-content collapse group-hover:visible">
+                    <v-icon name="fa-regular-edit"/>
+                  </div>
+                </label>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div v-if="this.evalParams.project_name" role="button" class="button mt-2" onclick="create_experiment_dialog.showModal()">
+          Add new experiment
+        </div>
+      </div>
+    </div>
+
+    <!-- Start button and results section -->
+    <div class="row-start-2 col-start-2 flex flex-col h-full">
+      <EvaluationControls
+        :is-running="server_info.state.is_running === true"
+        :can-start="true"
+        @start="submit_form"
+        @stop-gracefully="stop(false)"
+        @stop-forcefully="stop(true)"
+      />
+      <div class="results-section mt-2 h-full flex flex-col">
+        <section-header section="results" left></section-header>
+        <div class="flex flex-wrap justify-between h-fit">
+          <select class="w-fit h-fit" v-model="this.evalParams.experiment_to_plot" @change="propagate_new_params">
+            <option disabled value="">Select an experiment</option>
+            <option v-for="experiment in this.evalParams.experiments">{{ experiment }}</option>
+          </select>
+          <div class="flex flex-wrap">
+            <evaluation-status :server_info="this.server_info">
+            </evaluation-status>
+          </div>
+          <div class="flex flex-wrap">
+            <ul class="my-3 w-64">
+              <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
+            </ul>
+          </div>
+        </div>
+        <gantt ref="gantt" :eval_params="this.evalParams"></gantt>
+      </div>
+    </div>
+
+    <!-- PoC editor -->
+    <div class="form-section col-span-2 row-start-3">
+      <div class="flex">
+        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+          Experiment editor
+          <div v-if="this.selected.experiment !== null && !this.hide_poc_editor" class="px-1 font-normal">
+            ({{ this.selected.experiment }})
+          </div>
+        </h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_poc_editor = !this.hide_poc_editor">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="this.hide_poc_editor ? 'hidden w-full' : 'w-full'">
+        <poc-editor
+        :darkMode="this.darkMode"
+        :available_domains="this.available_domains"
+        :project="this.evalParams.project_name"
+        :poc="selected.experiment"
+        :subject_type="this.evalParams.subject_type"></poc-editor>
+      </div>
+    </div>
+
+    <!-- Advanced subject options -->
+    <!-- <div class="form-section col-span-2 row-start-4">
+      <div class="flex">
+        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+          Advanced subject options
+        </h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_advanced_subject_options = !this.hide_advanced_subject_options">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="this.hide_advanced_subject_options ? 'hidden w-full' : 'w-full'">
+        <div>
+          <label for="cli_options" class="pb-2">CLI flags</label>
+          <input class="w-full dark:!text-white dark:!bg-gray-800" type="text" name="cli_options" v-model="this.cli_options_str">
+        </div>
+        <div>
+          <div>
+            <label class="pt-4 pb-2">Previously used CLI flags</label>
+          </div>
+          <ul class="">
+            <li v-for="cli_options_str in this.previous_cli_options_list">
+              <div role="button" @click="this.cli_options_str=cli_options_str" class="button my-1 !text-black !text-left !bg-white hover:!bg-gray-100 dark:!text-white dark:!bg-gray-800 dark:hover:!bg-gray-600">
+                {{ cli_options_str }}
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- Advanced evaluation options -->
+    <div class="form-section h-fit col-span-2 row-start-4">
+      <div class="flex">
+        <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced evaluation options</h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_advanced_evaluation_options = !this.hide_advanced_evaluation_options">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="hide_advanced_evaluation_options ? 'hidden' : ''">
+        <div class="grid grid-cols-[auto,auto,auto] justify-start">
+          <!-- <div class="flex flex-col">
+            <div class="form-subsection">
+              <section-header section="subject_rev_range"></section-header>
+              <div class="p-1 w-1/2">
+                <label for="lower_commit_nb">Lower commit nb</label>
+                <input v-model.lazy="this.evalParams.lower_commit_nb" class="number-input w-32" type="number">
+              </div>
+
+              <div class="p-1 w-1/2">
+                <label for="upper_commit_nb">Upper rev nb</label>
+                <input v-model.lazy="this.evalParams.upper_commit_nb" class="number-input w-32" type="number">
+              </div>
+            </div>
+          </div> -->
+
+          <!-- Evaluation settings -->
+          <div class="form-subsection w-fit eval_opts col-start-3">
+            <section-header section="eval_settings"></section-header>
+            <div class="form-subsection">
+              <section-header section="search_strategy"></section-header>
+
+              <div class="radio-item">
+                <input v-model="this.evalParams.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
+                  value="bgb_sequence">
+                <label for="bgb_sequence">BGB sequence</label>
+                <tooltip tooltip="bgb_sequence"></tooltip>
+              </div>
+
+              <div class="radio-item">
+                <input v-model="this.evalParams.search_strategy" type="radio" id="bgb_search" name="search_strategy_option"
+                  value="bgb_search">
+                <label for="bgb_search">BGB search</label>
+                <tooltip tooltip="bgb_search"></tooltip>
+              </div>
+
+              <div class="radio-item">
+                <input v-model="this.evalParams.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
+                  value="comp_search">
+                <label for="comp_search">Composite search</label>
+                <tooltip tooltip="comp_search"></tooltip>
+              </div>
+              <br>
+
+              <div class="flex items-baseline mb-1">
+                <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
+                <tooltip tooltip="sequence_limit"></tooltip>
+              </div>
+              <input v-model.number="this.evalParams.sequence_limit" class="input-box" type="number" min="1" max="10000">
+            </div>
+
+            <div class="form-subsection">
+              <section-header section="parallel_containers"></section-header>
+              <input v-model.number="this.evalParams.nb_of_containers" class="input-box" type="number" id="nb_of_containers"
+                name="nb_of_containers" min="1" max="16">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="results-section h-fit col-span-2 row-start-5 flex-1">
+      <div class="flex">
+        <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
+        <div class="w-full text-right">
+          <button class="collapse-button" @click="this.hide_logs = !this.hide_logs">
+            <div class="flex items-center">
+              <p class="text-xl pb-1 px-1">+</p>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div :class="hide_logs ? 'hidden' : ''">
+        <div id="log_section" class="mt-3 h-96 bg-white overflow-y-scroll flex flex-col dark:bg-dark-3">
+          <ul>
+            <li v-for="entry in this.server_info.logs">
+              <p>{{ entry }}</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create file dialog -->
+  <dialog id="create_experiment_dialog" class="dialog">
+    <form method="dialog" @submit="create_new_experiment">
+      <p>
+        <label>
+          <div class="pb-5">
+            Enter new experiment name:
+          </div>
+          <input type="text" v-model="dialog.new_experiment_name" class="input-box" required autocomplete="off" />
+        </label>
+      </p>
+      <div class="flex pt-3">
+        <input type="submit" value="Create file" class="button m-2 w-full">
+        <input type="button" value="Cancel" class="button m-2" onclick="create_experiment_dialog.close()">
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Create project dialog -->
+  <dialog id="create_project_dialog" class="dialog">
+    <form method="dialog" @submit="create_new_project">
+      <p>
+        <label>
+          <div class="pb-5">
+            Enter new project name:
+          </div>
+          <input type="text" v-model="dialog.new_project_name" class="input-box" required autocomplete="off" />
+        </label>
+      </p>
+      <div class="flex pt-3">
+        <input type="submit" value="Create project" class="button m-2 w-full">
+        <input type="button" value="Cancel" class="button m-2" onclick="create_project_dialog.close()">
+      </div>
+    </form>
+  </dialog>
+</template>
+

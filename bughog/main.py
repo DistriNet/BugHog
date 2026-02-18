@@ -11,13 +11,13 @@ from bughog.exceptions import SystemError, UserError
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
+    ExperimentParameters,
 )
 from bughog.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bughog.subject import factory
-from bughog.version_control.state.base import ShallowState
 from bughog.version_control.state_factory import StateFactory
 from bughog.web.clients import Clients
 
@@ -52,7 +52,11 @@ class Main:
     def run(self, eval_params_list: list[EvaluationParameters]) -> None:
         # Sequence_configuration settings are the same over evaluation parameters (quick fix)
         self.__update_state(is_running=True, reason='user', status='running')
-        worker_manager = WorkerManager(eval_params_list[0])
+
+        subject_type = eval_params_list[0].subject_configuration.subject_type
+        subject_name = eval_params_list[0].subject_configuration.subject_name
+        nb_of_containers = eval_params_list[0].sequence_configuration.nb_of_containers
+        worker_manager = WorkerManager(subject_type, subject_name, nb_of_containers)
         self.stop_gracefully = False
         self.stop_forcefully = False
         try:
@@ -60,7 +64,7 @@ class Main:
             for eval_params in eval_params_list:
                 if self.stop_gracefully or self.stop_forcefully:
                     break
-                self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'active')
+                self.__update_eval_queue(eval_params.experiment_name, 'active')
                 self.__update_state(
                     is_running=True,
                     reason='user',
@@ -111,8 +115,8 @@ class Main:
         nb_of_iterations = 3
         for i in range(1, nb_of_iterations + 1):
             start_time = time.time()
-            subject = factory.get_subject_from_params(eval_params)
-            experiment_name = eval_params.evaluation_range.experiment_name
+            subject = factory.get_subject_from_params(eval_params.subject_configuration)
+            experiment_name = eval_params.experiment_name
             search_strategy = self.create_sequence_strategy(eval_params)
 
             logger.info(
@@ -125,7 +129,8 @@ class Main:
                     current_state = search_strategy.next(wait=False)
 
                     # Start worker to perform evaluation
-                    worker_manager.start_experiment(eval_params, current_state)
+                    experiment_params = eval_params.to_experiment_parameters(current_state.to_shallow_state())
+                    worker_manager.start_experiment(experiment_params, current_state)
 
             except SequenceFinished:
                 worker_manager.wait_until_all_evaluations_are_done()
@@ -141,7 +146,7 @@ class Main:
 
         worker_manager.wait_until_all_evaluations_are_done()
         self.state['reason'] = 'finished'
-        self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'done')
+        self.__update_eval_queue(eval_params.experiment_name, 'done')
         Clients.push_notification_to_all(f'Evaluation of {experiment_name} has finished.')
 
     def retry_dirty_tests(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
@@ -150,7 +155,7 @@ class Main:
             logger.info('No tests are associated with a dirty result.')
             return
 
-        experiment = eval_params.evaluation_range.experiment_name
+        experiment = eval_params.experiment_name
         message = f'Retrying {nb_of_dirty_states} tests with a dirty result for {experiment}.'
         logger.info(message)
 
@@ -158,19 +163,35 @@ class Main:
         for dirty_state in dirty_states:
             if self.stop_gracefully or self.stop_forcefully:
                 return
-            MongoDB().remove_datapoint(eval_params, dirty_state.to_shallow_state())
-            worker_manager.start_experiment(eval_params, dirty_state)
+            experiment_params = eval_params.to_experiment_parameters(dirty_state.to_shallow_state())
+            MongoDB().remove_datapoint(experiment_params)
+            worker_manager.start_experiment(experiment_params, dirty_state)
         worker_manager.wait_until_all_evaluations_are_done()
 
         dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
         logger.info(f'Dirty test results reduced from {nb_of_dirty_states} to {len(dirty_states_after_retry)}.')
+
+    def run_single_experiment(self, params: ExperimentParameters) -> None:
+        try:
+            self.__update_state(is_running=True, reason='user', status='running')
+            subject_config = params.subject_configuration
+            state = params.state.to_deep_state(subject_config.subject_type, subject_config.subject_name)
+            if not state.has_available_executable():
+                Clients.push_notification_to_all(f'No available executable for state {state.commit_nb}.', type='error')
+            else:
+                worker_manager = WorkerManager(subject_config.subject_type, subject_config.subject_name, 1)
+                worker_manager.start_experiment(params, state)
+                Clients.push_complete_experiment_result(params)
+        finally:
+            # TODO: error handling
+            self.__update_state(is_running=False, reason='idle', status='running')
 
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
         sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
-        subject = factory.get_subject_from_params(eval_params)
+        subject = factory.get_subject_from_params(eval_params.subject_configuration)
         state_factory = StateFactory(subject.state_oracle, eval_params)
 
         if search_strategy == 'bgb_sequence':
@@ -229,8 +250,8 @@ class Main:
                 update['state'] = self.state
         Clients.push_info(ws, update)
 
-    def remove_datapoint(self, params: EvaluationParameters, state: ShallowState) -> None:
-        MongoDB().remove_datapoint(params, state)
+    def remove_datapoint(self, params: ExperimentParameters) -> None:
+        MongoDB().remove_datapoint(params)
         Clients.push_results_to_all()
 
     def remove_cached_executable(self, subject_type: str, subject_name: str, state_name: str) -> None:
@@ -246,7 +267,7 @@ class Main:
         for eval_params in eval_params_list:
             self.eval_queue.append(
                 {
-                    'experiment': eval_params.evaluation_range.experiment_name,
+                    'experiment': eval_params.experiment_name,
                     'state': 'pending',
                 }
             )

@@ -13,7 +13,7 @@ class PlotFactory:
     @staticmethod
     def get_plot_commit_data(params: EvaluationParameters) -> dict:
         commit_docs = MongoDB().get_documents_for_plotting(params)
-        state_oracle = factory.get_subject_from_params(params).state_oracle
+        state_oracle = factory.get_subject_from_params(params.subject_configuration).state_oracle
         return PlotFactory.__add_outcome_info(commit_docs, state_oracle)
 
     @staticmethod
@@ -24,7 +24,7 @@ class PlotFactory:
     @staticmethod
     def validate_params(params: EvaluationParameters) -> list[str]:
         missing_parameters = []
-        if not params.evaluation_range.experiment_name:
+        if not params.experiment_name:
             missing_parameters.append('selected experiment')
         if not params.subject_configuration.subject_type:
             missing_parameters.append('subject_type')
@@ -43,7 +43,7 @@ class PlotFactory:
         return new_docs
 
     @staticmethod
-    def __add_outcome_info(docs: list, state_oracle: StateOracle|None):
+    def __add_outcome_info(docs: list, state_oracle: StateOracle | None):
         if not docs:
             return {'commit_nb': [], 'major_version': [], 'version_printed_by_executable': [], 'outcome': []}
 
@@ -63,7 +63,9 @@ class PlotFactory:
                 logger.error(f'Skipping state doc with unknown commit number (commit id: {commit_id}).')
                 continue
             elif commit_id is None:
-                logger.error(f'Including state doc with unknown commit id (commit number: {commit_nb}), without supplying commit url.')
+                logger.error(
+                    f'Including state doc with unknown commit id (commit number: {commit_nb}), without supplying commit url.'
+                )
                 commit_url = None
             else:
                 if state_oracle:
@@ -74,7 +76,7 @@ class PlotFactory:
             new_doc = {
                 'commit_nb': commit_nb,
                 'commit_url': commit_url,
-                'major_version': doc['state'].get('major_version', None), # commit states don't have this field
+                'major_version': doc['state'].get('major_version', None),  # commit states don't have this field
                 'version_printed_by_executable': doc['subject_version'],
             }
             if doc['dirty']:

@@ -8,7 +8,7 @@ import docker
 import docker.errors
 
 from bughog import configuration, worker
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
 
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class WorkerManager:
-    def __init__(self, eval_params: EvaluationParameters) -> None:
-        self.max_nb_of_containers = eval_params.sequence_configuration.nb_of_containers
+    def __init__(self, subject_type: str, subject_name: str, max_nb_of_containers: int) -> None:
+        self.max_nb_of_containers = max_nb_of_containers
 
         if self.max_nb_of_containers == 1:
             logger.info('Running in single container mode')
@@ -26,11 +26,9 @@ class WorkerManager:
             for i in range(self.max_nb_of_containers):
                 self.container_id_pool.put(i)
             self.client = docker.from_env()
-            subject_type = eval_params.subject_configuration.subject_type
-            subject_name = eval_params.subject_configuration.subject_name
             self.worker_image_ref = self.__get_worker_image_ref(subject_type, subject_name)
 
-    def start_experiment(self, params: EvaluationParameters, state: State, blocking_wait=True) -> None:
+    def start_experiment(self, params: ExperimentParameters, state: State, blocking_wait=True) -> None:
         if self.max_nb_of_containers != 1:
             return self.__run_container(params, state, blocking_wait)
 
@@ -38,7 +36,7 @@ class WorkerManager:
         worker.run(params, state)
         Clients.push_results_to_all()
 
-    def __run_container(self, params: EvaluationParameters, state: State, blocking_wait=True) -> None:
+    def __run_container(self, params: ExperimentParameters, state: State, blocking_wait=True) -> None:
         while blocking_wait and self.get_nb_of_running_worker_containers() >= self.max_nb_of_containers:
             time.sleep(1)
         container_id = self.container_id_pool.get()
@@ -122,7 +120,7 @@ class WorkerManager:
         thread.start()
         logger.info(f"Container '{container_name}' started experiments for '{state}'")
         # Sleep to avoid all workers downloading executables at once, clogging up all IO.
-        time.sleep(.1)
+        time.sleep(0.1)
 
     def get_nb_of_running_worker_containers(self):
         return len(self.get_runnning_containers())

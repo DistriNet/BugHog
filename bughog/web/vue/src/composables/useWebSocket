@@ -1,0 +1,169 @@
+import { ref, onMounted, onUnmounted } from 'vue';
+import { toast } from 'vue3-toastify';
+
+export function useWebSocket(options = {}) {
+  const {
+    onMessage = () => {},
+    onOpen = () => {},
+    onError = () => {},
+    onClose = () => {},
+    autoConnect = true,
+    reconnectInterval = 3000,
+    maxReconnectAttempts = Infinity,
+  } = options;
+
+  const websocket = ref(null);
+  const isConnected = ref(false);
+  const reconnectAttempts = ref(0);
+  const reconnectTimer = ref(null);
+
+  const createSocket = () => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${protocol}//${window.location.host}/api/socket/`;
+
+    const ws = new WebSocket(url);
+
+    ws.addEventListener('open', () => {
+      console.log('WebSocket opened!');
+      isConnected.value = true;
+      reconnectAttempts.value = 0;
+
+      onOpen(ws);
+    });
+
+    ws.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        // Handle notifications
+        if (data.hasOwnProperty('notification')) {
+          const { message, type } = data.notification;
+
+          if (type === 'info') {
+            toast.info(message);
+          } else if (type === 'error') {
+            toast.error(message);
+          }
+        }
+
+        // Call custom message handler with parsed data
+        onMessage(data);
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    });
+
+    ws.addEventListener('error', (event) => {
+      console.log('WebSocket error:', event.code, event.reason);
+      isConnected.value = false;
+
+      // Call custom error handler
+      onError(event);
+    });
+
+    ws.addEventListener('close', (event) => {
+      console.log('WebSocket closed:', event.code, event.reason);
+      isConnected.value = false;
+
+      // Call custom close handler
+      onClose(event);
+
+      // Attempt to reconnect
+      attemptReconnect();
+    });
+
+    return ws;
+  };
+
+  /**
+   * Attempts to reconnect to the WebSocket server
+   */
+  const attemptReconnect = () => {
+    if (reconnectAttempts.value >= maxReconnectAttempts) {
+      console.log('Max reconnect attempts reached');
+      return;
+    }
+
+    reconnectAttempts.value++;
+    console.log(`Attempting to reconnect... (${reconnectAttempts.value}/${maxReconnectAttempts})`);
+
+    reconnectTimer.value = setTimeout(() => {
+      websocket.value = createSocket();
+    }, reconnectInterval);
+  };
+
+  /**
+   * Sends data through the WebSocket connection
+   * @param {Object} data - Data to send (will be stringified)
+   */
+  const send = (data) => {
+    if (websocket.value === null || websocket.value === undefined || websocket.value.readyState > 1) {
+      console.log('WebSocket connection died, reviving...');
+      websocket.value = createSocket();
+
+      // Queue the message to be sent after reconnection
+      setTimeout(() => send(data), 1000);
+      return;
+    }
+
+    if (websocket.value.readyState === 0) {
+      console.log(`WebSocket is still trying to connect... (readyState: ${websocket.value.readyState})`);
+      // Queue the message to be sent after connection is established
+      setTimeout(() => send(data), 500);
+      return;
+    }
+
+    if (websocket.value.readyState === 1) {
+      websocket.value.send(JSON.stringify(data));
+    }
+  };
+
+  /**
+   * Manually connects the WebSocket
+   */
+  const connect = () => {
+    if (websocket.value && websocket.value.readyState === 1) {
+      console.log('WebSocket already connected');
+      return;
+    }
+
+    websocket.value = createSocket();
+  };
+
+  /**
+   * Manually disconnects the WebSocket
+   */
+  const disconnect = () => {
+    if (reconnectTimer.value) {
+      clearTimeout(reconnectTimer.value);
+      reconnectTimer.value = null;
+    }
+
+    if (websocket.value) {
+      websocket.value.close();
+      websocket.value = null;
+    }
+
+    isConnected.value = false;
+  };
+
+  // Lifecycle hooks
+  onMounted(() => {
+    if (autoConnect) {
+      connect();
+    }
+  });
+
+  onUnmounted(() => {
+    disconnect();
+  });
+
+  return {
+    websocket,
+    isConnected,
+    send,
+    connect,
+    disconnect,
+    reconnectAttempts,
+  };
+}

@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.file_structure import Folder
-from bughog.parameters import EvaluationParameters, SubjectConfiguration
+from bughog.parameters import ExperimentParameters, SubjectConfiguration
 from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
 from bughog.subject.state_oracle import StateOracle
@@ -61,7 +61,7 @@ class Subject(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> Simulation:
+    def create_simulation(executable: Executable, context: Folder, params: ExperimentParameters) -> Simulation:
         """
         Creates and returns the simulation object based on the given executable, experiment context and eval params.
         """

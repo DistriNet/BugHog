@@ -57,3 +57,13 @@ class ExperimentResult:
                 return None
             padded_version.append('0' * (padding_target - len(sub)) + sub)
         return '.'.join(padded_version)
+
+    def to_dict(self) -> dict:
+        return {
+            'executable_version': self.executable_version,
+            'executable_origin': self.executable_origin,
+            'state': self.state,
+            'raw_results': self.raw_results,
+            'result_variables': list(self.result_variables),
+            'is_dirty': self.is_dirty,
+        }

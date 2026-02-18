@@ -27,6 +27,9 @@ class ShallowState:
         }
         return {k: v for k, v in fields.items() if v is not None}
 
+    def to_deep_state(self, subject_type: str, subject_name: str) -> State:
+        return State.from_dict(subject_type, subject_name, self.dict)
+
 
 class State(ABC):
     def __init__(self, oracle: StateOracle):

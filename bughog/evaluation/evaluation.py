@@ -5,7 +5,7 @@ from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.evaluation.interaction import Interaction
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.subject import factory
 from bughog.subject.executable import Executable, ExecutableStatus
 from bughog.subject.simulation import Simulation
@@ -20,16 +20,16 @@ class Evaluation:
         self.experiments = factory.create_experiments(subject_type)
         self.should_stop = False
 
-    def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
-        if MongoDB().has_result(params, state.to_shallow_state()):
+    def evaluate(self, params: ExperimentParameters, state: State, is_worker=False):
+        if MongoDB().has_result(params):
             logger.warning(
-                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
+                f"Experiment '{params.experiment_name}' for '{params.state}' was already performed, skipping."
             )
             return
 
-        subject = factory.get_subject_from_params(params)
+        subject = factory.get_subject_from_params(params.subject_configuration)
 
-        experiment_folder = self.experiments.get_experiment_folder(params)
+        experiment_folder = self.experiments.get_experiment_folder(params.project_name, params.experiment_name)
         executable = subject.create_executable(params.subject_configuration, state)
         runtime_flags = self.experiments.framework.get_runtime_flags(experiment_folder)
         runtime_env_vars = self.experiments.framework.get_runtime_env_vars(experiment_folder)

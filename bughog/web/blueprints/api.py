@@ -13,9 +13,8 @@ from bughog.main import Main
 from bughog.parameters import MissingParametersError
 from bughog.subject import factory
 from bughog.subject.factory import get_all_subject_availability
-from bughog.version_control.state.base import ShallowState
 from bughog.web.clients import Clients
-from bughog.web.evaluation_thread import run_eval_thread
+from bughog.web.evaluation_thread import run_eval_thread, run_experiment_thread
 
 logger = logging.getLogger(__name__)
 api = Blueprint('api', __name__, url_prefix='/api')
@@ -59,7 +58,7 @@ def start_evaluation():
     data = request.json.copy()
     try:
         database_params = configuration.get_database_params()
-        params = application_logic.evaluation_factory(data, database_params)
+        params = application_logic.create_evaluation_params(data, database_params)
         run_eval_thread(__get_main(), params)
         return {'status': 'OK'}
     except MissingParametersError:
@@ -78,6 +77,22 @@ def stop_evaluation():
     else:
         __get_main().activate_stop_gracefully()
     return {'status': 'OK'}
+
+
+@api.route('/experiment/start/', methods=['POST'])
+def start_experiment():
+    if request.json is None:
+        return {'status': 'NOK', 'msg': 'No experiment parameters found'}
+
+    data = request.json.copy()
+    try:
+        database_params = configuration.get_database_params()
+        params = application_logic.create_experiment_params(data, database_params)
+        __get_main().remove_datapoint(params)
+        run_experiment_thread(__get_main(), params)
+        return {'status': 'OK'}
+    except MissingParametersError:
+        return {'status': 'NOK', 'msg': 'Could not start experiment due to missing parameters.'}
 
 
 """
@@ -100,6 +115,9 @@ def init_websocket(ws):
                 Clients.associate_params(ws, params)
             if requested_variables := message.get('get', []):
                 __get_main().push_info(ws, *requested_variables)
+            if params_dict := message.get('request_experiment_result', None):
+                params = application_logic.create_experiment_params(params_dict, configuration.get_database_params())
+                Clients.push_complete_experiment_result(params)
         except ValueError:
             logger.warning('Ignoring invalid message from client.')
 
@@ -229,15 +247,12 @@ def remove_datapoint():
     data = request.json.copy()
     if not isinstance(data, dict):
         return {'status': 'NOK', 'msg': 'Received dataformat is not a dictionary.'}
-    if (type := data.get('type')) not in ['release', 'commit']:
+    if (data.get('type')) not in ['release', 'commit']:
         return {'status': 'NOK', 'msg': 'Type argument should be release or commit.'}
     database_params = configuration.get_database_params()
     try:
-        params_list = application_logic.evaluation_factory(data, database_params, only_to_plot=True)
-        if len(params_list) < 1:
-            return {'status': 'NOK', 'msg': 'Could not construct removal parameters.'}
-        state = ShallowState(type, data.get('major_version'), data.get('commit_nb'), data.get('commit_id'))
-        __get_main().remove_datapoint(params_list[0], state)
+        params = application_logic.create_experiment_params(data, database_params)
+        __get_main().remove_datapoint(params)
     except MissingParametersError:
         return {'status': 'NOK', 'msg': 'Could not remove datapoint due to missing parameters'}
     return {'status': 'OK'}
