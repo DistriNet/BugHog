@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import Playground from '../views/Playground.vue'
+import Lab from '../views/Lab.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,9 +11,9 @@ const router = createRouter({
       component: Home
     },
     {
-      path: '/play/:subject_type/:subject_name/:project_name/:poc_name',
-      name: 'playground',
-      component: Playground,
+      path: '/lab/:subject_type/:subject_name/:project_name/:poc_name',
+      name: 'lab',
+      component: Lab,
       props: true
     }
   ]

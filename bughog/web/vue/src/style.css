@@ -39,7 +39,7 @@ select {
 }
 
 .horizontal-select label {
-  @apply w-full py-3 ml-1 text-sm text-left font-medium truncate
+  @apply w-full py-3 ml-1 text-sm text-left font-medium
 }
 
 label {

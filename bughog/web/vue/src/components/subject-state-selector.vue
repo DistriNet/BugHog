@@ -63,9 +63,9 @@ const isSliderMode = computed(() => {
     <div v-else class="relative">
       <div class="flex items-center">
         <button
-          @click="internalValue = Math.max(min, internalValue - 1)"
+          @click="internalValue = internalValue != null ? Math.max(min, internalValue - 1) : min"
           class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-l border border-r-0 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          :disabled="disabled || internalValue <= min"
+          :disabled="disabled || (internalValue != null && internalValue <= min)"
         >
           -
         </button>
@@ -78,17 +78,17 @@ const isSliderMode = computed(() => {
           class="w-full text-center p-2 border-t border-b border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
         />
         <button
-          @click="internalValue = Math.min(max, internalValue + 1)"
+          @click="internalValue = internalValue != null ? Math.min(max, internalValue + 1) : max"
           class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-r border border-l-0 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          :disabled="disabled || internalValue >= max"
+          :disabled="disabled || (internalValue != null && internalValue >= max)"
         >
           +
         </button>
       </div>
 
       <div v-if="mode === 'commit'" class="flex justify-between mt-1">
-        <button @click="internalValue = min" class="text-xs text-blue-500 hover:underline">Min</button>
-        <button @click="internalValue = max" class="text-xs text-blue-500 hover:underline">Max</button>
+        <button @click="internalValue = min" class="no-style text-xs text-blue-500 hover:underline">Min</button>
+        <button @click="internalValue = max" class="no-style text-xs text-blue-500 hover:underline">Max</button>
       </div>
     </div>
   </div>

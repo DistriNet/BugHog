@@ -171,15 +171,22 @@ export default {
       this.selected.experiment = null;
     },
     "evalParams.experiments": function (experiments) {
+      const totalEnabled = this.experiments.filter(tuple => tuple[1]).length;
+      if (totalEnabled > 0 && experiments.length === totalEnabled) {
+        this.select_all_experiments = true;
+      } else if (experiments.length < totalEnabled) {
+        this.select_all_experiments = false;
+      }
+
       if (experiments.length === 1) {
         this.evalParams.experiment_to_plot = experiments[0];
-        this.propagate_new_params()
       }
       else if (this.evalParams.experiment_to_plot) {
         if (!experiments.includes(this.evalParams.experiment_to_plot)) {
           this.evalParams.experiment_to_plot = null;
         }
       }
+      this.propagate_new_params();
     },
     "cli_options_str": function (val) {
       if (val !== "") {
@@ -189,12 +196,17 @@ export default {
       }
     },
     "select_all_experiments": function (val) {
-      if (this.select_all_experiments === true) {
-        this.evalParams.experiments = this.experiments
-          .filter(tuple => tuple[1]) // Only select enabled checkboxes
-          .map(tuple => tuple[0]);;
+      const totalEnabled = this.experiments.filter(tuple => tuple[1]).length;
+      if (val === true) {
+        if (this.evalParams.experiments.length !== totalEnabled) {
+          this.evalParams.experiments = this.experiments
+            .filter(tuple => tuple[1])
+            .map(tuple => tuple[0]);
+        }
       } else {
-        this.evalParams.experiments = [];
+        if (this.evalParams.experiments.length === totalEnabled) {
+          this.evalParams.experiments = [];
+        }
       }
     },
   },
@@ -263,6 +275,18 @@ export default {
           this.updateServerInfo(data.update);
         }
       }
+    },
+    openLab(poc_name) {
+      const routeData = this.$router.resolve({
+        name: 'lab',
+        params: {
+          subject_type: this.evalParams.subject_type,
+          subject_name: this.evalParams.subject_name,
+          project_name: this.evalParams.project_name,
+          poc_name: poc_name
+        }
+      });
+      window.open(routeData.href, '_blank');
     },
     fetch_server_info(info_types) {
       this.sendWithSocket({
@@ -486,32 +510,37 @@ export default {
             <li>
               <div class="bg-gray-100 dark:bg-gray-800">
                 <input id="select_all_experiments" type="checkbox" class="ml-1" v-model="this.select_all_experiments">
-                <label for="vue-checkbox-list" class="flex group w-full">
+                <label for="select_all_experiments" class="flex group w-full cursor-pointer">
                   <div class="pl-0 w-full">
                     <p class="truncate w-0 grow">
                       Select all experiments
                     </p>
                     <p class="text-gray-600 dark:text-gray-500">
-                      ({{ experiments.length }})
+                      ({{ evalParams.experiments.length }}/{{ experiments.filter(t => t[1]).length }})
                     </p>
                   </div>
                 </label>
               </div>
             </li>
-            <li v-for="tuple in experiments" :key="tuple[0]">
-              <div>
-                <input v-model="this.evalParams.experiments" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
-                <label for="vue-checkbox-list" class="flex group w-full">
-                  <div class="pl-0 w-full">
-                    <div v-if="!tuple[1]" class="text-red-500 font-bold">
+            <li v-for="tuple in experiments" :key="tuple[0]" class="group">
+              <div class="flex items-center">
+                <input :id="'checkbox-' + tuple[0]" v-model="this.evalParams.experiments" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
+                <label :for="'checkbox-' + tuple[0]" class="flex w-full items-center cursor-pointer min-w-0">
+                  <div class="pl-0 grow min-w-0 flex items-center">
+                    <div v-if="!tuple[1]" class="text-red-500 font-bold mr-1">
                       !
                     </div>
-                    <p class="truncate w-0 grow">
+                    <p class="grow min-w-0 whitespace-nowrap group-hover:truncate">
                       {{ tuple[0] }}
                     </p>
                   </div>
-                  <div role="button" @click="this.selected.experiment=tuple[0]" class="invisible w-content collapse group-hover:visible">
-                    <v-icon name="fa-regular-edit"/>
+                  <div class="invisible group-hover:visible flex items-center ml-2 shrink-0 w-0 group-hover:w-auto overflow-hidden">
+                    <div role="button" @click.stop.prevent="this.selected.experiment=tuple[0]" title="Edit PoC">
+                      <v-icon name="fa-regular-edit"/>
+                    </div>
+                    <div role="button" @click.stop.prevent="openLab(tuple[0])" title="Open Lab">
+                      <v-icon name="hi-beaker"/>
+                    </div>
                   </div>
                 </label>
               </div>
@@ -536,7 +565,7 @@ export default {
       <div class="results-section mt-2 h-full flex flex-col">
         <section-header section="results" left></section-header>
         <div class="flex flex-wrap justify-between h-fit">
-          <select class="w-fit h-fit" v-model="this.evalParams.experiment_to_plot" @change="propagate_new_params">
+          <select class="w-64 truncate h-fit" v-model="this.evalParams.experiment_to_plot" @change="propagate_new_params">
             <option disabled value="">Select an experiment</option>
             <option v-for="experiment in this.evalParams.experiments">{{ experiment }}</option>
           </select>

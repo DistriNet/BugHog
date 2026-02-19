@@ -9,9 +9,9 @@ import Vue3Toastify from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
 import { OhVueIcon, addIcons } from "oh-vue-icons";
-import { MdInfooutline, FaRegularEdit, FaLink, FaPlus } from "oh-vue-icons/icons";
+import { MdInfooutline, FaRegularEdit, FaLink, FaPlus, HiBeaker } from "oh-vue-icons/icons";
 
-addIcons(MdInfooutline, FaRegularEdit, FaLink, FaPlus);
+addIcons(MdInfooutline, FaRegularEdit, FaLink, FaPlus, HiBeaker);
 
 const app = createApp(App);
 app.use(router);

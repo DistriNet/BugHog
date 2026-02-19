@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
+import { useDarkMode } from '../composables/useDarkMode';
 
 const props = defineProps({
   fatal_error: {
@@ -32,7 +33,7 @@ const evalParams = computed({
   set: (val) => emit('update:modelValue', val)
 });
 
-const darkMode = ref(false);
+const { darkMode } = useDarkMode();
 
 const propagate_new_params = () => {
   emit('params-changed', evalParams.value);
