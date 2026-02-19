@@ -246,7 +246,7 @@ export default {
       if (this.system == null) {
         this.get_system_info();
       }
-      this.fetch_server_info(["logs"]);
+      this.fetch_server_info(["logs", "state"]);
     }, 2000);
   },
   mounted: function () {

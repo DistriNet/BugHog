@@ -2,7 +2,7 @@ import logging
 import os
 import threading
 import time
-from queue import Queue
+from queue import Empty, Queue
 
 import docker
 import docker.errors
@@ -37,9 +37,13 @@ class WorkerManager:
         Clients.push_results_to_all()
 
     def __run_container(self, params: ExperimentParameters, state: State, blocking_wait=True) -> None:
-        while blocking_wait and self.get_nb_of_running_worker_containers() >= self.max_nb_of_containers:
-            time.sleep(1)
-        container_id = self.container_id_pool.get()
+        try:
+            container_id = self.container_id_pool.get(block=blocking_wait)
+        except Empty:
+            logger.warning(
+                'No container id available to run experiment. This should not happen when blocking_wait is True.'
+            )
+            return
         container_name = f'bh_worker_{container_id}'
 
         def start_container_thread():
@@ -122,8 +126,9 @@ class WorkerManager:
         # Sleep to avoid all workers downloading executables at once, clogging up all IO.
         time.sleep(0.1)
 
-    def get_nb_of_running_worker_containers(self):
-        return len(self.get_runnning_containers())
+    @staticmethod
+    def get_nb_of_running_worker_containers():
+        return len(WorkerManager.get_runnning_containers())
 
     @staticmethod
     def get_runnning_containers():

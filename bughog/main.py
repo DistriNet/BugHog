@@ -247,6 +247,7 @@ class Main:
             if arg == 'logs' or all:
                 update['logs'] = configuration.Loggers.get_logs()
             if arg == 'state' or all:
+                self.state['nb_of_running_containers'] = WorkerManager.get_nb_of_running_worker_containers()
                 update['state'] = self.state
         Clients.push_info(ws, update)
 
@@ -260,6 +261,7 @@ class Main:
     def __update_state(self, **kwargs) -> None:
         for key, value in kwargs.items():
             self.state[key] = value
+        self.state['nb_of_running_containers'] = WorkerManager.get_nb_of_running_worker_containers()
         Clients.push_info_to_all({'state': self.state})
 
     def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
