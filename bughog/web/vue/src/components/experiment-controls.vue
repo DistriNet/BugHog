@@ -16,18 +16,18 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['start', 'stop']);
+const emit = defineEmits(['start']);
 
 const buttonText = computed(() => {
   if (props.isRunning) {
-    return 'Stop experiment';
+    return 'Running experiment...';
   }
   return props.hasResult ? 'Rerun experiment' : 'Run experiment';
 });
 
 const buttonClass = computed(() => {
   if (props.isRunning) {
-    return 'bg-yellow-300 hover:bg-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500';
+    return 'bg-blue-300 dark:bg-blue-800 cursor-not-allowed text-gray-700 dark:text-gray-300';
   }
   if (!props.canStart) {
     return 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500';
@@ -39,8 +39,8 @@ const buttonClass = computed(() => {
 <template>
   <div class="w-full">
     <button
-      @click="isRunning ? $emit('stop') : $emit('start')"
-      :disabled="!isRunning && !canStart"
+      @click="!isRunning && $emit('start')"
+      :disabled="isRunning || !canStart"
       :class="buttonClass"
       class="w-full text-black dark:text-white font-bold py-2 px-4 rounded transition-colors"
     >

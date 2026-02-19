@@ -1,6 +1,6 @@
 <script setup>
 import '@vueform/slider/themes/default.css';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useTitle } from '@vueuse/core';
 import axios from 'axios';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -23,6 +23,8 @@ const props = defineProps({
   project_name: { type: String, required: true },
   poc_name: { type: String, required: true },
 });
+
+useTitle('Bughog - Lab');
 
 const route = useRoute();
 const router = useRouter();
@@ -108,12 +110,6 @@ const start_experiment = () => {
     })
     .catch(console.error);
 };
-
-const stop = (forcefully) => {
-  const path = `/api/experiment/stop/`;
-  const data = forcefully ? { forcefully: true } : {};
-  axios.post(path, data).catch(console.error);
-};
 </script>
 
 <template>
@@ -170,8 +166,6 @@ const stop = (forcefully) => {
               :hasResult="experiment_result !== null"
               :can-start="true"
               @start="start_experiment"
-              @stop-gracefully="stop(false)"
-              @stop-forcefully="stop(true)"
             />
           </div>
 
