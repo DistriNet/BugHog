@@ -75,7 +75,7 @@ const isSliderMode = computed(() => {
           :min="min"
           :max="max"
           :disabled="disabled"
-          class="w-full text-center p-2 border-t border-b border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          class="w-full text-center p-2 border-t border-b border-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
         />
         <button
           @click="internalValue = internalValue != null ? Math.min(max, internalValue + 1) : max"

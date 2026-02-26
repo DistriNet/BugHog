@@ -309,7 +309,7 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
         <!-- Root files -->
         <li v-for="file in active_poc.tree.files.sort((a, b) => a.name.localeCompare(b.name))" :key="file.name">
           <div
-            class="group flex p-2 mb-2 hover:bg-gray-100 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
+            class="group flex p-2 mb-2 hover:bg-gray-100 hover:dark:bg-gray-800 hover:bg-opacity-80 hover:text-blue-gray-900 hover:cursor-pointer focus:bg-blue-gray-50 focus:bg-opacity-80 focus:text-blue-gray-900"
             role="button"
             @click="set_active_file(null, file.name)">
             <span class="truncate">{{ file.name }}</span>
