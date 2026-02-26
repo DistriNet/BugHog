@@ -29,24 +29,20 @@ subjects = {
 }
 
 
-@staticmethod
 def get_all_subject_types() -> list[str]:
     return sorted(subjects.keys())
 
 
-@staticmethod
 def get_all_subjects_for(subject_type: str) -> list[Subject]:
     if subject_objects := subjects.get(subject_type):
         return subject_objects['subjects']
     raise AttributeError(f"Subject type '{subject_type}' is not supported.")
 
 
-@staticmethod
 def get_all_subject_names_for(subject_type: str) -> list[str]:
     return [subject.name for subject in get_all_subjects_for(subject_type)]
 
 
-@staticmethod
 def create_evaluation_framework(subject_type: str) -> EvaluationFramework:
     if subject_classes := subjects.get(subject_type):
         return subject_classes['evaluation_framework'](subject_type)
@@ -58,12 +54,10 @@ def create_experiments(subject_type: str) -> Experiments:
     return Experiments(subject_type, create_evaluation_framework(subject_type))
 
 
-@staticmethod
 def invalidate_experiment_cache():
     create_experiments.cache_clear()
 
 
-@staticmethod
 def get_all_subject_availability() -> list[dict]:
     subject_availability = []
     for subject_type in get_all_subject_types():
@@ -74,20 +68,17 @@ def get_all_subject_availability() -> list[dict]:
     return subject_availability
 
 
-@staticmethod
 def get_subject_availability(subject_type: str, subject_name: str) -> tuple[int, int]:
     subject_availability = get_subject(subject_type, subject_name).get_availability()
     return subject_availability['min_version'], subject_availability['max_version']
 
 
-@staticmethod
 def get_subject_from_params(config: SubjectConfiguration) -> Subject:
     subject_type = config.subject_type
     subject_name = config.subject_name
     return get_subject(subject_type, subject_name)
 
 
-@staticmethod
 def get_subject(subject_type: str, subject_name: str) -> Subject:
     subjects = get_all_subjects_for(subject_type)
     matched_subjects = [subject for subject in subjects if subject.name == subject_name]
@@ -96,7 +87,6 @@ def get_subject(subject_type: str, subject_name: str) -> Subject:
     raise AttributeError(f"Subject '{subject_type}, {subject_name}' is not supported.")
 
 
-@staticmethod
 def initialize_all_subject_folders() -> None:
     for subject_type, specs in subjects.items():
         os.makedirs(f'/app/subject/{subject_type}/experiments/', exist_ok=True)

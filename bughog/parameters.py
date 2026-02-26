@@ -176,7 +176,6 @@ class PlotParameters(EvaluationParameters):
     dirty_results_allowed: bool
 
 
-@staticmethod
 def create_evaluation_params(
     kwargs: dict, database_params: DatabaseParameters, only_to_plot=False
 ) -> list[EvaluationParameters]:
@@ -203,7 +202,6 @@ def create_evaluation_params(
     return evaluation_params_list
 
 
-@staticmethod
 def create_experiment_params(kwargs: dict, database_params: DatabaseParameters) -> ExperimentParameters:
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     if 'major_version' in kwargs:
@@ -225,7 +223,6 @@ def create_experiment_params(kwargs: dict, database_params: DatabaseParameters) 
     )
 
 
-@staticmethod
 def __get_cookie_name(form_data: dict[str, str]) -> str | None:
     if form_data['check_for'] == 'request':
         return None
