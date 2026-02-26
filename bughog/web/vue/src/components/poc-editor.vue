@@ -261,6 +261,7 @@ import { getMode as getInteractionScriptMode } from '../interaction_script_mode'
       ace.config.set('basePath', '/node_modules/ace-builds/src-min-noconflict');
       this.editor = ace.edit("editor");
       this.editor.session.addEventListener("change", this.update_file_content);
+      this.editor.setTheme(this.darkMode ? "ace/theme/twilight" : "ace/theme/xcode");
     },
     watch: {
       "darkMode": function(val) {
