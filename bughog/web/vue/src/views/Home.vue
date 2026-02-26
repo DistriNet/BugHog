@@ -435,308 +435,311 @@ export default {
 </script>
 
 <template>
-  <div id="option-board" class="grid grid-rows-[4rem,50rem,auto,auto] grid-cols-[18rem,58rem] content-start gap-3 justify-center h-screen">
+  <div class="w-[85vw] mx-auto">
+    <div id="option-board" class="grid grid-rows-[4rem_50rem_auto_auto] grid-cols-[18rem_1fr] content-start gap-3 h-screen">
 
-    <!-- Banner -->
-    <Banner
-      :fatal_error="fatal_error"
-      :banner_message="banner_message"
-      :subject_availability="subject_availability"
-      v-model="evalParams"
-      @params-changed="propagate_new_params"
-      @toggle-dark-mode="darkMode = $event"
-    />
-
-    <!-- Subject settings and experiments -->
-    <div class="row-start-2 row-span-1 gap-3 flex flex-col">
-      <!-- Subject settings -->
-      <div class="form-section">
-        <section-header section="eval_range"></section-header>
-
-        <!-- Subject --><div class="form-subsection">
-    <h2 class="form-subsection-title">Subject</h2>
-    <div class="flex flex-row justify-center mx-5">
-      <div v-for="subject_name in subject_availability.get_available_subject_names_for_type(this.evalParams.subject_type)" :key="subject_name" class="radio-item flex-auto">
-        <input type="radio" :id="subject_name" name="subject" :value="subject_name" v-model="evalParams.subject_name" @change="propagate_new_params" />
-        <label :for="subject_name">{{ subject_name }}</label>
-      </div>
-    </div>
-  </div>
-
-        <div class="form-subsection">
-          <h2 class="form-subsection-title">Subject version range</h2>
-          <div class="flex flex-wrap">
-            <div class="w-5/6 m-auto pt-12">
-              <Slider
-                ref="version_slider"
-                v-model="evalParams.version_range"
-                :lazy=true
-                :min="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[0]"
-                :max="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[1]"
-                :merge="computed_slider_merge"
-                :disabled=false
-                class="slider"
-                @change="propagate_new_params"
-              />
-            </div>
-            <div class="pt-5 checkbox-item">
-              <input
-                v-model="this.evalParams.only_release_commits"
-                :true-value="false"
-                :false-value="true"
-                type="checkbox">
-              <label>Deep search
-                <tooltip tooltip="deep_search"></tooltip>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Experiments -->
-      <div class="form-section flex flex-col grow h-0">
-        <section-header section="experiments" class="w-1/2"></section-header>
-        <div class="flex mb-2 mr-1">
-          <select id="project_dropdown" v-model="this.evalParams.project_name" @change="propagate_new_params" >
-            <option disabled value="">Select a project</option>
-            <option v-for="project in projects">{{ project }}</option>
-          </select>
-          <button class="button ml-2" onclick="create_project_dialog.showModal()">
-            +
-          </button>
-        </div>
-        <div class="h-0 grow overflow-y-auto overflow-x-hidden">
-          <ul class="horizontal-select">
-            <li>
-              <div class="bg-gray-100 dark:bg-gray-800">
-                <input id="select_all_experiments" type="checkbox" class="ml-1" v-model="this.select_all_experiments">
-                <label for="select_all_experiments" class="flex group w-full cursor-pointer">
-                  <div class="pl-0 w-full">
-                    <p class="truncate w-0 grow">
-                      Select all experiments
-                    </p>
-                    <p class="text-gray-600 dark:text-gray-500">
-                      ({{ evalParams.experiments.length }}/{{ experiments.filter(t => t[1]).length }})
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </li>
-            <li v-for="tuple in experiments" :key="tuple[0]" class="group">
-              <div class="flex items-center">
-                <input :id="'checkbox-' + tuple[0]" v-model="this.evalParams.experiments" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
-                <label :for="'checkbox-' + tuple[0]" class="flex w-full items-center cursor-pointer min-w-0">
-                  <div class="pl-0 grow min-w-0 flex items-center">
-                    <div v-if="!tuple[1]" class="text-red-500 font-bold mr-1">
-                      !
-                    </div>
-                    <p class="grow min-w-0 whitespace-nowrap group-hover:truncate">
-                      {{ tuple[0] }}
-                    </p>
-                  </div>
-                  <div class="invisible group-hover:visible flex items-center ml-2 shrink-0 w-0 group-hover:w-auto overflow-hidden">
-                    <div role="button" @click.stop.prevent="this.selected.experiment=tuple[0]" title="Edit PoC">
-                      <v-icon name="fa-regular-edit"/>
-                    </div>
-                    <div role="button" @click.stop.prevent="openLab(tuple[0])" title="Open Lab">
-                      <v-icon name="hi-beaker"/>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <div v-if="this.evalParams.project_name" role="button" class="button mt-2" onclick="create_experiment_dialog.showModal()">
-          Add new experiment
-        </div>
-      </div>
-    </div>
-
-    <!-- Start button and results section -->
-    <div class="row-start-2 col-start-2 flex flex-col h-full">
-      <EvaluationControls
-        :is-running="server_info.state.is_running === true"
-        :can-start="true"
-        @start="submit_form"
-        @stop-gracefully="stop(false)"
-        @stop-forcefully="stop(true)"
+      <!-- Banner -->
+      <Banner
+        :fatal_error="fatal_error"
+        :banner_message="banner_message"
+        :subject_availability="subject_availability"
+        v-model="evalParams"
+        @params-changed="propagate_new_params"
+        @toggle-dark-mode="darkMode = $event"
       />
-      <div class="results-section mt-2 h-full flex flex-col">
-        <section-header section="results" left></section-header>
-        <div class="flex flex-wrap justify-between h-fit">
-          <select class="w-64 truncate h-fit" v-model="this.evalParams.experiment_to_plot" @change="propagate_new_params">
-            <option disabled value="">Select an experiment</option>
-            <option v-for="experiment in this.evalParams.experiments">{{ experiment }}</option>
-          </select>
-          <div class="flex flex-wrap">
-            <evaluation-status :server_info="this.server_info">
-            </evaluation-status>
+
+      <!-- Subject settings and experiments -->
+      <div class="row-start-2 row-span-1 gap-3 flex flex-col">
+        <!-- Subject settings -->
+        <div class="form-section">
+          <section-header section="eval_range"></section-header>
+
+          <!-- Subject -->
+          <div class="form-subsection">
+            <h2 class="form-subsection-title">Subject</h2>
+            <div class="flex flex-row flex-wrap justify-center mx-5">
+              <div v-for="subject_name in subject_availability.get_available_subject_names_for_type(this.evalParams.subject_type)" :key="subject_name" class="radio-item flex-auto pr-4">
+                <input class="shrink-0" type="radio" :id="subject_name" name="subject" :value="subject_name" v-model="evalParams.subject_name" @change="propagate_new_params" />
+                <label :for="subject_name">{{ subject_name }}</label>
+              </div>
+            </div>
           </div>
-          <div class="flex flex-wrap">
-            <ul class="my-3 w-64">
-              <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
+
+          <div class="form-subsection">
+            <h2 class="form-subsection-title">Subject version range</h2>
+            <div class="flex flex-wrap">
+              <div class="w-5/6 m-auto pt-12">
+                <Slider
+                  ref="version_slider"
+                  v-model="evalParams.version_range"
+                  :lazy=true
+                  :min="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[0]"
+                  :max="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[1]"
+                  :merge="computed_slider_merge"
+                  :disabled=false
+                  class="slider"
+                  @change="propagate_new_params"
+                />
+              </div>
+              <div class="pt-5 checkbox-item">
+                <input
+                  v-model="this.evalParams.only_release_commits"
+                  :true-value="false"
+                  :false-value="true"
+                  type="checkbox">
+                <label>Deep search
+                  <tooltip tooltip="deep_search"></tooltip>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Experiments -->
+        <div class="form-section flex flex-col grow h-0">
+          <section-header section="experiments" class="w-1/2"></section-header>
+          <div class="flex mb-2 mr-1">
+            <select id="project_dropdown" v-model="this.evalParams.project_name" @change="propagate_new_params" >
+              <option disabled value="">Select a project</option>
+              <option v-for="project in projects">{{ project }}</option>
+            </select>
+            <button class="button ml-2" onclick="create_project_dialog.showModal()">
+              +
+            </button>
+          </div>
+          <div class="h-0 grow overflow-y-auto overflow-x-hidden">
+            <ul class="horizontal-select">
+              <li>
+                <div class="bg-gray-100 dark:bg-gray-800">
+                  <input id="select_all_experiments" type="checkbox" class="ml-1" v-model="this.select_all_experiments">
+                  <label for="select_all_experiments" class="flex group w-full cursor-pointer">
+                    <div class="pl-0 w-full">
+                      <p class="truncate w-0 grow">
+                        Select all experiments
+                      </p>
+                      <p class="text-gray-600 dark:text-gray-500">
+                        ({{ evalParams.experiments.length }}/{{ experiments.filter(t => t[1]).length }})
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </li>
+              <li v-for="tuple in experiments" :key="tuple[0]" class="group">
+                <div class="flex items-center">
+                  <input :id="'checkbox-' + tuple[0]" v-model="this.evalParams.experiments" type="checkbox" class="ml-1" :value="tuple[0]" :disabled="!tuple[1]">
+                  <label :for="'checkbox-' + tuple[0]" class="flex w-full items-center cursor-pointer min-w-0">
+                    <div class="pl-0 grow min-w-0 flex items-center">
+                      <div v-if="!tuple[1]" class="text-red-500 font-bold mr-1">
+                        !
+                      </div>
+                      <p class="grow min-w-0 whitespace-nowrap group-hover:truncate">
+                        {{ tuple[0] }}
+                      </p>
+                    </div>
+                    <div class="invisible group-hover:visible flex items-center ml-2 shrink-0 w-0 group-hover:w-auto overflow-hidden">
+                      <div role="button" @click.stop.prevent="this.selected.experiment=tuple[0]" title="Edit PoC">
+                        <v-icon name="fa-regular-edit"/>
+                      </div>
+                      <div role="button" @click.stop.prevent="openLab(tuple[0])" title="Open Lab">
+                        <v-icon name="hi-beaker"/>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div v-if="this.evalParams.project_name" role="button" class="button mt-2" onclick="create_experiment_dialog.showModal()">
+            Add new experiment
+          </div>
+        </div>
+      </div>
+
+      <!-- Start button and results section -->
+      <div class="row-start-2 col-start-2 flex flex-col h-full">
+        <EvaluationControls
+          :is-running="server_info.state.is_running === true"
+          :can-start="true"
+          @start="submit_form"
+          @stop-gracefully="stop(false)"
+          @stop-forcefully="stop(true)"
+        />
+        <div class="results-section mt-2 h-full flex flex-col">
+          <section-header section="results" left></section-header>
+          <div class="flex flex-wrap justify-between h-fit grid grid-cols-[1fr_1fr_1fr] items-center justify-items-center gap-4">
+            <select class="truncate h-fit" v-model="this.evalParams.experiment_to_plot" @change="propagate_new_params">
+              <option disabled value="">Select an experiment</option>
+              <option v-for="experiment in this.evalParams.experiments">{{ experiment }}</option>
+            </select>
+            <div class="flex flex-wrap">
+              <evaluation-status :server_info="this.server_info">
+              </evaluation-status>
+            </div>
+            <div class="flex flex-wrap">
+              <ul class="my-3">
+                <li><b>Number of experiments:</b> {{ results.nb_of_evaluations }}</li>
+              </ul>
+            </div>
+          </div>
+          <gantt ref="gantt" :eval_params="this.evalParams"></gantt>
+        </div>
+      </div>
+
+      <!-- PoC editor -->
+      <div class="form-section col-span-2 row-start-3">
+        <div class="flex">
+          <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+            Experiment editor
+            <div v-if="this.selected.experiment !== null && !this.hide_poc_editor" class="px-1 font-normal">
+              ({{ this.selected.experiment }})
+            </div>
+          </h2>
+          <div class="w-full text-right">
+            <button class="collapse-button" @click="this.hide_poc_editor = !this.hide_poc_editor">
+              <div class="flex items-center">
+                <p class="text-xl pb-1 px-1">+</p>
+              </div>
+            </button>
+          </div>
+        </div>
+        <div :class="this.hide_poc_editor ? 'hidden w-full' : 'w-full'">
+          <poc-editor
+          :darkMode="this.darkMode"
+          :available_domains="this.available_domains"
+          :project="this.evalParams.project_name"
+          :poc="selected.experiment"
+          :subject_type="this.evalParams.subject_type"></poc-editor>
+        </div>
+      </div>
+
+      <!-- Advanced subject options -->
+      <!-- <div class="form-section col-span-2 row-start-4">
+        <div class="flex">
+          <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
+            Advanced subject options
+          </h2>
+          <div class="w-full text-right">
+            <button class="collapse-button" @click="this.hide_advanced_subject_options = !this.hide_advanced_subject_options">
+              <div class="flex items-center">
+                <p class="text-xl pb-1 px-1">+</p>
+              </div>
+            </button>
+          </div>
+        </div>
+        <div :class="this.hide_advanced_subject_options ? 'hidden w-full' : 'w-full'">
+          <div>
+            <label for="cli_options" class="pb-2">CLI flags</label>
+            <input class="w-full dark:!text-white dark:!bg-gray-800" type="text" name="cli_options" v-model="this.cli_options_str">
+          </div>
+          <div>
+            <div>
+              <label class="pt-4 pb-2">Previously used CLI flags</label>
+            </div>
+            <ul class="">
+              <li v-for="cli_options_str in this.previous_cli_options_list">
+                <div role="button" @click="this.cli_options_str=cli_options_str" class="button my-1 !text-black !text-left !bg-white hover:!bg-gray-100 dark:!text-white dark:!bg-gray-800 dark:hover:!bg-gray-600">
+                  {{ cli_options_str }}
+                </div>
+              </li>
             </ul>
           </div>
         </div>
-        <gantt ref="gantt" :eval_params="this.evalParams"></gantt>
-      </div>
-    </div>
+      </div> -->
 
-    <!-- PoC editor -->
-    <div class="form-section col-span-2 row-start-3">
-      <div class="flex">
-        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
-          Experiment editor
-          <div v-if="this.selected.experiment !== null && !this.hide_poc_editor" class="px-1 font-normal">
-            ({{ this.selected.experiment }})
+      <!-- Advanced evaluation options -->
+      <div class="form-section h-fit col-span-2 row-start-4">
+        <div class="flex">
+          <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced evaluation options</h2>
+          <div class="w-full text-right">
+            <button class="collapse-button" @click="this.hide_advanced_evaluation_options = !this.hide_advanced_evaluation_options">
+              <div class="flex items-center">
+                <p class="text-xl pb-1 px-1">+</p>
+              </div>
+            </button>
           </div>
-        </h2>
-        <div class="w-full text-right">
-          <button class="collapse-button" @click="this.hide_poc_editor = !this.hide_poc_editor">
-            <div class="flex items-center">
-              <p class="text-xl pb-1 px-1">+</p>
-            </div>
-          </button>
         </div>
-      </div>
-      <div :class="this.hide_poc_editor ? 'hidden w-full' : 'w-full'">
-        <poc-editor
-        :darkMode="this.darkMode"
-        :available_domains="this.available_domains"
-        :project="this.evalParams.project_name"
-        :poc="selected.experiment"
-        :subject_type="this.evalParams.subject_type"></poc-editor>
-      </div>
-    </div>
+        <div :class="hide_advanced_evaluation_options ? 'hidden' : ''">
+          <div class="grid grid-cols-[auto,auto,auto] justify-start">
+            <!-- <div class="flex flex-col">
+              <div class="form-subsection">
+                <section-header section="subject_rev_range"></section-header>
+                <div class="p-1 w-1/2">
+                  <label for="lower_commit_nb">Lower commit nb</label>
+                  <input v-model.lazy="this.evalParams.lower_commit_nb" class="number-input w-32" type="number">
+                </div>
 
-    <!-- Advanced subject options -->
-    <!-- <div class="form-section col-span-2 row-start-4">
-      <div class="flex">
-        <h2 class="flex flex-initial w-1/2 form-section-title pt-2">
-          Advanced subject options
-        </h2>
-        <div class="w-full text-right">
-          <button class="collapse-button" @click="this.hide_advanced_subject_options = !this.hide_advanced_subject_options">
-            <div class="flex items-center">
-              <p class="text-xl pb-1 px-1">+</p>
-            </div>
-          </button>
-        </div>
-      </div>
-      <div :class="this.hide_advanced_subject_options ? 'hidden w-full' : 'w-full'">
-        <div>
-          <label for="cli_options" class="pb-2">CLI flags</label>
-          <input class="w-full dark:!text-white dark:!bg-gray-800" type="text" name="cli_options" v-model="this.cli_options_str">
-        </div>
-        <div>
-          <div>
-            <label class="pt-4 pb-2">Previously used CLI flags</label>
-          </div>
-          <ul class="">
-            <li v-for="cli_options_str in this.previous_cli_options_list">
-              <div role="button" @click="this.cli_options_str=cli_options_str" class="button my-1 !text-black !text-left !bg-white hover:!bg-gray-100 dark:!text-white dark:!bg-gray-800 dark:hover:!bg-gray-600">
-                {{ cli_options_str }}
+                <div class="p-1 w-1/2">
+                  <label for="upper_commit_nb">Upper rev nb</label>
+                  <input v-model.lazy="this.evalParams.upper_commit_nb" class="number-input w-32" type="number">
+                </div>
               </div>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div> -->
+            </div> -->
 
-    <!-- Advanced evaluation options -->
-    <div class="form-section h-fit col-span-2 row-start-4">
-      <div class="flex">
-        <h2 class="flex-initial w-1/2 form-section-title pt-2">Advanced evaluation options</h2>
-        <div class="w-full text-right">
-          <button class="collapse-button" @click="this.hide_advanced_evaluation_options = !this.hide_advanced_evaluation_options">
-            <div class="flex items-center">
-              <p class="text-xl pb-1 px-1">+</p>
-            </div>
-          </button>
-        </div>
-      </div>
-      <div :class="hide_advanced_evaluation_options ? 'hidden' : ''">
-        <div class="grid grid-cols-[auto,auto,auto] justify-start">
-          <!-- <div class="flex flex-col">
-            <div class="form-subsection">
-              <section-header section="subject_rev_range"></section-header>
-              <div class="p-1 w-1/2">
-                <label for="lower_commit_nb">Lower commit nb</label>
-                <input v-model.lazy="this.evalParams.lower_commit_nb" class="number-input w-32" type="number">
+            <!-- Evaluation settings -->
+            <div class="form-subsection w-fit eval_opts col-start-3">
+              <section-header section="eval_settings"></section-header>
+              <div class="form-subsection">
+                <section-header section="search_strategy"></section-header>
+
+                <div class="radio-item">
+                  <input v-model="this.evalParams.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
+                    value="bgb_sequence">
+                  <label for="bgb_sequence">BGB sequence</label>
+                  <tooltip tooltip="bgb_sequence"></tooltip>
+                </div>
+
+                <div class="radio-item">
+                  <input v-model="this.evalParams.search_strategy" type="radio" id="bgb_search" name="search_strategy_option"
+                    value="bgb_search">
+                  <label for="bgb_search">BGB search</label>
+                  <tooltip tooltip="bgb_search"></tooltip>
+                </div>
+
+                <div class="radio-item">
+                  <input v-model="this.evalParams.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
+                    value="comp_search">
+                  <label for="comp_search">Composite search</label>
+                  <tooltip tooltip="comp_search"></tooltip>
+                </div>
+                <br>
+
+                <div class="flex items-baseline mb-1">
+                  <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
+                  <tooltip tooltip="sequence_limit"></tooltip>
+                </div>
+                <input v-model.number="this.evalParams.sequence_limit" class="input-box" type="number" min="1" max="10000">
               </div>
 
-              <div class="p-1 w-1/2">
-                <label for="upper_commit_nb">Upper rev nb</label>
-                <input v-model.lazy="this.evalParams.upper_commit_nb" class="number-input w-32" type="number">
+              <div class="form-subsection">
+                <section-header section="parallel_containers"></section-header>
+                <input v-model.number="this.evalParams.nb_of_containers" class="input-box" type="number" id="nb_of_containers"
+                  name="nb_of_containers" min="1" max="16">
               </div>
-            </div>
-          </div> -->
-
-          <!-- Evaluation settings -->
-          <div class="form-subsection w-fit eval_opts col-start-3">
-            <section-header section="eval_settings"></section-header>
-            <div class="form-subsection">
-              <section-header section="search_strategy"></section-header>
-
-              <div class="radio-item">
-                <input v-model="this.evalParams.search_strategy" type="radio" id="bin_seq" name="search_strategy_option"
-                  value="bgb_sequence">
-                <label for="bgb_sequence">BGB sequence</label>
-                <tooltip tooltip="bgb_sequence"></tooltip>
-              </div>
-
-              <div class="radio-item">
-                <input v-model="this.evalParams.search_strategy" type="radio" id="bgb_search" name="search_strategy_option"
-                  value="bgb_search">
-                <label for="bgb_search">BGB search</label>
-                <tooltip tooltip="bgb_search"></tooltip>
-              </div>
-
-              <div class="radio-item">
-                <input v-model="this.evalParams.search_strategy" type="radio" id="comp_search" name="search_strategy_option"
-                  value="comp_search">
-                <label for="comp_search">Composite search</label>
-                <tooltip tooltip="comp_search"></tooltip>
-              </div>
-              <br>
-
-              <div class="flex items-baseline mb-1">
-                <label for="sequence_limit" class="mb-0 align-middle">Sequence limit</label>
-                <tooltip tooltip="sequence_limit"></tooltip>
-              </div>
-              <input v-model.number="this.evalParams.sequence_limit" class="input-box" type="number" min="1" max="10000">
-            </div>
-
-            <div class="form-subsection">
-              <section-header section="parallel_containers"></section-header>
-              <input v-model.number="this.evalParams.nb_of_containers" class="input-box" type="number" id="nb_of_containers"
-                name="nb_of_containers" min="1" max="16">
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Logs -->
-    <div class="results-section h-fit col-span-2 row-start-5 flex-1">
-      <div class="flex">
-        <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
-        <div class="w-full text-right">
-          <button class="collapse-button" @click="this.hide_logs = !this.hide_logs">
-            <div class="flex items-center">
-              <p class="text-xl pb-1 px-1">+</p>
-            </div>
-          </button>
+      <!-- Logs -->
+      <div class="results-section h-fit col-span-2 row-start-5 flex-1">
+        <div class="flex">
+          <h2 class="flex-initial w-1/2 form-section-title">Log</h2>
+          <div class="w-full text-right">
+            <button class="collapse-button" @click="this.hide_logs = !this.hide_logs">
+              <div class="flex items-center">
+                <p class="text-xl pb-1 px-1">+</p>
+              </div>
+            </button>
+          </div>
         </div>
-      </div>
-      <div :class="hide_logs ? 'hidden' : ''">
-        <div id="log_section" class="mt-3 h-96 bg-white overflow-y-scroll flex flex-col dark:bg-dark-3">
-          <ul>
-            <li v-for="entry in this.server_info.logs">
-              <p>{{ entry }}</p>
-            </li>
-          </ul>
+        <div :class="hide_logs ? 'hidden' : ''">
+          <div id="log_section" class="mt-3 h-96 bg-white overflow-y-scroll flex flex-col dark:bg-dark-3">
+            <ul>
+              <li v-for="entry in this.server_info.logs">
+                <p>{{ entry }}</p>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

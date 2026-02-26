@@ -53,7 +53,7 @@ const toggleDarkMode = () => {
 
     <select
       id="subject-type-select"
-      class="w-64 block p-2 border border-gray-300 rounded"
+      class="w-64"
       v-model="evalParams.subject_type"
       :disabled="subject_availability?.is_empty ? subject_availability.is_empty() : false"
       @change="propagate_new_params"
