@@ -1,6 +1,7 @@
 import logging
 import time
 
+from bughog.config import settings
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.experiment_result import ExperimentResult
@@ -66,7 +67,7 @@ class Evaluation:
         self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]
     ) -> ExperimentResult:
         is_dirty = False
-        tries_left = 3
+        tries = 0
         collector.start()
         poc_was_reproduced = False
         intermediary_variables = None
@@ -74,8 +75,8 @@ class Evaluation:
         # Perform experiment with retries
         logger.info(f'Starting experiment for {executable.state}.')
         start_time = time.time()
-        while not poc_was_reproduced and tries_left > 0:
-            tries_left -= 1
+        while not poc_was_reproduced and tries < settings.experiment_tries:
+            tries += 1
             executable.pre_try_setup()
             try:
                 Interaction(script).do_experiment(simulation)
@@ -106,7 +107,7 @@ class Evaluation:
             result_variables.update(sanity_check_variables)
 
         elapsed_time = time.time() - start_time
-        logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s with {tries_left} tries left.')
+        logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s after {tries} tries.')
         return ExperimentResult(
             executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty
         )

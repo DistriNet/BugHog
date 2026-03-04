@@ -4,6 +4,8 @@ import os
 import sys
 from functools import lru_cache
 
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from rich.logging import RichHandler
 
 from bughog.database.mongo import container
@@ -11,6 +13,22 @@ from bughog.parameters import DatabaseParameters
 
 logger = logging.getLogger(__name__)
 custom_page_folder = '/app/experiments/pages'
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='BUGHOG_')
+
+    version: str | None = None
+    github_token: str | None = None
+    experiment_tries: int = Field(default=3, gt=0)
+    executable_cache_limit: int = Field(default=0, ge=0)
+    mongo_host: str | None = None
+    mongo_username: str | None = None
+    mongo_password: str | None = None
+    mongo_database: str | None = None
+
+
+settings = Settings()
 
 
 def get_available_domains() -> list[str]:
@@ -37,11 +55,11 @@ def check_required_env_parameters() -> bool:
         logger.debug(f'HOST_PWD={host_pwd}')
 
     # BUGHOG_VERSION
-    if (bughog_version := os.getenv('BUGHOG_VERSION')) in ['', None]:
+    if not settings.version:
         logger.fatal('"BUGHOG_VERSION" variable is not set.')
         fatal = True
     else:
-        logger.info(f'Starting BugHog with tag "{bughog_version}"')
+        logger.info(f'Starting BugHog with tag "{settings.version}"')
 
     return not fatal
 
@@ -49,47 +67,33 @@ def check_required_env_parameters() -> bool:
 # Singleton pattern with caching
 @lru_cache(maxsize=1)
 def get_database_params() -> DatabaseParameters:
-    try:
-        executable_cache_limit = int(os.getenv('BUGHOG_EXECUTABLE_CACHE_LIMIT', '0'))
-    except ValueError:
-        logger.warning("Invalid 'BUGHOG_EXECUTABLE_CACHE_LIMIT' provided; defaulting to 0.")
-        executable_cache_limit = 0
+    host = settings.mongo_host
+    username = settings.mongo_username
+    password = settings.mongo_password
+    database = settings.mongo_database
 
-    required_database_params = [
-        'BUGHOG_MONGO_HOST',
-        'BUGHOG_MONGO_USERNAME',
-        'BUGHOG_MONGO_DATABASE',
-        'BUGHOG_MONGO_PASSWORD',
-    ]
-    env_vars = {key: os.getenv(key) for key in required_database_params}
-    missing_database_params = [key for key, val in env_vars.items() if not val]
-    if missing_database_params:
-        logger.info(f'Could not find database parameters {missing_database_params}. Using database container...')
-        return container.run(executable_cache_limit)
+    if not (host and username and password and database):
+        missing = [name for name, val in [
+            ('BUGHOG_MONGO_HOST', host),
+            ('BUGHOG_MONGO_USERNAME', username),
+            ('BUGHOG_MONGO_PASSWORD', password),
+            ('BUGHOG_MONGO_DATABASE', database),
+        ] if not val]
+        logger.info(f'Could not find database parameters {missing}. Using database container...')
+        return container.run(settings.executable_cache_limit)
 
-    safe_env_vars = env_vars.copy()
-    safe_env_vars['BUGHOG_MONGO_PASSWORD'] = '*'
-    logger.info(f"Found database environment variables '{safe_env_vars}'.")
-
-    return DatabaseParameters(
-        env_vars['BUGHOG_MONGO_HOST'] or '',
-        env_vars['BUGHOG_MONGO_USERNAME'] or '',
-        env_vars['BUGHOG_MONGO_PASSWORD'] or '',
-        env_vars['BUGHOG_MONGO_DATABASE'] or '',
-        executable_cache_limit,
-    )
+    logger.info(f"Found database environment variables '{username}@{host}/{database}'.")
+    return DatabaseParameters(host, username, password, database, settings.executable_cache_limit)
 
 
-@staticmethod
 def get_tag() -> str:
     """
     Returns the Docker image tag of BugHog.
     This should never be empty.
     """
-    bughog_version = os.getenv('BUGHOG_VERSION', None)
-    if bughog_version is None or bughog_version == '':
+    if not settings.version:
         raise ValueError('BUGHOG_VERSION is not set')
-    return bughog_version
+    return settings.version
 
 
 class CustomHTTPHandler(logging.handlers.HTTPHandler):

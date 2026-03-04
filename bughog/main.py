@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 
 import bughog.database.mongo.container as mongodb_container
@@ -38,9 +37,9 @@ class Main:
         factory.initialize_all_subject_folders()
 
         logger.info('BugHog is ready!')
-        if os.getenv('GITHUB_TOKEN') is None:
+        if config.settings.github_token is None:
             logger.warning(
-                'GITHUB_TOKEN was not configured in ./config/.env. This might result in failed API requests.'
+                'BUGHOG_GITHUB_TOKEN was not configured in ./config/.env. This might result in failed API requests.'
             )
 
     def connect_to_database(self, db_connection_params: DatabaseParameters) -> None:

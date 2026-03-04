@@ -10,6 +10,8 @@ dependencies = [
     "gunicorn==25.1.0",
     "pillow==12.1.1",
     "pyautogui==0.9.54",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
     "pymongo==4.16.0",
     "pyvirtualdisplay==3.0",
     "requests==2.32.3",
