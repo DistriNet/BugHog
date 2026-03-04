@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, current_app, redirect, request
 
 import bughog.parameters as application_logic
-from bughog import configuration
+from bughog import config
 from bughog.app import sock
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.integration_tests import evaluation_configurations, verify_results
@@ -33,7 +33,7 @@ def check_readiness():
         # _ = ____get_main()
     except Exception as e:
         logger.critical(e)
-        return {'status': 'NOK', 'msg': 'BugHog is not ready', 'info': {'log': configuration.Loggers.get_logs()}}
+        return {'status': 'NOK', 'msg': 'BugHog is not ready', 'info': {'log': config.Loggers.get_logs()}}
 
 
 @api.after_request
@@ -57,7 +57,7 @@ def start_evaluation():
 
     data = request.json.copy()
     try:
-        database_params = configuration.get_database_params()
+        database_params = config.get_database_params()
         params = application_logic.create_evaluation_params(data, database_params)
         run_eval_thread(__get_main(), params)
         return {'status': 'OK'}
@@ -86,7 +86,7 @@ def start_experiment():
 
     data = request.json.copy()
     try:
-        database_params = configuration.get_database_params()
+        database_params = config.get_database_params()
         params = application_logic.create_experiment_params(data, database_params)
         __get_main().remove_datapoint(params)
         run_experiment_thread(__get_main(), params)
@@ -116,7 +116,7 @@ def init_websocket(ws):
             if requested_variables := message.get('get', []):
                 __get_main().push_info(ws, *requested_variables)
             if params_dict := message.get('request_experiment_result', None):
-                params = application_logic.create_experiment_params(params_dict, configuration.get_database_params())
+                params = application_logic.create_experiment_params(params_dict, config.get_database_params())
                 Clients.push_complete_experiment_result(params)
         except ValueError:
             logger.warning('Ignoring invalid message from client.')
@@ -219,7 +219,7 @@ def add_folder_or_file(subject_type: str, project: str, poc: str):
 
 @api.route('/poc/domain/', methods=['GET'])
 def get_available_domains():
-    return {'status': 'OK', 'domains': configuration.get_available_domains()}
+    return {'status': 'OK', 'domains': config.get_available_domains()}
 
 
 @api.route('/poc/<string:subject_type>/<string:project>/', methods=['POST'])
@@ -249,7 +249,7 @@ def remove_datapoint():
         return {'status': 'NOK', 'msg': 'Received dataformat is not a dictionary.'}
     if (data.get('type')) not in ['release', 'commit']:
         return {'status': 'NOK', 'msg': 'Type argument should be release or commit.'}
-    database_params = configuration.get_database_params()
+    database_params = config.get_database_params()
     try:
         params = application_logic.create_experiment_params(data, database_params)
         __get_main().remove_datapoint(params)

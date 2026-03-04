@@ -5,7 +5,7 @@ import signal
 from flask import Flask
 from flask_sock import Sock
 
-from bughog import configuration
+from bughog import config
 from bughog.main import Main
 
 sock = Sock()
@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 def create_app():
     try:
-        configuration.Loggers.configure_loggers()
+        config.Loggers.configure_loggers()
 
-        if not configuration.check_required_env_parameters():
+        if not config.check_required_env_parameters():
             raise Exception('Not all required environment variables are available')
 
         # Instantiate main object and add to global flask context

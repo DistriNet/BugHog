@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from bughog.configuration import Loggers
+from bughog.config import Loggers
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.evaluation import Evaluation
 from bughog.exceptions import SystemError, UserError

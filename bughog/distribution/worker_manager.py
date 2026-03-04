@@ -7,7 +7,7 @@ from queue import Empty, Queue
 import docker
 import docker.errors
 
-from bughog import configuration, worker
+from bughog import config, worker
 from bughog.parameters import ExperimentParameters
 from bughog.version_control.state.base import State
 from bughog.web.clients import Clients
@@ -153,15 +153,15 @@ class WorkerManager:
         """
         Returns the worker image's reference.
         """
-        subject_type_ref = f'bughog/worker-{subject_type}:{configuration.get_tag()}'
+        subject_type_ref = f'bughog/worker-{subject_type}:{config.get_tag()}'
         if self.__pull_worker_image(subject_type_ref):
             return subject_type_ref
 
-        subject_name_ref = f'bughog/worker-{subject_name}:{configuration.get_tag()}'
+        subject_name_ref = f'bughog/worker-{subject_name}:{config.get_tag()}'
         if self.__pull_worker_image(subject_name_ref):
             return subject_name_ref
 
-        return f'bughog/worker:{configuration.get_tag()}'
+        return f'bughog/worker:{config.get_tag()}'
 
     def __pull_worker_image(self, image_ref: str) -> bool:
         try:

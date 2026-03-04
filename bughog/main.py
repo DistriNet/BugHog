@@ -3,7 +3,7 @@ import os
 import time
 
 import bughog.database.mongo.container as mongodb_container
-from bughog import configuration
+from bughog import config
 from bughog.database.mongo.executable_cache import ExecutableCache
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
@@ -33,7 +33,7 @@ class Main:
 
         self.eval_queue = []
 
-        self.db_connection_params = configuration.get_database_params()
+        self.db_connection_params = config.get_database_params()
         self.connect_to_database(self.db_connection_params)
         factory.initialize_all_subject_folders()
 
@@ -245,7 +245,7 @@ class Main:
             if arg == 'db_info' or all:
                 update['db_info'] = MongoDB().get_info()
             if arg == 'logs' or all:
-                update['logs'] = configuration.Loggers.get_logs()
+                update['logs'] = config.Loggers.get_logs()
             if arg == 'state' or all:
                 self.state['nb_of_running_containers'] = WorkerManager.get_nb_of_running_worker_containers()
                 update['state'] = self.state

@@ -1,6 +1,6 @@
 import os
 
-from bughog import configuration
+from bughog import config
 from bughog.integration_tests import verify_results
 from bughog.parameters import (
     EvaluationParameters,
@@ -44,7 +44,7 @@ def get_default_sequence_config(sequence_limit: int) -> SequenceConfiguration:
 def get_default_evaluation_parameters(
     subject_type: str, subject_name: str, experiment: str, sequence_limit: int = 100, only_releases: bool = True
 ) -> EvaluationParameters:
-    database_params = configuration.get_database_params()
+    database_params = config.get_database_params()
     return EvaluationParameters(
         verify_results.TEST_PROJECT_NAME,
         experiment,

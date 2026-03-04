@@ -5,7 +5,7 @@ from typing import Literal
 
 from simple_websocket import Server
 
-from bughog import configuration
+from bughog import config
 from bughog.analysis.plot_factory import PlotFactory
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.parameters import ExperimentParameters, MissingParametersError, create_evaluation_params
@@ -63,7 +63,7 @@ class Clients:
                 return
             params['experiments'] = [params['experiment_to_plot']]
             try:
-                eval_params = create_evaluation_params(params, configuration.get_database_params())
+                eval_params = create_evaluation_params(params, config.get_database_params())
                 if len(eval_params) < 1:
                     return
                 plot_params = eval_params[0].to_plot_parameters(params['experiment_to_plot'])
