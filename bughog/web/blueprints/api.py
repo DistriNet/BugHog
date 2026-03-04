@@ -95,6 +95,21 @@ def start_experiment():
         return {'status': 'NOK', 'msg': 'Could not start experiment due to missing parameters.'}
 
 
+@api.route('/experiment/remove/', methods=['POST'])
+def remove_experiment_result():
+    if request.json is None:
+        return {'status': 'NOK', 'msg': 'No experiment parameters found'}
+
+    data = request.json.copy()
+    try:
+        database_params = config.get_database_params()
+        params = application_logic.create_experiment_params(data, database_params)
+        __get_main().remove_datapoint(params)
+        return {'status': 'OK'}
+    except MissingParametersError:
+        return {'status': 'NOK', 'msg': 'Could not remove experiment result due to missing parameters.'}
+
+
 """
 Requesting information
 """

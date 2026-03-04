@@ -101,10 +101,21 @@ const switch_subject = (new_subject_name) => {
 };
 
 const start_experiment = () => {
-  const path = `/api/experiment/start/`;
-  axios.post(path, experiment_parameters.value)
+  axios.post(`/api/experiment/start/`, experiment_parameters.value)
     .then((res) => {
       if (res.data.status === "NOK") {
+        toast.error(res.data.msg, { position: toast.POSITION.TOP_RIGHT });
+      }
+    })
+    .catch(console.error);
+};
+
+const remove_experiment_result = () => {
+  axios.post(`/api/experiment/remove/`, experiment_parameters.value)
+    .then((res) => {
+      if (res.data.status === "OK") {
+        experiment_result.value = null;
+      } else {
         toast.error(res.data.msg, { position: toast.POSITION.TOP_RIGHT });
       }
     })
@@ -166,6 +177,7 @@ const start_experiment = () => {
               :hasResult="experiment_result !== null"
               :can-start="true"
               @start="start_experiment"
+              @clear="remove_experiment_result"
             />
           </div>
 

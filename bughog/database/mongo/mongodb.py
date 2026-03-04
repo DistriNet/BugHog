@@ -346,7 +346,7 @@ class MongoDB:
         query = self.__to_experiment_query(params, params.state)
         count = collection.delete_one(query)
         if count.deleted_count == 0:
-            logger.error(f'Could not remove datapoint for {params.state}.')
+            logger.debug(f'Could not remove datapoint for {params.state} because it was not found.')
         else:
             logger.debug(f'Removed datapoint for {params.state}.')
 
