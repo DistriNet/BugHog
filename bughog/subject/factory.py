@@ -5,6 +5,7 @@ from bughog.evaluation.experiments import Experiments
 from bughog.parameters import SubjectConfiguration
 from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework
+from bughog.subject.js_engine.spidermonkey.subject import SpiderMonkeySubject
 from bughog.subject.js_engine.v8.subject import V8Subject
 from bughog.subject.js_engine.v8_sandbox.subject import V8SandboxSubject
 from bughog.subject.subject import Subject
@@ -17,7 +18,10 @@ from bughog.subject.web_browser.evaluation_framework import BrowserEvaluationFra
 from bughog.subject.web_browser.firefox.subject import Firefox
 
 subjects = {
-    'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject(), V8SandboxSubject()]},
+    'js_engine': {
+        'evaluation_framework': JSEngineEvaluationFramework,
+        'subjects': [SpiderMonkeySubject(), V8Subject(), V8SandboxSubject()],
+    },
     'wasm_runtime': {'evaluation_framework': WasmRuntimeEvaluationFramework, 'subjects': [WasmtimeSubject()]},
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,
