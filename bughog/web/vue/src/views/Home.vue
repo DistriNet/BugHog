@@ -581,7 +581,7 @@ export default {
               </ul>
             </div>
           </div>
-          <gantt ref="gantt" :eval_params="this.evalParams"></gantt>
+          <gantt ref="gantt" :eval_params="this.evalParams" class="flex-1 min-h-0"></gantt>
         </div>
       </div>
 

@@ -1,6 +1,27 @@
 <script>
 import axios from 'axios'
+import { useDarkMode } from '../composables/useDarkMode'
+
+const DARK_THEME = {
+    background: '#20262B',
+    border: '#15191C',
+    text: '#e0e0e0',
+    axis_line: '#aaaaaa',
+    grid_line: '#3a3a3a',
+};
+const LIGHT_THEME = {
+    background: '#ffffff',
+    border: '#ffffff',
+    text: '#444444',
+    axis_line: '#000000',
+    grid_line: '#cccccc',
+};
+
 export default {
+    setup() {
+        const { darkMode } = useDarkMode();
+        return { darkMode };
+    },
     props: {
       eval_params: Object,
     },
@@ -20,7 +41,13 @@ export default {
             x_min: null,
             x_max: null,
             shift_down: false,
+            version_text_renderer: null,
         }
+    },
+    watch: {
+        darkMode() {
+            this.apply_theme();
+        },
     },
     created: function() {
         document.addEventListener("keydown", (e) => {
@@ -50,8 +77,7 @@ export default {
                 title: 'Gantt Chart with Points',
                 x_range: [this.x_min, this.x_max],
                 y_range: ['Error', 'Not reproduced', 'Reproduced'],
-                height: 470,
-                width: 900,
+                sizing_mode: 'stretch_both',
                 tools: 'xwheel_zoom,pan',
                 active_scroll: 'xwheel_zoom'
             });
@@ -85,7 +111,7 @@ export default {
                 }
                 )
 
-                this.plot.text(
+                this.version_text_renderer = this.plot.text(
                 { field: 'commit_nb' },
                 { field: 'outcome' },
                 { field: 'major_version' },
@@ -94,7 +120,7 @@ export default {
                     x_offset: 0,
                     y_offset: -20,
                     text: { field: 'major_version' },
-                    text_color: "black",
+                    text_color: this.darkMode ? DARK_THEME.text : LIGHT_THEME.text,
                     text_align: 'center',
                     text_font_size: '14px',
                     angle: 45,
@@ -155,6 +181,7 @@ export default {
                 document.getElementById('gantt').children[0].remove();
             }
             Bokeh.Plotting.show(this.plot, document.getElementById('gantt'));
+            this.apply_theme();
             console.log("Gantt chart initialized!");
         },
         update_plot(subject_name, revision_data, version_data, project, poc) {
@@ -201,6 +228,26 @@ export default {
                         this.plot.x_range.end = new_x_max;
                     }
                 }
+            }
+        },
+        apply_theme() {
+            if (!this.plot) return;
+            const t = this.darkMode ? DARK_THEME : LIGHT_THEME;
+            this.plot.background_fill_color = t.background;
+            this.plot.border_fill_color = t.border;
+            this.plot.title.text_color = t.text;
+            for (const axis of [...this.plot.xaxis, ...this.plot.yaxis]) {
+                axis.axis_label_text_color = t.text;
+                axis.major_label_text_color = t.text;
+                axis.axis_line_color = t.axis_line;
+                axis.major_tick_line_color = t.axis_line;
+                axis.minor_tick_line_color = t.axis_line;
+            }
+            for (const grid of this.plot.center.filter(r => r instanceof Bokeh.Grid)) {
+                grid.grid_line_color = t.grid_line;
+            }
+            if (this.version_text_renderer) {
+                this.version_text_renderer.glyph.text_color = t.text;
             }
         },
         remove_datapoint(type, index) {

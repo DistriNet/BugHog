@@ -11,8 +11,8 @@ RUN apt update -y && \
     apt install -y curl && \
     rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /www/data/js && \
-    curl https://cdn.bokeh.org/bokeh/release/bokeh-3.6.1.min.js -o /www/data/js/bokeh.min.js && \
-    curl https://cdn.bokeh.org/bokeh/release/bokeh-api-3.6.1.min.js -o /www/data/js/bokeh-api.min.js
+    curl https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js -o /www/data/js/bokeh.min.js && \
+    curl https://cdn.bokeh.org/bokeh/release/bokeh-api-3.8.2.min.js -o /www/data/js/bokeh-api.min.js
 COPY ./nginx/start.sh /usr/local/bin/
 COPY ./nginx/config /etc/nginx/config
 COPY --from=ui-build-stage /app/dist /www/data

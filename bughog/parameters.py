@@ -218,8 +218,9 @@ def create_experiment_params(kwargs: dict, database_params: DatabaseParameters) 
         kwargs.get('commit_nb'),
         kwargs.get('commit_id'),
     )
+    poc_name = kwargs.get('experiment_to_plot', kwargs.get('poc_name'))
     return ExperimentParameters(
-        kwargs['project_name'], kwargs['poc_name'], subject_configuration, state, database_params
+        kwargs['project_name'], poc_name, subject_configuration, state, database_params
     )
 
 
