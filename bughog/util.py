@@ -170,7 +170,7 @@ def __get_session(token: Optional[str] = None, max_retries: int = 3, backoff_fac
 def download_and_extract(urls: list[str], dst_folder_path: str) -> bool:
     """
     Downloads the archive residing at the given URL and extracts it to the given dest_path.
-    This method currently supports zip, tar.bz2 and tar.xz archives.
+    This method currently supports zip, tar.gz, tar.bz2 and tar.xz archives.
 
     :return bool: Returns True if the archive was successfully downloaded and extracted, otherwise False.
     """
@@ -196,9 +196,7 @@ def download_and_extract(urls: list[str], dst_folder_path: str) -> bool:
         match file_extension:
             case '.zip':
                 unzip(tmp_file_path, dst_folder_path)
-            case '.bz2':
-                untar(tmp_file_path, dst_folder_path)
-            case '.xz':
+            case '.gz' | '.bz2' | '.xz':
                 untar(tmp_file_path, dst_folder_path)
             case _:
                 AttributeError(f'File extension {file_extension} is not supported.')

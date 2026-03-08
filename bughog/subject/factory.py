@@ -15,16 +15,14 @@ from bughog.subject.wasm_runtime.wasmtime.subject import WasmtimeSubject
 from bughog.subject.web_browser.chromium.subject import Chromium
 from bughog.subject.web_browser.evaluation_framework import BrowserEvaluationFramework
 from bughog.subject.web_browser.firefox.subject import Firefox
+from bughog.subject.web_browser.servo.subject import Servo
 
 subjects = {
     'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject(), V8SandboxSubject()]},
     'wasm_runtime': {'evaluation_framework': WasmRuntimeEvaluationFramework, 'subjects': [WasmtimeSubject()]},
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,
-        'subjects': [
-            Chromium(),
-            Firefox(),
-        ],
+        'subjects': [Chromium(), Firefox(), Servo()],
     },
 }
 
