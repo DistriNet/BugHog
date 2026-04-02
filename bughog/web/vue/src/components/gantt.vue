@@ -65,16 +65,21 @@ export default {
         init_plot() {
             console.log(`Initializing Gantt chart for ${this.subject_name}...`);
 
-            if (this.revision_source.length === 0 || this.version_source.length === 0) {
+            const has_revision_data = this.revision_source && this.revision_source.data && this.revision_source.data.commit_nb && this.revision_source.data.commit_nb.length > 0;
+            const has_version_data = this.version_source && this.version_source.data && this.version_source.data.commit_nb && this.version_source.data.commit_nb.length > 0;
+
+            if (!has_revision_data && !has_version_data) {
                 this.x_min = 1;
                 this.x_max = 1000000;
             } else {
-                this.x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
-                this.x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
+                const revision_commits = has_revision_data ? this.revision_source.data.commit_nb : [];
+                const version_commits = has_version_data ? this.version_source.data.commit_nb : [];
+                this.x_min = Math.min(...revision_commits.concat(version_commits));
+                this.x_max = Math.max(...revision_commits.concat(version_commits));
             }
 
             this.plot = Bokeh.Plotting.figure({
-                title: 'Gantt Chart with Points',
+                title: `Gantt Chart for ${this.subject_name}`,
                 x_range: [this.x_min, this.x_max],
                 y_range: ['Error', 'Not reproduced', 'Reproduced'],
                 sizing_mode: 'stretch_both',
@@ -177,19 +182,21 @@ export default {
             });
             this.plot.add_tools(hover);
 
-            if (document.getElementById('gantt').childElementCount > 0) {
-                document.getElementById('gantt').children[0].remove();
+            const container = this.$el;
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
             }
-            Bokeh.Plotting.show(this.plot, document.getElementById('gantt'));
+            Bokeh.Plotting.show(this.plot, container);
             this.apply_theme();
             console.log("Gantt chart initialized!");
         },
         update_plot(subject_name, revision_data, version_data, project, poc) {
             if (revision_data === null && version_data === null) {
+                this.clear_plot();
                 return;
             }
 
-            let init_required = this.revision_source === null || this.subject_name !== subject_name;
+            let init_required = this.plot === null || this.subject_name !== subject_name;
             this.subject_name = subject_name;
             this.project = project;
             this.poc = poc;
@@ -209,16 +216,27 @@ export default {
                 'commit_nb': [],
                 'outcome': [],
                 'major_version': [],
+                'version_printed_by_executable': [],
+                'commit_url': [],
             };
-            this.revision_source.data = empty_data;
-            this.version_source.data = empty_data;
+            if (this.revision_source && this.revision_source.data) {
+                this.revision_source.data = empty_data;
+            }
+            if (this.version_source && this.version_source.data) {
+                this.version_source.data = empty_data;
+            }
         },
         update_x_range(force_update) {
             console.log("Updating Gantt chart x range");
             if (this.plot !== null) {
-                if (this.revision_source.length !== 0 || this.version_source.length !== 0) {
-                    var new_x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
-                    var new_x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
+                const has_revision_data = this.revision_source && this.revision_source.data && this.revision_source.data.commit_nb && this.revision_source.data.commit_nb.length > 0;
+                const has_version_data = this.version_source && this.version_source.data && this.version_source.data.commit_nb && this.version_source.data.commit_nb.length > 0;
+
+                if (has_revision_data || has_version_data) {
+                    const revision_commits = has_revision_data ? this.revision_source.data.commit_nb : [];
+                    const version_commits = has_version_data ? this.version_source.data.commit_nb : [];
+                    var new_x_min = Math.min(...revision_commits.concat(version_commits));
+                    var new_x_max = Math.max(...revision_commits.concat(version_commits));
                     if (new_x_min != this.x_min || force_update === true) {
                         this.x_min = new_x_min;
                         this.plot.x_range.start = new_x_min;

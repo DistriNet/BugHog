@@ -53,11 +53,8 @@ Since then, it has continued to evolve and has been exhibited at major cybersecu
 git clone https://github.com/DistriNet/BugHog
 cd BugHog
 
-# Pull the pre-built Docker images from Docker Hub
-./scripts/pull.sh
-
-# Start BugHog
-./scripts/start.sh
+# Pull the latest pre-built images from Docker Hub and start BugHog
+./scripts/deploy.sh
 ```
 
 Open your web browser and navigate to [http://localhost:80](http://localhost:80) to access the graphical user interface.
@@ -72,7 +69,7 @@ If BugHog is started on a remote server, substitute 'localhost' with the appropr
 > [!TIP]
 > Our [30-minute tutorial](https://github.com/DistriNet/BugHog/wiki/Tutorial) will guide you on how to use BugHog to trace a real bug's lifecycle!
 
-To stop BugHog, simply run this in the project root:
+To stop BugHog (including any running worker containers), run this in the project root:
 
 ```bash
 ./scripts/stop.sh
@@ -81,28 +78,17 @@ To stop BugHog, simply run this in the project root:
 
 ## Development :hammer_and_wrench:
 
-Use the following commands to build the Docker images yourself, for instance after you made changes to the source code:
+Use the following command to build all Docker images from the current codebase and start BugHog, for instance after you made changes to the source code:
 
 ```bash
-# Build BugHog images
-./scripts/build.sh
-
-# Run the freshly built images
-./scripts/start.sh
+./scripts/build-deploy.sh
 ```
 
-> [!NOTE]
-> For reference, building takes about 4 minutes on a machine with 8 CPU cores and 8 GB of RAM.
+This builds all images (core, nginx, and all subject workers) tagged as `dev`.
 
 
 ### Debugging
 
-The most convenient debugging approach is to launch an interactive Node environment.
-The UI can be visited at [http://localhost:5173](http://localhost:5173).
-
-```bash
-./scripts/node_dev.sh
-```
 
 For debugging the core application, consider using the VS Code dev container.
 You can utilize the configuration in [.devcontainer](.devcontainer) for this.

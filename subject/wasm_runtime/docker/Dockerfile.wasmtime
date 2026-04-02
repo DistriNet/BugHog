@@ -1,0 +1,16 @@
+# wasmtime needs a more recent version of glibc than avaiable in bullseye
+FROM python:3.13-slim-bookworm
+
+COPY --from=ghcr.io/astral-sh/uv:0.9.7 /uv /uvx /bin/
+RUN apt-get update
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH"
+
+RUN apt install -y \
+    libc6
+
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --no-dev --locked
+COPY --chmod=0755 scripts/ /app/scripts/
+COPY bughog /app/bughog
+ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

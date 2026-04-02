@@ -63,7 +63,8 @@ class WorkerManager:
             except docker.errors.APIError:
                 logger.error('Could not consult list of active containers', exc_info=True)
 
-            debug = bool(os.getenv('DEVELOPMENT'))
+            core_in_development_mode = bool(os.getenv('DEVELOPMENT'))
+            worker_in_debug_mode = core_in_development_mode and self.max_nb_of_containers == 1
             container = None
             try:
                 volumes = [
@@ -74,11 +75,18 @@ class WorkerManager:
                     os.path.join(host_pwd, 'logs') + ':/app/logs:rw',
                     os.path.join(host_pwd, 'nginx/ssl') + ':/etc/nginx/ssl:ro',
                 ]
-                debug_kwargs = {}
-                if debug:
+                if core_in_development_mode:
                     volumes.append(os.path.join(host_pwd, 'bughog') + ':/app/bughog:rw')
+
+                debug_kwargs = {}
+                if worker_in_debug_mode:
+                    logger.info(f"Starting container '{container_name}' in debug mode")
                     debug_kwargs['ports'] = {'5678/tcp': 5678}
-                    debug_kwargs['environment'] = {'DEVELOPMENT': '1'}
+                    debug_kwargs['environment'] = {
+                        'DEVELOPMENT': '1',
+                    }
+                else:
+                    logger.info(f"Starting container '{container_name}'")
                 container = self.client.containers.run(
                     self.worker_image_ref,
                     name=container_name,
@@ -139,12 +147,8 @@ class WorkerManager:
         )
 
     def wait_until_all_evaluations_are_done(self):
-        if self.max_nb_of_containers == 1:
-            return
-        while True:
-            if self.get_nb_of_running_worker_containers() == 0:
-                break
-            time.sleep(5)
+        while self.container_id_pool.qsize() < self.max_nb_of_containers:
+            time.sleep(1)
 
     @staticmethod
     def forcefully_stop_all_running_containers():
@@ -153,17 +157,21 @@ class WorkerManager:
 
     def __get_worker_image_ref(self, subject_type: str, subject_name: str) -> str:
         """
-        Returns the worker image's reference.
+        Returns the worker image reference to use for this subject.
+        Checks for a locally available subject-specific image first, then tries
+        to pull it. Falls back to the generic worker image if neither succeeds.
+        Subject-specific images are expected to be built beforehand (e.g. via
+        build-deploy.sh) and are never built at runtime.
         """
-        subject_type_ref = f'bughog/worker-{subject_type}:{config.get_tag()}'
-        if self.__pull_worker_image(subject_type_ref):
-            return subject_type_ref
+        tag = config.get_tag()
+        image_ref = f'bughog/worker-{subject_name}:{tag}'
+        worker_ref = f'bughog/worker:{tag}'
 
-        subject_name_ref = f'bughog/worker-{subject_name}:{config.get_tag()}'
-        if self.__pull_worker_image(subject_name_ref):
-            return subject_name_ref
+        if self.__image_exists_locally(image_ref) or self.__pull_worker_image(image_ref):
+            return image_ref
 
-        return f'bughog/worker:{config.get_tag()}'
+        logger.warning(f"Subject-specific image '{image_ref}' not found, falling back to '{worker_ref}'.")
+        return worker_ref
 
     def __pull_worker_image(self, image_ref: str) -> bool:
         try:
@@ -172,4 +180,11 @@ class WorkerManager:
         except docker.errors.ImageNotFound:
             return False
         except docker.errors.APIError:
+            return False
+
+    def __image_exists_locally(self, image_ref: str) -> bool:
+        try:
+            self.client.images.get(image_ref)
+            return True
+        except docker.errors.ImageNotFound:
             return False
