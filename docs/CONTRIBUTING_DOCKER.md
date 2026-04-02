@@ -20,11 +20,11 @@ All images are built from a shared `base` stage defined in the root `Dockerfile`
 
 | Branch / event | Images built | Tags applied |
 |---|---|---|
+| Push to `dev` | All | `dev` |
 | Push to `beta` | All | `beta` |
 | Tag `vx.y.z` on `main` | All | `x.y.z`, `latest` |
-| Push to `dev` | — | — |
 
-- **`dev`** is for active development. Developers build images locally; nothing is pushed to Docker Hub.
+- **`dev`** is for active development. Every push builds and overwrites the `dev` tag on Docker Hub.
 - **`beta`** is for pre-release testing. Every push builds and overwrites the `beta` tag on Docker Hub.
 - **Releases** are triggered by pushing a version tag (e.g. `v1.2.3`) on `main`. Images are tagged with the version number and `latest`.
 
@@ -38,7 +38,7 @@ All images are built from a shared `base` stage defined in the root `Dockerfile`
 
 ## Building locally
 
-To build all images on your machine:
+To build and test changes before pushing, you can build all images on your machine:
 
 ```bash
 docker buildx bake              # builds core + nginx + default worker
