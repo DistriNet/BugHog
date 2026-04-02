@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +41,10 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Build and push
-        run: docker buildx bake all --push
+        run: |
+          docker buildx bake all --push \
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max"
         env:
           BUGHOG_VERSION:   ${{ steps.meta.outputs.version }}
           ADDITIONAL_TAG:   ${{ steps.meta.outputs.additional_tag }}
