@@ -19,6 +19,12 @@ def __run_by_worker() -> None:
     Should only be called by worker.
     """
     Loggers.configure_loggers()
+    if os.getenv('DEVELOPMENT'):
+        import debugpy
+        debugpy.listen(('0.0.0.0', 5678))
+        logger.info('Waiting for debugger to attach on port 5678...')
+        debugpy.wait_for_client()
+        logger.info('Debugger attached.')
     if len(sys.argv) < 3:
         logger.info('Worker did not receive enough arguments.')
         os._exit(0)

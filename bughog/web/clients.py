@@ -80,6 +80,9 @@ class Clients:
                         {
                             'update': {
                                 'plot_data': {
+                                    'subject_name': params.get('subject_name'),
+                                    'project_name': params.get('project_name'),
+                                    'experiment_name': params.get('experiment_to_plot'),
                                     'revision_data': revision_data,
                                     'version_data': version_data,
                                 }

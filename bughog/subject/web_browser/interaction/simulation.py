@@ -14,11 +14,11 @@ from bughog.subject.web_browser.executable import BrowserExecutable
 
 class BrowserSimulation(Simulation):
     def __init__(self, executable: BrowserExecutable, folder: Folder, params: ExperimentParameters):
-        import pyautogui as gui
-
         super().__init__(executable, folder, params)
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
         disp.start()
+        import pyautogui as gui
+
         gui._pyautogui_x11._display = Xlib.display.Display(os.environ['DISPLAY'])
 
     def __del__(self):

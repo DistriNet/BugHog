@@ -156,6 +156,9 @@ export default {
       } else {
         console.log("Setting subject: " + subject_name)
         this.evalParams.version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, subject_name);
+        if (this.$refs.gantt) {
+          this.$refs.gantt.clear_plot();
+        }
       }
     },
     "evalParams.project_name": function (project_name) {
@@ -260,10 +263,21 @@ export default {
     onSocketMessage(data) {
       if (data.hasOwnProperty("update")) {
         if (data.update.hasOwnProperty("plot_data")) {
-          const revision_data = data.update.plot_data.revision_data;
-          const version_data = data.update.plot_data.version_data;
-          this.$refs.gantt.update_plot(this.evalParams.subject_name, revision_data, version_data);
-          this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+          const plot_data = data.update.plot_data;
+          if (plot_data.subject_name === this.evalParams.subject_name &&
+              plot_data.project_name === this.evalParams.project_name &&
+              plot_data.experiment_name === this.evalParams.experiment_to_plot) {
+            const revision_data = plot_data.revision_data;
+            const version_data = plot_data.version_data;
+            this.$refs.gantt.update_plot(plot_data.subject_name, revision_data, version_data, plot_data.project_name, plot_data.experiment_name);
+            if (revision_data && version_data) {
+              this.results.nb_of_evaluations = revision_data.outcome.length + version_data.outcome.length;
+            } else {
+              this.results.nb_of_evaluations = 0;
+            }
+          } else {
+            console.log("Ignoring plot_data as it does not match current selection.");
+          }
         }
         if (data.update.hasOwnProperty("experiments")) {
           this.experiments = data.update.experiments;

@@ -2,10 +2,19 @@
 
 source /app/scripts/boot/setup_environment.sh
 
-/app/scripts/boot/manage_certs.sh
+if [ -n "$MANAGE_CERTS" ]; then
+    /app/scripts/boot/manage_certs.sh
+fi
 
-rm -f /tmp/Xvfb.pid
-service xvfb start
+if [ -n "$MANAGE_XVFB" ]; then
+    rm -f /tmp/Xvfb.pid
+    rm -f /tmp/.X1-lock
+    service xvfb start
+fi
 
-uv sync --no-dev --locked
+if [ -n "$DEVELOPMENT" ]; then
+    uv sync --locked
+else
+    uv sync --no-dev --locked
+fi
 exec python3 /app/bughog/worker.py "$@"

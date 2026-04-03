@@ -49,41 +49,52 @@ class Main:
             logger.error('Could not connect to database.', exc_info=True)
 
     def run(self, eval_params_list: list[EvaluationParameters]) -> None:
-        # Sequence_configuration settings are the same over evaluation parameters (quick fix)
         self.__update_state(is_running=True, reason='user', status='running')
-
-        subject_type = eval_params_list[0].subject_configuration.subject_type
-        subject_name = eval_params_list[0].subject_configuration.subject_name
-        nb_of_containers = eval_params_list[0].sequence_configuration.nb_of_containers
-        worker_manager = WorkerManager(subject_type, subject_name, nb_of_containers)
         self.stop_gracefully = False
         self.stop_forcefully = False
+
+        # Group evaluations by subject so each gets its own correctly-configured worker image.
+        groups: dict[tuple[str, str], list[EvaluationParameters]] = {}
+        for params in eval_params_list:
+            key = (params.subject_configuration.subject_type, params.subject_configuration.subject_name)
+            groups.setdefault(key, []).append(params)
+
         try:
             self.__init_eval_queue(eval_params_list)
-            for eval_params in eval_params_list:
+            for (subject_type, subject_name), group in groups.items():
                 if self.stop_gracefully or self.stop_forcefully:
                     break
-                self.__update_eval_queue(eval_params.experiment_name, 'active')
-                self.__update_state(
-                    is_running=True,
-                    reason='user',
-                    status='running',
-                    queue=self.eval_queue,
+                worker_manager = WorkerManager(
+                    subject_type, subject_name, group[0].sequence_configuration.nb_of_containers
                 )
                 try:
-                    self.run_single_evaluation(eval_params, worker_manager)
-                except (UserError, SystemError) as e:
-                    # If we are running integration tests, we want to just continue with other subjects.
-                    unique_subjects = set(
-                        [eval_params.subject_configuration.subject_name for eval_params in eval_params_list]
-                    )
-                    if len(unique_subjects) == 1:
-                        raise e
-                except Exception:
-                    logger.error(
-                        f'Could not finish evaluation for {eval_params.subject_configuration.subject_name}.',
-                        exc_info=True,
-                    )
+                    for eval_params in group:
+                        if self.stop_gracefully or self.stop_forcefully:
+                            break
+                        self.__update_eval_queue(eval_params.experiment_name, 'active')
+                        self.__update_state(
+                            is_running=True,
+                            reason='user',
+                            status='running',
+                            queue=self.eval_queue,
+                        )
+                        try:
+                            self.run_single_evaluation(eval_params, worker_manager)
+                        except (UserError, SystemError) as e:
+                            # For a single subject, surface the error. For multiple subjects
+                            # (e.g. integration tests), log and continue with the next subject.
+                            if len(groups) == 1:
+                                raise e
+                            logger.error(
+                                f'Skipping remaining evaluations for {subject_name} due to error: {e}'
+                            )
+                            break
+                        except Exception:
+                            logger.error(
+                                f'Could not finish evaluation for {subject_name}.', exc_info=True
+                            )
+                finally:
+                    worker_manager.wait_until_all_evaluations_are_done()
 
             # Exit handling
             if self.stop_gracefully:
@@ -92,7 +103,7 @@ class Main:
             elif self.stop_forcefully:
                 logger.info('Forcefully stopping experiment queue due to user end signal...')
                 self.state['reason'] = 'user'
-                worker_manager.forcefully_stop_all_running_containers()
+                WorkerManager.forcefully_stop_all_running_containers()
             else:
                 logger.info('Gracefully stopping experiment queue since last experiment started.')
 
@@ -103,8 +114,6 @@ class Main:
             logger.critical('A critical error occurred', exc_info=True)
             raise e
         finally:
-            logger.info('Waiting for remaining experiments to stop...')
-            worker_manager.wait_until_all_evaluations_are_done()
             logger.info('BugHog has finished the evaluation!')
             self.__update_state(is_running=False, status='idle', queue=self.eval_queue)
 
@@ -180,10 +189,11 @@ class Main:
             else:
                 worker_manager = WorkerManager(subject_config.subject_type, subject_config.subject_name, 1)
                 worker_manager.start_experiment(params, state)
+                worker_manager.wait_until_all_evaluations_are_done()
                 Clients.push_complete_experiment_result(params)
         finally:
             # TODO: error handling
-            self.__update_state(is_running=False, reason='idle', status='running')
+            self.__update_state(is_running=False, reason='idle', status='idle')
 
     @staticmethod
     def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
