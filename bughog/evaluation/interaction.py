@@ -44,9 +44,11 @@ class Interaction:
             return True
         except SimulationException as e:
             # Simulation exception - sane behaviour, but do not continue interpreting
+            logger.exception(e)
             simulation.report_simulation_error(str(e))
             return True
         except Exception as e:
             # Unexpected exception type - not sane, report the exception
+            logger.exception(e)
             simulation.report_simulation_error(str(e))
             return False

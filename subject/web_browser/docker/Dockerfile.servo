@@ -1,0 +1,30 @@
+FROM python:3.13-slim-trixie
+COPY --from=ghcr.io/astral-sh/uv:0.9.7 /uv /uvx /bin/
+RUN apt-get update
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH"
+
+RUN apt install -y curl gnome-screenshot libgstreamer-plugins-bad1.0-0 libxcursor1 libxrandr2 libxi6 libxkbcommon0 libvulkan1 libegl1 python3-tk xvfb xxd &&\
+    rm -rf /var/lib/apt/lists/*
+
+# RUN curl -sSLo multiarch-support.deb https://snapshot.debian.org/archive/debian-security/20240630T105336Z/pool/updates/main/g/glibc/multiarch-support_2.28-10%2Bdeb10u4_amd64.deb &&\
+#     dpkg -i multiarch-support.deb &&\
+#     rm multiarch-support.deb
+
+COPY --chmod=0755 scripts/ /app/scripts/
+RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb &&\
+    mkdir -p /app/logs
+
+# Initiate PyAutoGUI
+RUN touch /root/.Xauthority && \
+    xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
+RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb &&\
+    mkdir -p /app/logs
+
+ENV MANAGE_CERTS=1 MANAGE_XVFB=1
+
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --no-dev --locked
+COPY --chmod=0755 scripts/ /app/scripts/
+COPY bughog /app/bughog
+ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

@@ -68,6 +68,15 @@ target "worker-firefox" {
   tags       = tags("bughog/worker-firefox")
 }
 
+target "worker-servo" {
+  context    = "."
+  dockerfile = "subject/web_browser/docker/Dockerfile.servo"
+  contexts   = {
+    base = "target:base"
+  }
+  tags       = tags("bughog/worker-servo")
+}
+
 target "worker-wasmtime" {
   context    = "."
   dockerfile = "subject/wasm_runtime/docker/Dockerfile.wasmtime"
@@ -86,7 +95,7 @@ group "default" {
 }
 
 group "subjects" {
-  targets = ["worker-chromium", "worker-firefox", "worker-wasmtime"]
+  targets = ["worker-chromium", "worker-firefox", "worker-servo", "worker-wasmtime"]
 }
 
 group "all" {

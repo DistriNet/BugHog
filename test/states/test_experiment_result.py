@@ -1,3 +1,5 @@
+import pytest
+
 from bughog.evaluation.experiment_result import ExperimentResult
 
 
@@ -73,17 +75,23 @@ class TestPaddedSubjectVersion:
         result = _make_result(set(), executable_version='5')
         assert result.padded_subject_version == '0005'
 
-    def test_segment_too_long_returns_none(self):
+    def test_segment_too_long_raises(self):
         result = _make_result(set(), executable_version='12345.0.0.0')
-        assert result.padded_subject_version is None
+        with pytest.raises(ValueError):
+            _ = result.padded_subject_version
 
-    def test_none_version_returns_none(self):
+    def test_none_version_raises(self):
         result = _make_result(set(), executable_version=None)
-        assert result.padded_subject_version is None
+        with pytest.raises(ValueError):
+            _ = result.padded_subject_version
 
     def test_already_padded(self):
         result = _make_result(set(), executable_version='0001.0002.0003.0004')
         assert result.padded_subject_version == '0001.0002.0003.0004'
+
+    def test_version_with_hash_suffix(self):
+        result = _make_result(set(), executable_version='0.0.1-abc123f')
+        assert result.padded_subject_version == '0000.0000.0001-abc123f'
 
 
 class TestToDict:
@@ -91,8 +99,12 @@ class TestToDict:
         result = _make_result({('reproduced', 'ok')})
         d = result.to_dict()
         assert set(d.keys()) == {
-            'executable_version', 'executable_origin', 'state',
-            'raw_results', 'result_variables', 'is_dirty',
+            'executable_version',
+            'executable_origin',
+            'state',
+            'raw_results',
+            'result_variables',
+            'is_dirty',
         }
 
     def test_result_variables_serialized_as_list(self):

@@ -142,6 +142,13 @@ def get_subjects():
     return {'status': 'OK', 'subject_availability': get_all_subject_availability()}
 
 
+@api.route('/subject/<string:subject_name>/versions/', methods=['GET'])
+def get_subject_versions(subject_name: str):
+    from bughog.version_control.conversion import bughog_service
+    versions = bughog_service.find_all_versions(subject_name)
+    return {'status': 'OK', 'versions': versions}
+
+
 @api.route('/system/', methods=['GET'])
 def get_system_info():
     return {'status': 'OK', 'cpu_count': os.cpu_count() if os.cpu_count() else 2}

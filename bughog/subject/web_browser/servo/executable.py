@@ -18,7 +18,7 @@ class ServoExecutable(BrowserExecutable):
     def _get_version(self) -> str:
         command = f'./{self.executable_name} --version'
         output = cli.execute_and_return_output(command, cwd=self.staging_folder)
-        match = re.match(r'Chromium (?P<version>[0-9]+\.[0-9]+\.[0-9]+)', output)
+        match = re.search(r'Servo (?P<version>[0-9]+\.[0-9]+\.[0-9]+(-\w+)?)', output)
         if match:
             return match.group('version')
         raise AttributeError(f"Could not determine version of executable at '{self.executable_name}'.")
@@ -35,19 +35,20 @@ class ServoExecutable(BrowserExecutable):
 
     @property
     def open_console_hotkey(self) -> list[str]:
-        raise NotImplementedError()
+        """
+        This is not implemented, but we simply ignore the command in the interaction script.
+        """
+        return []
 
     @property
     def supported_options(self) -> list[str]:
         return []
 
     def _get_cli_command(self) -> list[str]:
-        cmd = [self.executable_path, f'--profile={self._profile_path}']
-        return cmd
+        return [self.executable_path, '--ignore-certificate-errors']
 
     def _prepare_profile_folder(self):
-        cli.execute_and_return_status(f'mkdir -p {self._profile_path}')
+        pass
 
     def _remove_profile_folder(self):
-        if self._profile_path:
-            cli.execute_and_return_status(f'rm -rf {self._profile_path}')
+        pass

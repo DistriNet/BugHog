@@ -90,6 +90,12 @@ def find_version_commit(
 
 
 @lru_cache(maxsize=LRU_CACHE_SIZE)
+def find_all_versions(subject_name: str) -> list[dict]:
+    url = urljoin(BASE_URL, f'{subject_name}/versions')
+    return __fetch_list(url)
+
+
+@lru_cache(maxsize=LRU_CACHE_SIZE)
 def find_latest_major_version(subject_name: str) -> int:
     url = urljoin(BASE_URL, f'{subject_name}/versions/latest')
     version_info = __fetch_dict(url)
