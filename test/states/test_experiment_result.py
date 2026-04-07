@@ -1,11 +1,12 @@
 import pytest
 
 from bughog.evaluation.experiment_result import ExperimentResult
+from bughog.version_control.version import Version
 
 
 def _make_result(result_variables, executable_version='100.0.1.1'):
     return ExperimentResult(
-        executable_version=executable_version,
+        executable_version=Version(executable_version) if executable_version else None,
         executable_origin='public',
         state={'type': 'commit', 'commit_nb': 1},
         raw_results={},

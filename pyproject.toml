@@ -8,6 +8,7 @@ dependencies = [
     "flask-sock==0.7.0",
     "flatten-dict==0.4.2",
     "gunicorn==25.1.0",
+    "packaging>=26.0",
     "pillow==12.1.1",
     "pyautogui==0.9.54",
     "pydantic>=2.12.5",

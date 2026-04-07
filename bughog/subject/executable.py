@@ -6,13 +6,13 @@ import subprocess
 import time
 from abc import ABC, abstractmethod
 from enum import Enum, auto, unique
-from typing import Optional
 
 from bughog import util
 from bughog.evaluation.collectors.logs import LogCollector
 from bughog.evaluation.file_structure import Folder
 from bughog.parameters import SubjectConfiguration
 from bughog.version_control.state.base import State
+from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class Executable(ABC):
         self._runtime_env_vars = {}
         self._runtime_args = []
         self.__version = None
-        self.__process: Optional[subprocess.Popen] = None
+        self.__process: subprocess.Popen | None = None
 
     # #
     # TO BE IMPLEMENT BY EVERY EVALUATION SUBJECT EXECUTABLE
@@ -147,10 +147,11 @@ class Executable(ABC):
         return os.path.isfile(self.executable_path) and self.version is not None
 
     @property
-    def version(self) -> Optional[str]:
+    def version(self) -> Version | None:
         if self.__version is None:
             try:
-                self.__version = self._get_version()
+                version_str = self._get_version()
+                self.__version = Version(version_str)
             except Exception:
                 logger.error(f'Could not retrieve version for {self.state}', exc_info=True)
                 return None
@@ -212,7 +213,7 @@ class Executable(ABC):
         elif os.path.isdir(self.staging_folder):
             shutil.rmtree(self.staging_folder)
 
-    def run(self, experiment_specific_params: list[str], cwd: Optional[Folder] = None):
+    def run(self, experiment_specific_params: list[str], cwd: Folder | None = None):
         """
         Runs the executable with the given arguments, and kills it after the given timeout.
         """

@@ -11,6 +11,7 @@ from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
 
 from bughog.evaluation.experiment_result import ExperimentResult
+from bughog.version_control.version import Version
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
@@ -147,7 +148,7 @@ class MongoDB:
         subject_config = params.subject_configuration
         collection = self.__get_data_collection(subject_config)
         query = {
-            'subject_version': result.executable_version,
+            'subject_version': str(result.executable_version) if result.executable_version else None,
             'executable_origin': result.executable_origin,
             'padded_subject_version': result.padded_subject_version,
             'subject_config': subject_config.subject_setting,
@@ -183,7 +184,7 @@ class MongoDB:
         doc = collection.find_one(query)
         if doc:
             return ExperimentResult(
-                doc['subject_version'],
+                Version(doc['subject_version']),
                 doc['executable_origin'],
                 doc['state'],
                 doc['result']['raw'],
