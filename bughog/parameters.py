@@ -8,6 +8,7 @@ from typing import Optional
 
 from bughog.exceptions import MissingParametersError
 from bughog.version_control.state.base import ShallowState
+from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class EvaluationRange:
     def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
         if range := form_data.get('version_range', None):
             if len(range) == 2:
-                return (int(range[0]), int(range[1]))
+                return (Version(str(range[0])).major, Version(str(range[1])).major)
         return None
 
     @staticmethod
@@ -206,15 +207,17 @@ def create_experiment_params(kwargs: dict, database_params: DatabaseParameters) 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     if 'major_version' in kwargs:
         state_type = 'version'
+        major_version = Version(str(kwargs['major_version'])).major
     elif 'commit_nb' in kwargs or 'commit_id' in kwargs:
         state_type = 'commit'
+        major_version = None
     else:
         raise MissingParametersError(
             'Experiment parameters require either a major version, commit number, or commit id.'
         )
     state = ShallowState(
         state_type,
-        kwargs.get('major_version'),
+        major_version,
         kwargs.get('commit_nb'),
         kwargs.get('commit_id'),
     )

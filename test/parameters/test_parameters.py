@@ -89,6 +89,10 @@ class TestEvaluationRange:
         r = EvaluationRange.from_dict({'version_range': ['100', '120']})
         assert r.major_version_range == (100, 120)
 
+    def test_from_dict_version_range_full_version(self):
+        r = EvaluationRange.from_dict({'version_range': ['100.0.1', '120.5.2']})
+        assert r.major_version_range == (100, 120)
+
     def test_from_dict_commit_range(self):
         r = EvaluationRange.from_dict({'lower_commit_nb': '1000', 'upper_commit_nb': '2000'})
         assert r.commit_nb_range == (1000, 2000)
@@ -178,6 +182,12 @@ class TestCreateExperimentParams:
 
     def test_with_major_version(self):
         data = {**self._base(), 'major_version': 100}
+        params = create_experiment_params(data, _db())
+        assert params.state.type == 'version'
+        assert params.state.major_version == 100
+
+    def test_with_full_version(self):
+        data = {**self._base(), 'major_version': '100.0.1234'}
         params = create_experiment_params(data, _db())
         assert params.state.type == 'version'
         assert params.state.major_version == 100

@@ -4,6 +4,7 @@ from typing import Literal, Optional
 
 from bughog.subject.artisanal_executable_manager import artisanal_executable_manager
 from bughog.version_control.conversion import bughog_service
+from bughog.version_control.version import Version
 
 
 class StateOracle(ABC):
@@ -58,9 +59,12 @@ class StateOracle(ABC):
         return re.match(r'[0-9]{1,7}', str(commit_nb)) is not None
 
     @staticmethod
-    def get_full_version_from_release_tag(release_tag: str) -> str | None:
-        if match := re.search(r'\d+\.\d+\.\d+', release_tag):
-            return match[0]
+    def get_full_version_from_release_tag(release_tag: str) -> Version | None:
+        if match := re.search(r'\d+\.\d+(?:\.\d+)*(?:-\w+)?', release_tag):
+            try:
+                return Version(match[0])
+            except Exception:
+                return None
         return None
 
     """
@@ -150,10 +154,9 @@ class StateOracle(ABC):
         candidates = []
         for tag in all_release_tags:
             v = StateOracle.get_full_version_from_release_tag(tag)
-            if v is None or not v.startswith(f'{major_release}.'):
+            if v is None or v.major != major_release:
                 continue
-            parts = tuple(int(p) for p in v.split('.'))
-            candidates.append((parts, tag))
+            candidates.append((v, tag))
 
         if not candidates:
             raise ValueError(f'Could not find earliest tag for major {major_release}.')

@@ -35,8 +35,8 @@ class WasmtimeStateOracle(StateOracle):
 
     def get_most_recent_major_release_version(self) -> int:
         all_release_tags = self.__get_all_release_tags()
-        truncated_tags = [self.get_full_version_from_release_tag(tag) for tag in all_release_tags]
-        major_versions = set(int(tag.split('.')[0]) for tag in truncated_tags if tag is not None)
+        versions = [self.get_full_version_from_release_tag(tag) for tag in all_release_tags]
+        major_versions = set(version.major for version in versions if version is not None)
         return max(major_versions)
 
     @staticmethod

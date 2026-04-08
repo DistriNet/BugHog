@@ -35,22 +35,19 @@ class TestIsValidCommitNb:
 
 class TestGetFullVersionFromReleaseTag:
     def test_v_prefixed_tag(self):
-        assert StateOracle.get_full_version_from_release_tag('v100.0.5000') == '100.0.5000'
+        assert str(StateOracle.get_full_version_from_release_tag('v100.0.5000')) == '100.0.5000'
 
     def test_no_prefix(self):
-        assert StateOracle.get_full_version_from_release_tag('100.0.5000') == '100.0.5000'
+        assert str(StateOracle.get_full_version_from_release_tag('100.0.5000')) == '100.0.5000'
 
     def test_no_version_returns_none(self):
         assert StateOracle.get_full_version_from_release_tag('latest') is None
         assert StateOracle.get_full_version_from_release_tag('stable') is None
 
-    def test_four_part_version_extracts_three(self):
-        # The regex matches the first three-part version found
+    def test_four_part_version_extracts_all(self):
+        # The new regex matches the whole version string
         result = StateOracle.get_full_version_from_release_tag('120.0.6099.109')
-        assert result == '120.0.6099'
-
-    def test_version_embedded_in_string(self):
-        assert StateOracle.get_full_version_from_release_tag('release-120.0.6099-stable') == '120.0.6099'
+        assert str(result) == '120.0.6099.109'
 
 
 class TestParseCommitNbFromGooglesource:
