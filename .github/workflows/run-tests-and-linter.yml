@@ -71,11 +71,11 @@ jobs:
         run: uv sync --dev --frozen
 
       - name: Lint with ruff
-        run: uv run ruff check --exit-zero --output-format=text > ruff.txt
+        run: uv run ruff check --exit-zero --output-format=concise > ruff.txt
 
       - name: Generate badge
         run: |
-          VIOLATIONS=$(wc -l < ruff.txt | xargs)
+          VIOLATIONS=$(tail -1 ruff.txt | grep -oP '\d+')
           if [ "$VIOLATIONS" -eq 0 ]; then
             uv run anybadge --label=ruff --value=passing --color=green --file=ruff.svg
           else
