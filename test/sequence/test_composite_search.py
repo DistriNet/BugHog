@@ -1,16 +1,15 @@
-import unittest
+import pytest
 
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished
 from test.sequence.test_sequence_strategy import TestSequenceStrategy as helper
 
 
-class TestCompositeSearch(unittest.TestCase):
-
+class TestCompositeSearch:
     def test_binary_sequence_always_available_composite(self):
         state_factory = helper.create_state_factory(
-            helper.always_has_binary,
-            outcome_func=lambda x: True if x < 50 else False)
+            helper.always_has_binary, outcome_func=lambda x: True if x < 50 else False
+        )
         sequence = CompositeSearch(state_factory, 10)
 
         # Sequence
@@ -21,19 +20,20 @@ class TestCompositeSearch(unittest.TestCase):
         state_factory = helper.create_state_factory(
             helper.always_has_binary,
             outcome_func=lambda x: True if x < 50 else False,
-            evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
+            evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42],
         )
 
         # Sequence
         index_sequence = [sequence.next(wait=False).index for _ in range(3)]
         assert index_sequence == [55, 52, 50]
 
-        self.assertRaises(SequenceFinished, lambda: sequence.next(wait=False))
+        with pytest.raises(SequenceFinished):
+            sequence.next(wait=False)
 
     def test_binary_sequence_always_available_composite_two_shifts(self):
         state_factory = helper.create_state_factory(
-            helper.always_has_binary,
-            outcome_func=lambda x: True if x < 33 or 81 < x else False)
+            helper.always_has_binary, outcome_func=lambda x: True if x < 33 or 81 < x else False
+        )
         sequence = CompositeSearch(state_factory, 10)
 
         # Sequence
@@ -44,7 +44,7 @@ class TestCompositeSearch(unittest.TestCase):
         state_factory = helper.create_state_factory(
             helper.always_has_binary,
             outcome_func=lambda x: True if x < 33 or 81 < x else False,
-            evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42]
+            evaluated_indexes=[0, 99, 49, 74, 24, 36, 61, 86, 12, 42],
         )
 
         while True:

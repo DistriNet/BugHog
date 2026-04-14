@@ -1,10 +1,9 @@
-import unittest
 from unittest.mock import mock_open, patch
 
 from bughog.evaluation.file_structure import File
 
 
-class TestPocParameterParsing(unittest.TestCase):
+class TestPocParameterParsing:
 
     def test_html_file_param_parsing(self):
         file = File('index.html', '/')

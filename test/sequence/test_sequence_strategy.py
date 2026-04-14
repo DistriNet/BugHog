@@ -1,4 +1,3 @@
-import unittest
 from typing import Callable, Optional
 from unittest.mock import MagicMock
 
@@ -9,7 +8,7 @@ from bughog.version_control.state_factory import StateFactory
 from bughog.version_control.version import Version
 
 
-class TestSequenceStrategy(unittest.TestCase):
+class TestSequenceStrategy:
     """
     Helper functions to create states and state factories for testing.
     """

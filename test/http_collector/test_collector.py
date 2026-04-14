@@ -1,5 +1,4 @@
 import time
-import unittest
 
 import requests
 
@@ -7,7 +6,7 @@ from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.requests import RequestCollector
 
 
-class TestCollector(unittest.TestCase):
+class TestCollector:
     @staticmethod
     def test_start_stop():
         collector = Collector([RequestCollector()])
@@ -33,7 +32,12 @@ class TestCollector(unittest.TestCase):
     def test_requests():
         collector = Collector([RequestCollector()])
         collector.start()
-        response_data = {'url': 'https://leak.test/report/?bughog_testvar=123', 'method': 'GET', 'headers': [], 'content': 'test'}
+        response_data = {
+            'url': 'https://leak.test/report/?bughog_testvar=123',
+            'method': 'GET',
+            'headers': [],
+            'content': 'test',
+        }
         requests.post('http://localhost:5001', json=response_data)
         time.sleep(1)
         collector.stop()
