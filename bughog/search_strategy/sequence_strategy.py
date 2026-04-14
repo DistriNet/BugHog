@@ -50,12 +50,12 @@ class SequenceStrategy:
         fetched_states = []
         if wait:
             for _ in range(10):
-                fetched_states = self._state_factory.create_evaluated_states()
+                fetched_states = list(self._state_factory.create_evaluated_states())
                 if all(state in fetched_states for state in self._considered_states):
                     break
                 time.sleep(3)
         else:
-            fetched_states = self._state_factory.create_evaluated_states()
+            fetched_states = list(self._state_factory.create_evaluated_states())
 
         for state in self._considered_states:
             if state not in fetched_states:

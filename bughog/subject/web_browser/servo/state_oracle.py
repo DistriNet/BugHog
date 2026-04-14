@@ -1,7 +1,6 @@
-from typing import Literal
-
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.conversion import bughog_service
+from bughog.version_control.version import Version
 
 
 class ServoStateOracle(StateOracle):
@@ -11,33 +10,27 @@ class ServoStateOracle(StateOracle):
     def find_commit_id(self, commit_nb: int) -> str | None:
         return bughog_service.find_commit_id(self.subject_name, commit_nb)
 
-    def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
-        return bughog_service.find_version_commit(self.subject_name, release_version)
+    def get_earliest_supported_release_version(self) -> Version:
+        return Version('0.0.1')
 
-    def get_oldest_supported_release_version(self) -> int:
-        return 0
+    def has_public_commit_executable(self, commit_nb: int) -> bool:
+        return bughog_service.find_commit_executable_info(self.subject_name, commit_nb) is not None
 
-    def get_most_recent_major_release_version(self) -> int:
-        return bughog_service.find_latest_major_version(self.subject_name)
+    def get_release_executable_urls(self, version: Version) -> list[str]:
+        version_info = bughog_service.find_version_info(self.subject_name, version, has_public_executable=True)
+        if version_info is None:
+            return []
+        base_url = version_info.get('executable_info', {}).get('base_url')
+        assets = version_info.get('executable_info', {}).get('assets', [])
+        if base_url is None or 'servo-x86_64-linux-gnu.tar.gz' not in assets:
+            return []
+        return [base_url + 'servo-x86_64-linux-gnu.tar.gz']
 
-    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
-        match state_type:
-            case 'release':
-                # For now, only support commits.
-                return False
-            case 'commit':
-                return bughog_service.find_commit_executable_info(self.subject_name, state_index) is not None
-
-    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
-        match state_type:
-            case 'release':
-                # For now, only support commits.
-                return []
-            case 'commit':
-                commit_info = bughog_service.find_commit_executable_info(self.subject_name, state_index)
-                if commit_info is None:
-                    return []
-                return [commit_info['base_url'] + 'servo-latest.tar.gz']
+    def get_commit_executable_urls(self, commit_nb: int) -> list[str]:
+        commit_info = bughog_service.find_commit_executable_info(self.subject_name, commit_nb)
+        if commit_info is None:
+            return []
+        return [commit_info['base_url'] + 'servo-latest.tar.gz']
 
     def get_nearest_commit_with_executable(
         self, target_commit_nb: int, lower_bound: int, upper_bound: int
@@ -48,5 +41,4 @@ class ServoStateOracle(StateOracle):
         return commit_info.get('nb') if commit_info else None
 
     def get_commit_url(self, commit_nb: int, commit_id: str | None) -> str | None:
-        commit_info = bughog_service.find_commit_info(self.subject_name, commit_nb)
-        return commit_info.get('url') if commit_info else None
+        return f'https://github.com/servo/servo/commit/{commit_id}'

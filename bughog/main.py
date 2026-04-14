@@ -17,7 +17,7 @@ from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bughog.subject import factory
-from bughog.version_control.state_factory import StateFactory
+from bughog.version_control.state_factory import create_state_factory, create_state_from_shallow_state
 from bughog.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -85,14 +85,10 @@ class Main:
                             # (e.g. integration tests), log and continue with the next subject.
                             if len(groups) == 1:
                                 raise e
-                            logger.error(
-                                f'Skipping remaining evaluations for {subject_name} due to error: {e}'
-                            )
+                            logger.error(f'Skipping remaining evaluations for {subject_name} due to error: {e}')
                             break
                         except Exception:
-                            logger.error(
-                                f'Could not finish evaluation for {subject_name}.', exc_info=True
-                            )
+                            logger.error(f'Could not finish evaluation for {subject_name}.', exc_info=True)
                 finally:
                     worker_manager.wait_until_all_evaluations_are_done()
 
@@ -158,32 +154,36 @@ class Main:
         Clients.push_notification_to_all(f'Evaluation of {experiment_name} has finished.')
 
     def retry_dirty_tests(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
-        dirty_states = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
-        if (nb_of_dirty_states := len(dirty_states)) == 0:
-            logger.info('No tests are associated with a dirty result.')
-            return
-
-        experiment = eval_params.experiment_name
-        message = f'Retrying {nb_of_dirty_states} tests with a dirty result for {experiment}.'
-        logger.info(message)
-
-        Clients.push_notification_to_all(message)
-        for dirty_state in dirty_states:
+        state_factory = create_state_factory(eval_params)
+        nb_of_dirty_states = 0
+        for dirty_state in state_factory.create_evaluated_states(dirty=True):
+            if nb_of_dirty_states == 0:
+                experiment = eval_params.experiment_name
+                message = f'Retrying tests with a dirty result for {experiment}.'
+                logger.info(message)
+                Clients.push_notification_to_all(message)
+            nb_of_dirty_states += 1
             if self.stop_gracefully or self.stop_forcefully:
                 return
             experiment_params = eval_params.to_experiment_parameters(dirty_state.to_shallow_state())
             MongoDB().remove_datapoint(experiment_params)
             worker_manager.start_experiment(experiment_params, dirty_state)
-        worker_manager.wait_until_all_evaluations_are_done()
 
-        dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
-        logger.info(f'Dirty test results reduced from {nb_of_dirty_states} to {len(dirty_states_after_retry)}.')
+        if nb_of_dirty_states == 0:
+            logger.info('No tests are associated with a dirty result.')
+            return
+
+        worker_manager.wait_until_all_evaluations_are_done()
+        nb_after_retry = sum(1 for _ in state_factory.create_evaluated_states(dirty=True))
+        logger.info(f'Dirty test results reduced from {nb_of_dirty_states} to {nb_after_retry}.')
 
     def run_single_experiment(self, params: ExperimentParameters) -> None:
         try:
             self.__update_state(is_running=True, reason='user', status='running')
             subject_config = params.subject_configuration
-            state = params.state.to_deep_state(subject_config.subject_type, subject_config.subject_name)
+            state = create_state_from_shallow_state(
+                params.state, subject_config.subject_type, subject_config.subject_name
+            )
             if not state.has_available_executable():
                 Clients.push_notification_to_all(f'No available executable for state {state.commit_nb}.', type='error')
             else:
@@ -200,8 +200,7 @@ class Main:
         sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
-        subject = factory.get_subject_from_params(eval_params.subject_configuration)
-        state_factory = StateFactory(subject.state_oracle, eval_params)
+        state_factory = create_state_factory(eval_params)
 
         if search_strategy == 'bgb_sequence':
             strategy = BiggestGapBisectionSequence(state_factory, sequence_limit)

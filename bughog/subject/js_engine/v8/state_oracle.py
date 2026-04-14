@@ -1,6 +1,5 @@
 import logging
 import re
-from typing import Literal
 
 import requests
 
@@ -8,6 +7,7 @@ from bughog import util
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.conversion import bughog_service, github
+from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,10 @@ class V8StateOracle(StateOracle):
         return bughog_service.find_commit_id('v8', commit_nb)
 
     @Cache.cache_in_db('js_engine', 'v8')
-    def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
+    def find_commit_of_release(self, release_version: Version) -> tuple[int, str]:
         # TODO: make more efficient (possibly by adding functionality to bughog service)
         all_release_tags = self.__get_all_release_tags()
-        major_release_tag = self._get_earliest_tag_with_major(all_release_tags, release_version)
+        major_release_tag = self._get_earliest_tag_version_match(all_release_tags, release_version)
         commit_id = github.find_commit_id_from_tag('v8', 'v8', major_release_tag)
         commit_nb = self.find_commit_nb(commit_id)
         return commit_nb, commit_id
@@ -47,17 +47,25 @@ class V8StateOracle(StateOracle):
 
     # Public executables
 
-    def get_oldest_supported_release_version(self) -> int:
-        return 6
+    def get_earliest_supported_release_version(self) -> Version:
+        return Version('6')
 
-    def get_most_recent_major_release_version(self) -> int:
+    def get_latest_supported_release_version(self) -> Version:
         all_release_tags = self.__get_all_release_tags()
-        major_versions = set(int(tag.split('.')[0]) for tag in all_release_tags)
-        return max(major_versions)
+        versions = list(Version(tag.split('.')[0]) for tag in all_release_tags)
+        return max(versions)
 
     @Cache.cache_in_db('js_engine', 'v8')
-    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
-        for url in self.get_executable_download_urls(state_index, state_type):
+    def has_public_release_executable(self, version: Version) -> bool:
+        for url in self.get_release_executable_urls(version):
+            resp = requests.head(url, allow_redirects=True)
+            if resp.status_code == 200:
+                return True
+        return False
+
+    @Cache.cache_in_db('js_engine', 'v8')
+    def has_public_commit_executable(self, commit_nb: int) -> bool:
+        for url in self.get_commit_executable_urls(commit_nb):
             resp = requests.head(url, allow_redirects=True)
             if resp.status_code == 200:
                 return True
@@ -69,19 +77,19 @@ class V8StateOracle(StateOracle):
         NotImplementedError()
 
     @Cache.cache_in_db('js_engine', 'v8')
-    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
-        match state_type:
-            case 'release':
-                commit_nb = self.find_commit_of_release(state_index)[0]
-                return self.get_executable_download_urls(commit_nb, 'commit')
-            case 'commit':
-                # Debug:
-                return [
-                    f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-debug%2Fasan-linux-debug-v8-component-{state_index}.zip?alt=media',
-                    f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-debug%2Fd8-asan-linux-debug-v8-component-{state_index}.zip?alt=media',
-                ]
-                # Release
-                # return [f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-release%2Fd8-linux-release-v8-component-{state_index}.zip?alt=media']
+    def get_release_executable_urls(self, version: Version) -> list[str]:
+        commit_nb = self.find_commit_of_release(version)[0]
+        return self.get_commit_executable_urls(commit_nb)
+
+    @Cache.cache_in_db('js_engine', 'v8')
+    def get_commit_executable_urls(self, commit_nb: int) -> list[str]:
+        # Debug:
+        return [
+            f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-debug%2Fasan-linux-debug-v8-component-{commit_nb}.zip?alt=media',
+            f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-debug%2Fd8-asan-linux-debug-v8-component-{commit_nb}.zip?alt=media',
+        ]
+        # Release
+        # return [f'https://www.googleapis.com/download/storage/v1/b/v8-asan/o/linux-release%2Fd8-linux-release-v8-component-{commit_nb}.zip?alt=media']
 
     @staticmethod
     @Cache.cache_in_db('js_engine', 'v8', ttl=24)

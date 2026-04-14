@@ -1,4 +1,5 @@
 import pytest
+
 from bughog.version_control.version import Version
 
 
@@ -43,6 +44,8 @@ def test_version_comparison():
     assert Version('0.1.2') > Version('0.1.1')
     assert Version('0.1.2') < Version('1.0.0')
     assert Version('100.0.1') == Version('100.0.1')
+    assert hash(Version('100.0.1')) == hash(Version('100.0.1'))
+    assert len({Version('1.2.3'), Version('1.2.3')}) == 1
 
 
 def test_padded_version():
@@ -55,3 +58,26 @@ def test_padded_version():
 def test_invalid_version():
     with pytest.raises(Exception):
         Version('not-a-version')
+
+
+def test_version_matches():
+    # User examples
+    assert Version('12').matches(Version('12.0.1'))
+    assert Version('13.1').matches(Version('13.1.2'))
+    assert not Version('13.1').matches(Version('13.2'))
+
+    # Edge cases
+    assert Version('12.0').matches(Version('12'))
+    assert Version('12').matches(Version('12.0'))
+    assert Version('12.1.0').matches(Version('12.1'))
+    assert Version('12.1').matches(Version('12.1.0'))
+
+    # Semantic equality
+    assert Version('100.0.0').matches(Version('100'))
+    assert not Version('100.0.1').matches(Version('100'))
+
+    # Local segments (Servo style)
+    assert Version('0.0.1').matches(Version('0.0.1-abc123f'))
+    assert not Version('0.0.1-abc123f').matches(Version('0.0.1-def456'))
+    assert Version('0.0.1-abc123f').matches(Version('0.0.1-abc123f'))
+    assert not Version('0.0.1-abc123f').matches(Version('0.0.1'))

@@ -90,31 +90,43 @@ class SubjectConfiguration:
 
 @dataclass(frozen=True)
 class EvaluationRange:
-    major_version_range: tuple[int, int] | None = None
+    version_range: tuple[Version, Version] | None = None
+    versions: list[Version] | None = None
     commit_nb_range: tuple[int, int] | None = None
     only_release_commits: bool = False
 
     def __post_init__(self):
-        if self.major_version_range:
-            assert self.major_version_range[0] <= self.major_version_range[1]
+        if self.versions:
+            return
+        if self.version_range:
+            assert self.version_range[0] <= self.version_range[1]
         elif self.commit_nb_range:
             assert self.commit_nb_range[0] <= self.commit_nb_range[1]
         else:
-            raise AttributeError('Evaluation ranges require either major versions or commit numbers')
+            raise AttributeError(
+                'Evaluation ranges require either major versions, commit numbers or a list of versions'
+            )
 
     @staticmethod
     def from_dict(data: dict) -> EvaluationRange:
         return EvaluationRange(
             EvaluationRange.__get_version_range(data),
+            EvaluationRange.__get_versions(data),
             EvaluationRange.__get_commit_nb_range(data),
             data.get('only_release_commits', False),
         )
 
     @staticmethod
-    def __get_version_range(form_data: dict[str, str]) -> tuple[int, int] | None:
+    def __get_versions(form_data: dict) -> list[Version] | None:
+        if versions := form_data.get('versions', None):
+            return [Version(str(v)) for v in versions]
+        return None
+
+    @staticmethod
+    def __get_version_range(form_data: dict[str, str]) -> tuple[Version, Version] | None:
         if range := form_data.get('version_range', None):
             if len(range) == 2:
-                return (Version(str(range[0])).major, Version(str(range[1])).major)
+                return (Version(str(range[0])), Version(str(range[1])))
         return None
 
     @staticmethod
@@ -207,24 +219,22 @@ def create_experiment_params(kwargs: dict, database_params: DatabaseParameters) 
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     if 'major_version' in kwargs:
         state_type = 'version'
-        major_version = Version(str(kwargs['major_version'])).major
+        version = Version(str(kwargs['major_version'])).major
     elif 'commit_nb' in kwargs or 'commit_id' in kwargs:
         state_type = 'commit'
-        major_version = None
+        version = None
     else:
         raise MissingParametersError(
             'Experiment parameters require either a major version, commit number, or commit id.'
         )
     state = ShallowState(
         state_type,
-        major_version,
+        version,
         kwargs.get('commit_nb'),
         kwargs.get('commit_id'),
     )
     poc_name = kwargs.get('experiment_to_plot', kwargs.get('poc_name'))
-    return ExperimentParameters(
-        kwargs['project_name'], poc_name, subject_configuration, state, database_params
-    )
+    return ExperimentParameters(kwargs['project_name'], poc_name, subject_configuration, state, database_params)
 
 
 def __get_cookie_name(form_data: dict[str, str]) -> str | None:

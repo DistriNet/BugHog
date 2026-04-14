@@ -1,3 +1,4 @@
+import os
 import re
 
 from bughog import cli
@@ -13,7 +14,11 @@ class ServoExecutable(BrowserExecutable):
 
     @property
     def executable_name(self) -> str:
-        return 'servo'
+        if os.path.isfile(os.path.join(self.temporary_storage_folder, 'servo')):
+            return 'servo'
+        if os.path.isfile(os.path.join(self.temporary_storage_folder, 'servoshell')):
+            return 'servoshell'
+        raise FileNotFoundError(f"No executable found for state '{self.state.name}' in the storage folder.")
 
     def _get_version(self) -> str:
         command = f'./{self.executable_name} --version'

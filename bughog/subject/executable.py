@@ -35,7 +35,7 @@ class Executable(ABC):
         self.__process: subprocess.Popen | None = None
 
     # #
-    # TO BE IMPLEMENT BY EVERY EVALUATION SUBJECT EXECUTABLE
+    # TO BE IMPLEMENTED BY EVERY EVALUATION SUBJECT EXECUTABLE
     # #
 
     @property

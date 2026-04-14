@@ -8,27 +8,29 @@ from typing import Literal, Optional
 
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.subject.state_oracle import StateOracle
+from bughog.version_control.version import Version
 
 
 @dataclass(frozen=True)
 class ShallowState:
     type: str
-    major_version: int | None
+    version: Version | None
     commit_nb: int | None
     commit_id: str | None
 
     @property
     def dict(self) -> dict:
+        # 'major_version' is always written (e.g. 120 for Chromium, 0 for Servo).
+        # 'version' is additionally written when the major version is 0 (e.g. 0.1.1 for Servo),
+        # since major_version alone is insufficient to identify the release in that case.
         fields = {
             'type': self.type,
-            'major_version': self.major_version,
+            'major_version': self.version.major if self.version is not None else None,
+            'version': str(self.version) if self.version is not None and self.version.major == 0 else None,
             'commit_nb': self.commit_nb,
             'commit_id': self.commit_id,
         }
         return {k: v for k, v in fields.items() if v is not None}
-
-    def to_deep_state(self, subject_type: str, subject_name: str) -> State:
-        return State.from_dict(subject_type, subject_name, self.dict)
 
 
 class State(ABC):
@@ -70,12 +72,8 @@ class State(ABC):
             )
 
     @property
-    def name(self) -> str:
-        return self.get_name(self.index)
-
-    @staticmethod
     @abstractmethod
-    def get_name(index: int) -> str:
+    def name(self) -> str:
         pass
 
     @property
@@ -115,27 +113,6 @@ class State(ABC):
 
     def to_dict(self) -> dict:
         return self.to_shallow_state().dict
-
-    @staticmethod
-    def from_dict(subject_type: str, subject_name: str, data: dict) -> State:
-        from bughog.subject import factory
-        from bughog.version_control.state.commit_state import CommitState
-        from bughog.version_control.state.release_state import ReleaseState
-
-        subject_class = factory.get_subject(subject_type, subject_name)
-        oracle = subject_class.state_oracle
-        commit_nb = data.get('commit_nb')
-        commit_id = data.get('commit_id')
-        major_version = data.get('major_version')
-        match data['type']:
-            case 'commit':
-                return CommitState(oracle, commit_nb=commit_nb, commit_id=commit_id)
-            case 'release':
-                if major_version is None:
-                    raise ValueError('major_version is required for release states.')
-                return ReleaseState(oracle, release_version=major_version, commit_nb=commit_nb, commit_id=commit_id)
-            case _:
-                raise Exception(f'Unknown state type: {data["type"]}')
 
     def has_available_executable(self) -> bool:
         return self.has_artisanal_executable() or self.has_public_executable()
@@ -183,7 +160,4 @@ class State(ABC):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, State):
             return False
-        return self.index == other.index
-
-    def __hash__(self) -> int:
-        return hash(self.index)
+        return self.__hash__() == other.__hash__()

@@ -5,12 +5,12 @@ from bughog.database.mongo.mongodb import MongoDB
 
 
 class Cache:
-
     @staticmethod
     def cache_in_db(subject_type: str, subject_name: str, ttl: int = 0):
         """
         Caches the result of the function in MongoDB, with respect to TTL (in hours).
         """
+
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
@@ -20,11 +20,9 @@ class Cache:
                     key = args[0] if args else kwargs.get('key')
 
                 collection = MongoDB().get_cache_collection(subject_type)
-                doc = collection.find_one({
-                    'subject_name': subject_name,
-                    'function_name': func.__name__,
-                    'key': key
-                })
+                doc = collection.find_one(
+                    {'subject_name': subject_name, 'function_name': func.__name__, 'key': str(key)}
+                )
 
                 now = datetime.now(timezone.utc)
                 # Check for cache existence and TTL
@@ -37,7 +35,7 @@ class Cache:
                         cached_time = datetime.fromisoformat(doc['ts'])
                     except Exception:
                         # Fallback in case of serialization issues
-                        cached_time = datetime.strptime(doc['ts'], "%Y-%m-%d %H:%M:%S%z")
+                        cached_time = datetime.strptime(doc['ts'], '%Y-%m-%d %H:%M:%S%z')
                     age = now - cached_time
                     if age < timedelta(hours=ttl):
                         return doc['value']
@@ -48,7 +46,7 @@ class Cache:
                         {
                             'subject_name': subject_name,
                             'function_name': func.__name__,
-                            'key': key,
+                            'key': str(key),
                         },
                         {
                             '$set': {
@@ -56,8 +54,10 @@ class Cache:
                                 'ts': now.replace(microsecond=0).isoformat(),
                             }
                         },
-                        upsert=True
+                        upsert=True,
                     )
                 return new_value
+
             return wrapper
+
         return decorator

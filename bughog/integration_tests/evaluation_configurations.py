@@ -9,6 +9,7 @@ from bughog.parameters import (
     SubjectConfiguration,
 )
 from bughog.subject import factory
+from bughog.version_control.version import Version
 
 
 def get_default_configuration(subject_type: str, subject_name: str) -> SubjectConfiguration:
@@ -24,9 +25,13 @@ def get_default_configuration(subject_type: str, subject_name: str) -> SubjectCo
 def get_default_evaluation_range(
     subject_type: str, subject_name: str, experiment: str, only_releases: bool
 ) -> EvaluationRange:
-    min_version, max_version = factory.get_subject_availability(subject_type, subject_name)
+    subject_availability = factory.get_subject_availability(subject_type, subject_name)
+    min_version = subject_availability['min_version']
+    max_version = subject_availability['max_version']
+    versions = subject_availability['available_versions']
     return EvaluationRange(
-        (min_version, max_version),
+        (Version(min_version), Version(max_version)),
+        [Version(v) for v in versions],
         None,
         only_releases,
     )

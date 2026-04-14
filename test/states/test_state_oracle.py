@@ -1,6 +1,7 @@
 import pytest
 
 from bughog.subject.state_oracle import StateOracle
+from bughog.version_control.version import Version
 
 
 class TestIsValidCommitId:
@@ -70,17 +71,21 @@ class TestParseCommitNbFromGooglesource:
 class TestGetEarliestTagWithMajor:
     def test_picks_earliest_minor_version(self):
         tags = ['v120.0.5', 'v120.0.1', 'v120.0.10', 'v121.0.0']
-        assert StateOracle._get_earliest_tag_with_major(tags, 120) == 'v120.0.1'
+        version = Version('120')
+        assert StateOracle._get_earliest_tag_version_match(tags, version) == 'v120.0.1'
 
     def test_ignores_other_major_versions(self):
         tags = ['v119.0.0', 'v121.0.0']
+        version = Version('120')
         with pytest.raises(ValueError):
-            StateOracle._get_earliest_tag_with_major(tags, 120)
+            StateOracle._get_earliest_tag_version_match(tags, version)
 
     def test_single_candidate(self):
         tags = ['v100.0.0', 'v200.0.0']
-        assert StateOracle._get_earliest_tag_with_major(tags, 100) == 'v100.0.0'
+        version = Version('100')
+        assert StateOracle._get_earliest_tag_version_match(tags, version) == 'v100.0.0'
 
     def test_empty_list_raises(self):
+        version = Version('100')
         with pytest.raises(ValueError):
-            StateOracle._get_earliest_tag_with_major([], 100)
+            StateOracle._get_earliest_tag_version_match([], version)

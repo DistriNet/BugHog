@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Iterator, Optional
 
 from gridfs import GridFS
 from pymongo import ASCENDING, MongoClient
@@ -11,7 +11,6 @@ from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
 
 from bughog.evaluation.experiment_result import ExperimentResult
-from bughog.version_control.version import Version
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
@@ -19,6 +18,7 @@ from bughog.parameters import (
     SubjectConfiguration,
 )
 from bughog.version_control.state.base import ShallowState, State
+from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +206,7 @@ class MongoDB:
         params: EvaluationParameters,
         boundary_states: Optional[tuple[State, State]],
         dirty: Optional[bool] = None,
-    ) -> list[State]:
+    ) -> Iterator[dict]:
         collection = self.__get_data_collection(params.subject_configuration)
         query = {
             'project': params.project_name,
@@ -237,15 +237,14 @@ class MongoDB:
         if dirty is not None:
             query['dirty'] = dirty
         cursor = collection.find(query)
-        states = []
+
         for doc in cursor:
-            subject_type = params.subject_configuration.subject_type
-            subject_name = params.subject_configuration.subject_name
-            state = State.from_dict(subject_type, subject_name, doc['state'])
-            state.result_variables = set(tuple(item) for item in doc['result']['variables'])
-            state.result_attempt = doc['result'].get('attempt', 1)
-            states.append(state)
-        return states
+            yield {
+                'subject_type': params.subject_configuration.subject_type,
+                'subject_name': params.subject_configuration.subject_name,
+                'state': doc['state'],
+                'result': doc['result'],
+            }
 
     def __to_experiment_query(self, params: ExperimentParameters, state: ShallowState) -> dict:
         state_query = {'state.' + k: v for k, v in state.dict.items()}
@@ -320,10 +319,10 @@ class MongoDB:
                 '$gte': evaluation_range.commit_nb_range[0],
                 '$lte': evaluation_range.commit_nb_range[1],
             }
-        elif evaluation_range.major_version_range:
+        elif evaluation_range.version_range:
             query['padded_subject_version'] = {
-                '$gte': str(evaluation_range.major_version_range[0]).zfill(4),
-                '$lte': str(evaluation_range.major_version_range[1] + 1).zfill(4),
+                '$gte': evaluation_range.version_range[0].padded(),
+                '$lte': evaluation_range.version_range[1].next_padded(),
             }
         docs = collection.aggregate(
             [

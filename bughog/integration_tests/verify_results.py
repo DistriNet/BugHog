@@ -3,15 +3,16 @@ import logging
 from collections import defaultdict
 from typing import Callable, Generator
 
-from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.evaluation.experiments import Experiments
 from bughog.evaluation.file_structure import Folder
+from bughog.exceptions import UserError
 from bughog.integration_tests import evaluation_configurations
 from bughog.parameters import EvaluationParameters
 from bughog.subject import factory
 from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.version_control.state.base import State
+from bughog.version_control.state_factory import create_state_factory
 
 TEST_PROJECT_NAME = '_tests'
 logger = logging.getLogger(__name__)
@@ -35,9 +36,14 @@ def verify_all() -> dict:
         eval_parameters_list = evaluation_configurations.get_eval_parameters_list(subject_type, elegible_experiments)
 
         for eval_parameters in eval_parameters_list:
-            experiment_verification = __verify_experiment(eval_parameters, all_experiments)
-            if experiment_verification:
-                grouped_results[subject_type].append(experiment_verification)
+            try:
+                experiment_verification = __verify_experiment(eval_parameters, all_experiments)
+                if experiment_verification:
+                    grouped_results[subject_type].append(experiment_verification)
+            except UserError as e:
+                logger.error(
+                    f'UserError while verifying {eval_parameters.experiment_name} of {subject_type}.', exc_info=e
+                )
 
     # Return list of lists, each sublist for one subject_type
     return grouped_results
@@ -51,7 +57,8 @@ def __verify_experiment(params: EvaluationParameters, all_experiments: Experimen
     if verification_func is None:
         return None
 
-    states = MongoDB().get_evaluated_states(params, None)
+    state_factory = create_state_factory(params)
+    states = state_factory.create_evaluated_states()
     nb_of_success_results = len(list(filter(lambda x: verification_func(x), states)))
     nb_of_fail_results = len(
         list(

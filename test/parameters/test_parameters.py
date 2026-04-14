@@ -11,6 +11,7 @@ from bughog.parameters import (
     create_experiment_params,
 )
 from bughog.version_control.state.base import ShallowState
+from bughog.version_control.version import Version
 
 
 def _db():
@@ -27,6 +28,7 @@ def _state():
 
 # --- SubjectConfiguration ---
 
+
 class TestSubjectConfiguration:
     def test_from_dict_defaults(self):
         config = SubjectConfiguration.from_dict({'subject_type': 'browser', 'subject_name': 'chromium'})
@@ -35,13 +37,15 @@ class TestSubjectConfiguration:
         assert config.extensions == []
 
     def test_from_dict_explicit_fields(self):
-        config = SubjectConfiguration.from_dict({
-            'subject_type': 'js_engine',
-            'subject_name': 'v8',
-            'subject_setting': 'headless',
-            'cli_options': ['--flag'],
-            'extensions': ['ext'],
-        })
+        config = SubjectConfiguration.from_dict(
+            {
+                'subject_type': 'js_engine',
+                'subject_name': 'v8',
+                'subject_setting': 'headless',
+                'cli_options': ['--flag'],
+                'extensions': ['ext'],
+            }
+        )
         assert config.subject_setting == 'headless'
         assert config.cli_options == ['--flag']
         assert config.extensions == ['ext']
@@ -59,16 +63,17 @@ class TestSubjectConfiguration:
 
 # --- EvaluationRange ---
 
+
 class TestEvaluationRange:
     def test_version_range(self):
-        r = EvaluationRange(major_version_range=(100, 120))
-        assert r.major_version_range == (100, 120)
+        r = EvaluationRange(version_range=(Version('100'), Version('120')))
+        assert r.version_range == (Version('100'), Version('120'))
         assert r.commit_nb_range is None
 
     def test_commit_range(self):
         r = EvaluationRange(commit_nb_range=(1000, 2000))
         assert r.commit_nb_range == (1000, 2000)
-        assert r.major_version_range is None
+        assert r.version_range is None
 
     def test_equal_bounds_allowed(self):
         EvaluationRange(commit_nb_range=(500, 500))
@@ -79,7 +84,7 @@ class TestEvaluationRange:
 
     def test_inverted_version_range_raises(self):
         with pytest.raises(AssertionError):
-            EvaluationRange(major_version_range=(120, 100))
+            EvaluationRange(version_range=(Version('120'), Version('100')))
 
     def test_inverted_commit_range_raises(self):
         with pytest.raises(AssertionError):
@@ -87,11 +92,11 @@ class TestEvaluationRange:
 
     def test_from_dict_version_range(self):
         r = EvaluationRange.from_dict({'version_range': ['100', '120']})
-        assert r.major_version_range == (100, 120)
+        assert r.version_range == (Version('100'), Version('120'))
 
     def test_from_dict_version_range_full_version(self):
         r = EvaluationRange.from_dict({'version_range': ['100.0.1', '120.5.2']})
-        assert r.major_version_range == (100, 120)
+        assert r.version_range == (Version('100.0.1'), Version('120.5.2'))
 
     def test_from_dict_commit_range(self):
         r = EvaluationRange.from_dict({'lower_commit_nb': '1000', 'upper_commit_nb': '2000'})
@@ -113,6 +118,7 @@ class TestEvaluationRange:
 
 # --- SequenceConfiguration ---
 
+
 class TestSequenceConfiguration:
     def test_defaults(self):
         config = SequenceConfiguration.from_dict({})
@@ -121,17 +127,20 @@ class TestSequenceConfiguration:
         assert config.search_strategy is None
 
     def test_explicit_values(self):
-        config = SequenceConfiguration.from_dict({
-            'nb_of_containers': '4',
-            'sequence_limit': '100',
-            'search_strategy': 'bgb',
-        })
+        config = SequenceConfiguration.from_dict(
+            {
+                'nb_of_containers': '4',
+                'sequence_limit': '100',
+                'search_strategy': 'bgb',
+            }
+        )
         assert config.nb_of_containers == 4
         assert config.sequence_limit == 100
         assert config.search_strategy == 'bgb'
 
 
 # --- DatabaseParameters ---
+
 
 class TestDatabaseParameters:
     def test_str(self):
@@ -147,6 +156,7 @@ class TestDatabaseParameters:
 
 # --- ExperimentParameters serialization ---
 
+
 class TestExperimentParametersSerialization:
     def test_serialize_returns_string(self):
         params = ExperimentParameters('proj', 'poc', _subject(), _state(), _db())
@@ -158,6 +168,7 @@ class TestExperimentParametersSerialization:
 
 
 # --- create_experiment_params ---
+
 
 class TestCreateExperimentParams:
     def _base(self):
@@ -184,13 +195,13 @@ class TestCreateExperimentParams:
         data = {**self._base(), 'major_version': 100}
         params = create_experiment_params(data, _db())
         assert params.state.type == 'version'
-        assert params.state.major_version == 100
+        assert params.state.version == 100
 
     def test_with_full_version(self):
         data = {**self._base(), 'major_version': '100.0.1234'}
         params = create_experiment_params(data, _db())
         assert params.state.type == 'version'
-        assert params.state.major_version == 100
+        assert params.state.version == 100
 
     def test_missing_state_raises(self):
         with pytest.raises(MissingParametersError):
@@ -204,6 +215,7 @@ class TestCreateExperimentParams:
 
 
 # --- create_evaluation_params ---
+
 
 class TestCreateEvaluationParams:
     def _base(self):

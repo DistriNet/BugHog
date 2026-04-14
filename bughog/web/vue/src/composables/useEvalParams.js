@@ -20,6 +20,7 @@ const DEFAULT_EVAL_PARAMS = {
   extensions: [],
   experiments: [],
   version_range: [-1, -1],
+  versions: null,
   lower_commit_nb: null,
   upper_commit_nb: null,
   only_release_commits: true,

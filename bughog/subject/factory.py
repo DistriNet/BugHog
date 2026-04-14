@@ -66,9 +66,8 @@ def get_all_subject_availability() -> list[dict]:
     return subject_availability
 
 
-def get_subject_availability(subject_type: str, subject_name: str) -> tuple[int, int]:
-    subject_availability = get_subject(subject_type, subject_name).get_availability()
-    return subject_availability['min_version'], subject_availability['max_version']
+def get_subject_availability(subject_type: str, subject_name: str) -> dict[str, str | int | list[str]]:
+    return get_subject(subject_type, subject_name).get_availability()
 
 
 def get_subject_from_params(config: SubjectConfiguration) -> Subject:

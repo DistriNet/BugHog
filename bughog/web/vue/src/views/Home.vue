@@ -35,7 +35,10 @@ export default {
     const { evalParams, resetEvalParams } = useEvalParams()
     const { serverInfo, updateServerInfo, bannerMessage } = useServerInfo();
     const { subject_availability } = useSubjectAvailability(() => {
-      evalParams.version_range = subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name);
+      const versions = subject_availability.get_subject_available_versions(evalParams.subject_type, evalParams.subject_name);
+      if (versions.length > 0) {
+        evalParams.version_range = [versions[0], versions[versions.length - 1]];
+      }
     });
     const socketHandlers = {
         onOpen: () => {},
@@ -108,12 +111,40 @@ export default {
         return `Connecting to database...`;
       }
     },
+    "slider_available_versions": function () {
+      return this.subject_availability.get_subject_available_versions(this.evalParams.subject_type, this.evalParams.subject_name);
+    },
     "computed_slider_merge": function () {
-      const version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, this.evalParams.subject_name);
-      return Math.ceil((version_range[1] - version_range[0]) / 7);
+      return Math.ceil(this.slider_available_versions.length / 7);
+    },
+    "slider_format": function () {
+      const versions = this.slider_available_versions;
+      return (idx) => versions[idx] ?? idx;
+    },
+    "slider_index_range": {
+      get() {
+        const versions = this.slider_available_versions;
+        if (versions.length === 0) return [0, 0];
+        const start = versions.indexOf(String(this.evalParams.version_range[0]));
+        const end = versions.indexOf(String(this.evalParams.version_range[1]));
+        return [
+          start === -1 ? 0 : start,
+          end === -1 ? versions.length - 1 : end,
+        ];
+      },
+      set(newIndices) {
+        const versions = this.slider_available_versions;
+        if (versions.length > 0) {
+          this.evalParams.version_range = [versions[newIndices[0]], versions[newIndices[1]]];
+          this.update_versions();
+        }
+      },
     }
   },
   watch: {
+    "evalParams.only_release_commits": function (val) {
+      this.update_versions();
+    },
     "selected.experiment": function (val) {
       if (val !== null) {
         this.hide_poc_editor = false;
@@ -141,6 +172,7 @@ export default {
       if (subject_names !== null && subject_names.length > 0) {
         this.evalParams.subject_name = subject_names[0];
       }
+      this.update_versions();
       this.get_projects(() => {
         if (this.projects.length === 1) {
           this.evalParams.project_name = this.projects[0];
@@ -155,7 +187,11 @@ export default {
         console.log("Unsetting subject");
       } else {
         console.log("Setting subject: " + subject_name)
-        this.evalParams.version_range = this.subject_availability.get_subject_version_range(this.evalParams.subject_type, subject_name);
+        const versions = this.subject_availability.get_subject_available_versions(this.evalParams.subject_type, subject_name);
+        if (versions.length > 0) {
+          this.evalParams.version_range = [versions[0], versions[versions.length - 1]];
+        }
+        this.update_versions();
         if (this.$refs.gantt) {
           this.$refs.gantt.clear_plot();
         }
@@ -234,6 +270,8 @@ export default {
       this.sendWithSocket({ get: ['all'] });
     }
 
+    this.update_versions();
+
     this.get_projects();
     const path = `/api/poc/domain/`;
     axios.get(path)
@@ -288,6 +326,15 @@ export default {
         else {
           this.updateServerInfo(data.update);
         }
+      }
+    },
+    update_versions() {
+      if (this.evalParams.only_release_commits) {
+        const versions = this.slider_available_versions;
+        const [start, end] = this.slider_index_range;
+        this.evalParams.versions = versions.slice(start, end + 1);
+      } else {
+        this.evalParams.versions = null;
       }
     },
     openLab(poc_name) {
@@ -485,12 +532,12 @@ export default {
               <div class="w-5/6 m-auto pt-12">
                 <Slider
                   ref="version_slider"
-                  v-model="evalParams.version_range"
-                  :lazy=true
-                  :min="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[0]"
-                  :max="subject_availability.get_subject_version_range(evalParams.subject_type, evalParams.subject_name)[1]"
+                  v-model="slider_index_range"
+                  :min="0"
+                  :max="Math.max(0, slider_available_versions.length - 1)"
                   :merge="computed_slider_merge"
-                  :disabled=false
+                  :disabled="slider_available_versions.length === 0"
+                  :format="slider_format"
                   class="slider"
                   @change="propagate_new_params"
                 />

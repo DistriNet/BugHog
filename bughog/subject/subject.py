@@ -89,16 +89,28 @@ class Subject(ABC):
         """
         return os.path.join('/app/subject', self.type, self.name)
 
-    def get_availability(self) -> dict:
-        oldest_major_version = self.state_oracle.get_oldest_supported_release_version()
-        newest_major_version = self.state_oracle.get_most_recent_major_release_version()
+    def get_availability(self) -> dict[str, str | int | list[str]]:
+        earliest_version = self.state_oracle.get_earliest_supported_release_version()
+        latest_version = self.state_oracle.get_latest_supported_release_version()
 
-        oldest_commit_number = self.state_oracle.find_commit_of_release(oldest_major_version)[0]
-        newest_commit_number = self.state_oracle.find_commit_of_release(newest_major_version)[0]
+        if earliest_version.major != 0 and latest_version.major != 0:
+            earliest_major_version = earliest_version.major
+            latest_major_version = latest_version.major
+            available_versions = [
+                str(version) for version in list(range(earliest_major_version, latest_major_version + 1))
+            ]
+        else:
+            earliest_major_version = earliest_version.base_version
+            latest_major_version = latest_version.base_version
+            available_versions = [str(version) for version in self.state_oracle.get_all_available_release_versions()]
+
+        earliest_commit_number = self.state_oracle.find_commit_of_release(earliest_version)[0]
+        latest_commit_number = self.state_oracle.find_commit_of_release(latest_version)[0]
         return {
             'name': self.name,
-            'min_version': oldest_major_version,
-            'max_version': newest_major_version,
-            'min_commit': oldest_commit_number,
-            'max_commit': newest_commit_number,
+            'min_version': earliest_major_version,
+            'max_version': latest_major_version,
+            'min_commit': earliest_commit_number,
+            'max_commit': latest_commit_number,
+            'available_versions': available_versions,
         }

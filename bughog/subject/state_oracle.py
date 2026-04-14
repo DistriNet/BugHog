@@ -23,21 +23,29 @@ class StateOracle(ABC):
     def find_commit_id(self, commit_nb: int) -> str | None:
         pass
 
-    @abstractmethod
-    def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
-        pass
+    def find_commit_of_release(self, release_version: Version) -> tuple[int, str]:
+        version_info = bughog_service.find_version_info(self.subject_name, release_version)
+        return version_info.get('commit_info', {}).get('nb'), version_info.get('commit_info', {}).get('id')
 
     @abstractmethod
     def get_commit_url(self, commit_nb: int, commit_id: str | None) -> str | None:
         pass
 
     @abstractmethod
-    def get_oldest_supported_release_version(self) -> int:
+    def get_earliest_supported_release_version(self) -> Version:
         pass
 
-    @abstractmethod
-    def get_most_recent_major_release_version(self) -> int:
-        pass
+    def get_latest_supported_release_version(self) -> Version:
+        return bughog_service.find_latest_major_version(self.subject_name)
+
+    def get_all_available_release_versions(self) -> list[Version]:
+        versions = [
+            Version(version_info.get('version'))
+            for version_info in bughog_service.find_all_versions(self.subject_name)
+            if version_info.get('version') is not None
+        ]
+        versions.sort()
+        return versions
 
     def get_most_recent_commit_nb(self) -> int:
         return bughog_service.find_latest_commit_info(self.subject_name).get('nb')
@@ -96,12 +104,19 @@ class StateOracle(ABC):
 
     # Public executables
 
+    def has_public_release_executable(self, version: Version) -> bool:
+        return bughog_service.find_version_info(self.subject_name, version, has_public_executable=True) is not None
+
     @abstractmethod
-    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
+    def has_public_commit_executable(self, commit_nb: int) -> bool:
         pass
 
     @abstractmethod
-    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
+    def get_release_executable_urls(self, version: Version) -> list[str]:
+        pass
+
+    @abstractmethod
+    def get_commit_executable_urls(self, commit_nb: int) -> list[str]:
         pass
 
     def get_nearest_state_with_public_executable(
@@ -150,16 +165,15 @@ class StateOracle(ABC):
         return None
 
     @staticmethod
-    def _get_earliest_tag_with_major(all_release_tags: list[str], major_release: int) -> str:
+    def _get_earliest_tag_version_match(all_release_tags: list[str], release_version: Version) -> str:
         candidates = []
         for tag in all_release_tags:
             v = StateOracle.get_full_version_from_release_tag(tag)
-            if v is None or v.major != major_release:
-                continue
-            candidates.append((v, tag))
+            if v is not None and release_version.matches(v):
+                candidates.append((v, tag))
 
         if not candidates:
-            raise ValueError(f'Could not find earliest tag for major {major_release}.')
+            raise ValueError(f'Could not find earliest tag for {release_version}.')
 
         candidates.sort()
         return candidates[0][1]
