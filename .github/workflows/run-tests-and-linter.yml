@@ -1,4 +1,4 @@
-name: Pytest CI/CD
+name: CI
 on: [push]
 jobs:
   pytest:
@@ -13,17 +13,17 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --dev --locked
+        run: uv sync --dev --frozen
 
       - name: Run pytest
         run: uv run pytest --ignore=test/availability
 
-      - name: Generate badge
+      - name: Generate badges
         run: |
           uv run genbadge tests -i junit.xml -o pytest.svg
           uv run genbadge coverage -i coverage.xml -o coverage.svg
 
-      - name: Upload test badge
+      - name: Upload pytest badge
         uses: actions/upload-artifact@v4
         with:
           name: pytest
@@ -38,7 +38,7 @@ jobs:
           overwrite: true
 
 
-  flake8:
+  ty:
     runs-on: ubuntu-latest
 
     steps:
@@ -50,20 +50,84 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-          uv sync --dev --locked
+        run: uv sync --dev --frozen
 
-      - name: Lint with flake8
-        run: |
-          uv run flake8 --exit-zero --output-file flake8.txt
+      - name: Run ty
+        run: uv run ty check
+
+
+  ruff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev --frozen
+
+      - name: Lint with ruff
+        run: uv run ruff check --exit-zero --output-format=text > ruff.txt
 
       - name: Generate badge
         run: |
-          uv run genbadge flake8 -i flake8.txt -o flake8.svg
+          VIOLATIONS=$(wc -l < ruff.txt | xargs)
+          if [ "$VIOLATIONS" -eq 0 ]; then
+            uv run anybadge --label=ruff --value=passing --color=green --file=ruff.svg
+          else
+            uv run anybadge --label=ruff --value="$VIOLATIONS violations" --color=orange --file=ruff.svg
+          fi
 
-      - name: Upload badge
+      - name: Upload ruff badge
         uses: actions/upload-artifact@v4
         with:
-          name: flake8
-          path: flake8.svg
+          name: ruff
+          path: ruff.svg
           overwrite: true
+
+
+  build:
+    needs: [pytest, ty, ruff]
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/beta' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve build metadata
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "additional_tag=latest"         >> $GITHUB_OUTPUT
+          elif [[ "$GITHUB_REF_NAME" == "beta" ]]; then
+            echo "version=beta"                  >> $GITHUB_OUTPUT
+            echo "additional_tag="               >> $GITHUB_OUTPUT
+          else
+            echo "version=dev"                   >> $GITHUB_OUTPUT
+            echo "additional_tag="               >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push
+        run: |
+          docker buildx bake all --push \
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max"
+        env:
+          BUGHOG_VERSION:   ${{ steps.meta.outputs.version }}
+          ADDITIONAL_TAG:   ${{ steps.meta.outputs.additional_tag }}
