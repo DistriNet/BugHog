@@ -19,11 +19,20 @@ jobs:
         run: uv run pytest --ignore=test/availability
 
       - name: Generate badges
+        if: always()
         run: |
-          uv run genbadge tests -i junit.xml -o pytest.svg
-          uv run genbadge coverage -i coverage.xml -o coverage.svg
+          PASSED=$(python -c "import xml.etree.ElementTree as ET; r=ET.parse('junit.xml').getroot(); ts=r.findall('testsuite'); print(sum(int(t.get('tests',0))-int(t.get('failures',0))-int(t.get('errors',0)) for t in ts))")
+          FAILED=$(python -c "import xml.etree.ElementTree as ET; r=ET.parse('junit.xml').getroot(); ts=r.findall('testsuite'); print(sum(int(t.get('failures',0))+int(t.get('errors',0)) for t in ts))")
+          if [ "$FAILED" -eq 0 ]; then
+            uv run anybadge --label=pytest --value="${PASSED} passed" --color=green --file=pytest.svg
+          else
+            uv run anybadge --label=pytest --value="${PASSED} passed, ${FAILED} failed" --color=red --file=pytest.svg
+          fi
+          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; t=ET.parse('coverage.xml').getroot(); print(round(float(t.get('line-rate',0))*100))")
+          uv run anybadge --value=$COVERAGE --file=coverage.svg coverage
 
       - name: Upload pytest badge
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pytest
@@ -31,6 +40,7 @@ jobs:
           overwrite: true
 
       - name: Upload coverage badge
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage
@@ -71,9 +81,10 @@ jobs:
         run: uv sync --dev --frozen
 
       - name: Lint with ruff
-        run: uv run ruff check --exit-zero --output-format=concise > ruff.txt
+        run: uv run ruff check --output-format=concise > ruff.txt
 
       - name: Generate badge
+        if: always()
         run: |
           VIOLATIONS=$(tail -1 ruff.txt | grep -oP '\d+')
           if [ "$VIOLATIONS" -eq 0 ]; then
@@ -83,6 +94,7 @@ jobs:
           fi
 
       - name: Upload ruff badge
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ruff
@@ -98,7 +110,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolve build metadata
         id: meta
