@@ -196,7 +196,7 @@ class Main:
             self.__update_state(is_running=False, reason='idle', status='idle')
 
     @staticmethod
-    def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
+    def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy | CompositeSearch:
         sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit

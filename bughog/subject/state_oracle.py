@@ -40,15 +40,15 @@ class StateOracle(ABC):
 
     def get_all_available_release_versions(self) -> list[Version]:
         versions = [
-            Version(version_info.get('version'))
+            Version(v)
             for version_info in bughog_service.find_all_versions(self.subject_name)
-            if version_info.get('version') is not None
+            if (v := version_info.get('version')) is not None
         ]
         versions.sort()
         return versions
 
     def get_most_recent_commit_nb(self) -> int:
-        return bughog_service.find_latest_commit_info(self.subject_name).get('nb')
+        return bughog_service.find_latest_commit_info(self.subject_name)['nb']
 
     @staticmethod
     def is_valid_commit_id(commit_id: str) -> bool:

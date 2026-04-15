@@ -6,14 +6,13 @@ from bughog.version_control.state.base import State
 
 
 class V8SandboxSubject(JsEngine):
-
     @property
     def name(self) -> str:
         return 'v8_sandbox'
 
     @property
-    def _state_oracle_class(self) -> type[V8SandboxStateOracle]:
-        return V8SandboxStateOracle
+    def state_oracle(self) -> V8SandboxStateOracle:
+        return V8SandboxStateOracle(self.type, self.name)
 
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> V8Executable:
         return V8Executable(subject_configuration, state)

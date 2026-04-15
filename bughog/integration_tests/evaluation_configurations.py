@@ -29,6 +29,11 @@ def get_default_evaluation_range(
     min_version = subject_availability['min_version']
     max_version = subject_availability['max_version']
     versions = subject_availability['available_versions']
+
+    assert isinstance(min_version, (str, int))
+    assert isinstance(max_version, (str, int))
+    assert isinstance(versions, list)
+
     return EvaluationRange(
         (Version(min_version), Version(max_version)),
         [Version(v) for v in versions],

@@ -19,7 +19,7 @@ class File:
         return self.name.split('.')[-1]
 
     @property
-    def comment_delimiters(self) -> tuple[str,str|None] | None:
+    def comment_delimiters(self) -> tuple[str, str | None] | None:
         match self.file_type:
             case 'html' | 'xml':
                 return r'<!--', r'-->'
@@ -41,7 +41,7 @@ class File:
                     # Stop looking upon the first non-comment line that also is not the document declaration.
                     if not re.match(rf'^\s*{prefix}', line) and '<!DOCTYPE' not in line:
                         break
-                    match = re.search(rf'^\s*{prefix}\s*bughog_{name}:\s*(.*)\s*{suffix if suffix else ''}\s*$', line)
+                    match = re.search(rf'^\s*{prefix}\s*bughog_{name}:\s*(.*)\s*{suffix if suffix else ""}\s*$', line)
                     if match:
                         return match.group(1).strip()
         else:
@@ -53,11 +53,7 @@ class File:
 
 
 class Folder:
-    __files_and_folders_to_ignore = [
-        '.DS_Store',
-        '.git',
-        'README.md'
-    ]
+    __files_and_folders_to_ignore = ['.DS_Store', '.git', 'README.md']
 
     def __init__(self, name: str, path: str):
         """
@@ -148,7 +144,9 @@ class Folder:
             raise AttributeError('The file name cannot be empty.')
         regex = r'^[A-Za-z0-9_\-.]+$'
         if re.match(regex, name) is None:
-            raise AttributeError(f"The given name '{name}' is invalid. Only letters, numbers, '.', '-' and '_' can be used, and the name should not be empty.")
+            raise AttributeError(
+                f"The given name '{name}' is invalid. Only letters, numbers, '.', '-' and '_' can be used, and the name should not be empty."
+            )
 
     def __repr__(self):
         return f'Folder(name={self.name}, path={self.path}, subfolders={self.subfolders}, files={self.files})'

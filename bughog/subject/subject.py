@@ -44,14 +44,6 @@ class Subject(ABC):
         """
         pass
 
-    @property
-    @abstractmethod
-    def _state_oracle_class(self) -> type[StateOracle]:
-        """
-        Returns the state oracle class associated with this subject.
-        """
-        pass
-
     @abstractmethod
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> Executable:
         """
@@ -76,11 +68,12 @@ class Subject(ABC):
         pass
 
     @property
+    @abstractmethod
     def state_oracle(self) -> StateOracle:
         """
         Creates and returns the state oracle associated with this subject.
         """
-        return self._state_oracle_class(self.type, self.name)
+        pass
 
     @property
     def assets_folder_path(self) -> str:

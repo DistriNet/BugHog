@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
 from gridfs import GridFS
 from pymongo import ASCENDING, MongoClient
@@ -208,7 +208,7 @@ class MongoDB:
         dirty: Optional[bool] = None,
     ) -> Iterator[dict]:
         collection = self.__get_data_collection(params.subject_configuration)
-        query = {
+        query: dict[str, Any] = {
             'project': params.project_name,
             'subject_config': params.subject_configuration.subject_setting,
             'experiment': params.experiment_name,
@@ -247,8 +247,8 @@ class MongoDB:
             }
 
     def __to_experiment_query(self, params: ExperimentParameters, state: ShallowState) -> dict:
-        state_query = {'state.' + k: v for k, v in state.dict.items()}
-        query = {
+        state_query = {'state.' + k: v for k, v in state.to_dict().items()}
+        query: dict[str, Any] = {
             'project': params.project_name,
             'subject_config': params.subject_configuration.subject_setting,
             'experiment': params.experiment_name,
@@ -302,18 +302,24 @@ class MongoDB:
         evaluation_range = params.evaluation_range
         subject_config = params.subject_configuration
 
-        query = {
+        extensions_filter: dict[str, Any] = {
+            '$size': len(subject_config.extensions) if subject_config.extensions else 0
+        }
+        if subject_config.extensions:
+            extensions_filter['$all'] = subject_config.extensions
+        cli_options_filter: dict[str, Any] = {
+            '$size': len(subject_config.cli_options) if subject_config.cli_options else 0
+        }
+        if subject_config.cli_options:
+            cli_options_filter['$all'] = subject_config.cli_options
+        query: dict[str, Any] = {
             'project': params.project_name,
             'experiment': params.experiment_name,
             'subject_config': subject_config.subject_setting,
             'state.type': 'release' if releases else 'commit',
-            'extensions': {'$size': len(subject_config.extensions) if subject_config.extensions else 0},
-            'cli_options': {'$size': len(subject_config.cli_options) if subject_config.cli_options else 0},
+            'extensions': extensions_filter,
+            'cli_options': cli_options_filter,
         }
-        if subject_config.extensions:
-            query['extensions']['$all'] = subject_config.extensions
-        if subject_config.cli_options:
-            query['cli_options']['$all'] = subject_config.cli_options
         if evaluation_range.commit_nb_range:
             query['state.commit_nb'] = {
                 '$gte': evaluation_range.commit_nb_range[0],

@@ -3,9 +3,9 @@ import re
 
 import requests
 
-from bughog import util
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
+from bughog.util import http
 from bughog.version_control.conversion import bughog_service
 from bughog.version_control.version import Version
 
@@ -26,7 +26,7 @@ class ChromiumStateOracle(StateOracle):
 
         # If not found, use googlesource.
         url = f'{REV_ID_BASE_URL}{commit_id}'
-        html = util.request_html(url).decode()
+        html = http.request_html(url).decode()
         commit_nb = self._parse_commit_nb_from_googlesource(html)
         if commit_nb is None:
             logger.error(f"Could not parse commit number on '{url}'")
@@ -42,8 +42,8 @@ class ChromiumStateOracle(StateOracle):
 
         # If not found, use crrev.com.
         try:
-            final_url = util.request_final_url(f'{REV_NUMBER_BASE_URL}{commit_nb}')
-        except util.ResourceNotFound:
+            final_url = http.request_final_url(f'{REV_NUMBER_BASE_URL}{commit_nb}')
+        except http.ResourceNotFound:
             return None
         commit_id = final_url[-40:]
         assert re.match(r'[a-z0-9]{40}', commit_id)
@@ -62,7 +62,8 @@ class ChromiumStateOracle(StateOracle):
     # @Cache.cache_in_db('web_browser', 'chromium')
     def get_release_executable_urls(self, version: Version) -> list[str]:
         # TODO: make more efficient (by possibly adding to bughog service)
-        commit_nb, _ = bughog_service.find_version_info('chromium', version, has_public_executable=True)
+        version_info = bughog_service.find_version_info('chromium', version, has_public_executable=True)
+        commit_nb = version_info['commit_nb']
         return self.get_commit_executable_urls(commit_nb)
 
     # @Cache.cache_in_db('web_browser', 'chromium')

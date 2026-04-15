@@ -195,13 +195,17 @@ class TestCreateExperimentParams:
         data = {**self._base(), 'major_version': 100}
         params = create_experiment_params(data, _db())
         assert params.state.type == 'version'
-        assert params.state.version == 100
+        assert params.state.version is not None
+        assert params.state.version.major == 100
 
     def test_with_full_version(self):
         data = {**self._base(), 'major_version': '100.0.1234'}
         params = create_experiment_params(data, _db())
         assert params.state.type == 'version'
-        assert params.state.version == 100
+        assert params.state.version is not None
+        assert params.state.version.major == 100
+        assert params.state.version.minor == 0
+        assert params.state.version.patch == 1234
 
     def test_missing_state_raises(self):
         with pytest.raises(MissingParametersError):

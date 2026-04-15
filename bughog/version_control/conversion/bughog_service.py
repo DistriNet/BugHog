@@ -4,7 +4,7 @@ from os import getenv
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
-from bughog.util import ResourceNotFound, request_json
+from bughog.util.http import fetch_dict, fetch_list
 from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ LRU_CACHE_SIZE = 1024
 @lru_cache(maxsize=LRU_CACHE_SIZE)
 def find_commit_info(subject_name: str, commit_nb: str) -> dict[str, Any]:
     url = urljoin(BASE_URL, f'{subject_name}/commits/{commit_nb}')
-    return __fetch_dict(url)
+    return fetch_dict(url)
 
 
 def find_latest_commit_info(subject_name: str) -> dict[str, Any]:
@@ -30,7 +30,7 @@ def find_latest_commit_info(subject_name: str) -> dict[str, Any]:
 @lru_cache(maxsize=LRU_CACHE_SIZE)
 def find_commit_nb(subject_name: str, commit_id: str) -> int:
     url = urljoin(BASE_URL, f'{subject_name}/commits/{commit_id}')
-    commit_info = __fetch_dict(url)
+    commit_info = fetch_dict(url)
     commit_nb = commit_info.get('nb')
     if commit_nb is None or not isinstance(commit_nb, int):
         raise Exception('BugHog service response did not include a valid commit number.')
@@ -66,7 +66,7 @@ def find_nearest_commit_with_executable(
         BASE_URL,
         f'{subject_name}/commits/{target_commit_nb}/nearest_with_executable?max_lower_offset={max_lower_offset}&max_upper_offset={max_upper_offset}',
     )
-    return __fetch_dict(url)
+    return fetch_dict(url)
 
 
 @lru_cache(maxsize=LRU_CACHE_SIZE)
@@ -94,7 +94,7 @@ def find_version_info(subject_name: str, version: Version, has_public_executable
         if has_public_executable is not None:
             url += f'?has_executable={str(has_public_executable).lower()}'
 
-        version_list = __fetch_list(url)
+        version_list = fetch_list(url)
         if len(version_list) > 0:
             return version_list[0]
 
@@ -104,31 +104,13 @@ def find_version_info(subject_name: str, version: Version, has_public_executable
 @lru_cache(maxsize=LRU_CACHE_SIZE)
 def find_all_versions(subject_name: str) -> list[dict]:
     url = urljoin(BASE_URL, f'{subject_name}/versions')
-    return __fetch_list(url)
+    return fetch_list(url)
 
 
 @lru_cache(maxsize=LRU_CACHE_SIZE)
 def find_latest_major_version(subject_name: str) -> Version:
     url = urljoin(BASE_URL, f'{subject_name}/versions/latest')
-    version_str = __fetch_dict(url).get('version')
+    version_str = fetch_dict(url).get('version')
     if version_str is None:
         raise Exception('BugHog service response did not include a valid major version.')
     return Version(version_str)
-
-
-def __fetch(url: str) -> dict | list | None:
-    try:
-        return request_json(url)
-    except ResourceNotFound:
-        logger.warning(f'Could not fetch {url}')
-        return None
-
-
-def __fetch_list(url: str) -> list:
-    data = __fetch(url)
-    return data if isinstance(data, list) else []
-
-
-def __fetch_dict(url: str) -> dict:
-    data = __fetch(url)
-    return data if isinstance(data, dict) else {}

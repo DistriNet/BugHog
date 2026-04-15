@@ -24,7 +24,7 @@ class V8SandboxStateOracle(V8StateOracle):
         """
         We override this method because we want to call the API for v8, not v8_sandbox.
         """
-        return bughog_service.find_latest_commit_info('v8').get('nb')
+        return bughog_service.find_latest_commit_info('v8')['nb']
 
     def has_public_release_executable(self, version: Version) -> bool:
         return False

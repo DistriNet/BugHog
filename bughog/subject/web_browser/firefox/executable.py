@@ -76,11 +76,14 @@ class FirefoxExecutable(BrowserExecutable):
             add_user_pref('network.cookie.cookieBehavior', 1)
             add_user_pref('browser.contentblocking.category', 'custom')
         elif 'tp' in self.config.subject_setting:
-            if int(self.version) >= 65:
+            assert self.version is not None
+            if self.version.major >= 65:
                 add_user_pref('privacy.trackingprotection.enabled', True)
                 add_user_pref('pref.privacy.disable_button.change_blocklis', False)
                 add_user_pref('pref.privacy.disable_button.tracking_protection_exceptions', False)
-                add_user_pref('urlclassifier.trackingTable', 'test-track-simple,base-track-digest256,content-track-digest256')
+                add_user_pref(
+                    'urlclassifier.trackingTable', 'test-track-simple,base-track-digest256,content-track-digest256'
+                )
             else:
                 add_user_pref('privacy.contentblocking.category', 'strict')
                 add_user_pref('privacy.trackingprotection.enabled', True)
@@ -124,10 +127,14 @@ class FirefoxExecutable(BrowserExecutable):
 
         # For newer Firefox versions (> 57):
         # Generate SQLite database: cert9.db  key4.db  pkcs11.txt
-        cli.execute(f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}')
+        cli.execute(
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}'
+        )
         # For older Firefox versions (<= 57):
         # Generate in Berkeley DB database: cert8.db, key3.db, secmod.db
-        cli.execute(f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}')
+        cli.execute(
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}'
+        )
 
         # More info:
         # - https://support.mozilla.org/en-US/questions/1207165

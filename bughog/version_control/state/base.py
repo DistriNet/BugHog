@@ -18,8 +18,7 @@ class ShallowState:
     commit_nb: int | None
     commit_id: str | None
 
-    @property
-    def dict(self) -> dict:
+    def to_dict(self) -> dict:
         # 'major_version' is always written (e.g. 120 for Chromium, 0 for Servo).
         # 'version' is additionally written when the major version is 0 (e.g. 0.1.1 for Servo),
         # since major_version alone is insufficient to identify the release in that case.
@@ -112,7 +111,7 @@ class State(ABC):
         return pickle.loads(pickled_bytes)
 
     def to_dict(self) -> dict:
-        return self.to_shallow_state().dict
+        return self.to_shallow_state().to_dict()
 
     def has_available_executable(self) -> bool:
         return self.has_artisanal_executable() or self.has_public_executable()

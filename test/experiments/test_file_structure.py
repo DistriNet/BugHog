@@ -26,18 +26,27 @@ class TestFileType:
 
 class TestCommentDelimiters:
     def test_html_has_closing_delimiter(self):
-        prefix, suffix = File('index.html', '/').comment_delimiters
-        assert suffix is not None
+        pre_and_suffix = File('index.html', '/').comment_delimiters
+        assert pre_and_suffix is not None
+        prefix, suffix = pre_and_suffix
+        assert prefix == r'<!--'
+        assert suffix == r'-->'
 
     def test_xml_same_as_html(self):
         assert File('doc.xml', '/').comment_delimiters == File('index.html', '/').comment_delimiters
 
     def test_js_no_closing_delimiter(self):
-        _, suffix = File('script.js', '/').comment_delimiters
+        pre_and_suffix = File('script.js', '/').comment_delimiters
+        assert pre_and_suffix is not None
+        prefix, suffix = pre_and_suffix
+        assert prefix == r'//'
         assert suffix is None
 
     def test_wat_no_closing_delimiter(self):
-        _, suffix = File('module.wat', '/').comment_delimiters
+        pre_and_suffix = File('module.wat', '/').comment_delimiters
+        assert pre_and_suffix is not None
+        prefix, suffix = pre_and_suffix
+        assert prefix == r';;'
         assert suffix is None
 
     def test_unknown_type_returns_none(self):

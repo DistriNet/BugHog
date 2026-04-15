@@ -3,9 +3,9 @@ import re
 
 import requests
 
-from bughog import util
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
+from bughog.util import http
 from bughog.version_control.conversion import bughog_service, github
 from bughog.version_control.version import Version
 
@@ -95,7 +95,7 @@ class V8StateOracle(StateOracle):
     @Cache.cache_in_db('js_engine', 'v8', ttl=24)
     def __get_all_release_tags() -> list[str]:
         url = 'https://chromium.googlesource.com/v8/v8.git/+refs'
-        html = util.request_html(url).decode()
+        html = http.request_html(url).decode()
         all_tags = re.findall(r'/refs/tags/(\d+(?:\.\d+)+)', html)
         pattern = re.compile(r'^\d+\.\d+\.\d+$')
         return [tag for tag in all_tags if pattern.match(tag)]

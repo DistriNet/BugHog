@@ -11,8 +11,8 @@ class WasmtimeSubject(WasmRuntime):
         return 'wasmtime'
 
     @property
-    def _state_oracle_class(self) -> type[WasmtimeStateOracle]:
-        return WasmtimeStateOracle
+    def state_oracle(self) -> WasmtimeStateOracle:
+        return WasmtimeStateOracle(self.type, self.name)
 
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> WasmtimeExecutable:
         return WasmtimeExecutable(subject_configuration, state)

@@ -7,10 +7,10 @@ import time
 from abc import ABC, abstractmethod
 from enum import Enum, auto, unique
 
-from bughog import util
 from bughog.evaluation.collectors.logs import LogCollector
 from bughog.evaluation.file_structure import Folder
 from bughog.parameters import SubjectConfiguration
+from bughog.util import fs, http
 from bughog.version_control.state.base import State
 from bughog.version_control.version import Version
 
@@ -121,7 +121,7 @@ class Executable(ABC):
         return LogCollector.log_path
 
     @property
-    @util.ensure_folder_exists
+    @fs.ensure_folder_exists
     def temporary_storage_folder(self) -> str:
         """
         Executables are stored here before staging.
@@ -134,7 +134,7 @@ class Executable(ABC):
         return os.path.isdir(path) and any(os.scandir(path))
 
     @property
-    @util.ensure_folder_exists
+    @fs.ensure_folder_exists
     def staging_folder(self) -> str:
         return os.path.join('/memory/staging/', f'{self.config.subject_name}-{str(self.state.name)}')
 
@@ -182,7 +182,7 @@ class Executable(ABC):
             self.origin = 'artisanal'
             logger.info(f'Executable from artisanal build for {self.state.name} was found.')
             executable_path = self.state.get_artisanal_executable_folder()
-            util.copy_folder(executable_path, self.temporary_storage_folder)
+            fs.copy_folder(executable_path, self.temporary_storage_folder)
         elif ExecutableCache.fetch_executable_files(self.config, self.state.name, self.temporary_storage_folder):
             self.origin = 'public'
             logger.info(f'Executable for {self.state.name} was fetched from cache.')
@@ -190,7 +190,7 @@ class Executable(ABC):
             self.origin = 'public'
             start = time.time()
             executable_urls = self.state.get_executable_source_urls()
-            util.download_and_extract(executable_urls, self.temporary_storage_folder)
+            http.download_and_extract(executable_urls, self.temporary_storage_folder)
             elapsed_time = time.time() - start
             logger.info(f'Executable for {self.state.name} was downloaded in {elapsed_time:.2f}s')
             self._optimize_for_storage()
@@ -204,7 +204,7 @@ class Executable(ABC):
 
     def stage(self):
         self.unstage()
-        util.copy_folder(self.temporary_storage_folder, self.staging_folder)
+        fs.copy_folder(self.temporary_storage_folder, self.staging_folder)
         self._configure_executable()
 
     def unstage(self):
@@ -220,12 +220,15 @@ class Executable(ABC):
         cli_command = self._get_cli_command() + experiment_specific_params + self._runtime_args
         logger.debug(f'Executing: {" ".join(cli_command)}')
         with open(self.log_path, 'a+') as file:
-            popen_args = {'args': cli_command, 'stdout': file, 'stderr': file, 'bufsize': 1, 'text': True}
-            if cwd:
-                popen_args['cwd'] = cwd.path
-            if self._runtime_env_vars:
-                popen_args['env'] = self._runtime_env_vars
-            self.__process = subprocess.Popen(**popen_args)
+            self.__process = subprocess.Popen(
+                cli_command,
+                stdout=file,
+                stderr=file,
+                bufsize=1,
+                text=True,
+                cwd=cwd.path if cwd else None,
+                env=self._runtime_env_vars if self._runtime_env_vars else None,
+            )
 
     def terminate(self, wait=False, timeout: int = 5):
         if self.__process is None:

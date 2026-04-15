@@ -1,5 +1,6 @@
 import os
 from functools import lru_cache
+from typing import Any
 
 from bughog.evaluation.experiments import Experiments
 from bughog.parameters import SubjectConfiguration
@@ -17,7 +18,7 @@ from bughog.subject.web_browser.evaluation_framework import BrowserEvaluationFra
 from bughog.subject.web_browser.firefox.subject import Firefox
 from bughog.subject.web_browser.servo.subject import Servo
 
-subjects = {
+subjects: dict[str, Any] = {
     'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject(), V8SandboxSubject()]},
     'wasm_runtime': {'evaluation_framework': WasmRuntimeEvaluationFramework, 'subjects': [WasmtimeSubject()]},
     'web_browser': {
