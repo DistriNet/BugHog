@@ -1,9 +1,14 @@
 <div align="center">
     <img alt="BugHog logo" src="./assets/bughog_logo_long.svg" height="186"/>
     <div>
-        <img alt="pytest_job" src="https://github.com/DistriNet/BugHog/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main" />
+        <img alt="pytest" src="https://raw.githubusercontent.com/DistriNet/BugHog/badges/pytest.svg" />
+        <img alt="coverage" src="https://raw.githubusercontent.com/DistriNet/BugHog/badges/coverage.svg" />
+        <img alt="ty" src="https://raw.githubusercontent.com/DistriNet/BugHog/badges/ty.svg" />
+        <img alt="ruff" src="https://raw.githubusercontent.com/DistriNet/BugHog/badges/ruff.svg" />
+        <br>
         <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Version (tag)" src="https://img.shields.io/docker/v/bughog/core/latest?logo=docker" /></a>
-        <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Size" src="https://img.shields.io/docker/image-size/bughog/core?logo=docker" /></a>
+        <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Size" src="https://img.shields.io/docker/image-size/bughog/core/latest?logo=docker&label=core%20image%20size" /></a>
+        <a href="https://hub.docker.com/r/bughog/core"><img alt="Docker Image Size" src="https://img.shields.io/docker/pulls/bughog/core?logo=docker" /></a>
     </div>
 </div>
 <br>
