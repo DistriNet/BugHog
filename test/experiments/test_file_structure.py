@@ -157,13 +157,13 @@ class TestFolderParse:
     def test_get_file_raises_when_missing(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Folder.parse(tmpdir)
-            with pytest.raises(Exception):
+            with pytest.raises(FileNotFoundError):
                 folder.get_file('nonexistent.html')
 
     def test_get_folder_raises_when_missing(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             folder = Folder.parse(tmpdir)
-            with pytest.raises(Exception):
+            with pytest.raises(FileNotFoundError):
                 folder.get_folder('nonexistent')
 
 

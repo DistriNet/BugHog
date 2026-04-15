@@ -91,7 +91,7 @@ class Folder:
     def get_file(self, name: str) -> File:
         matched = [file for file in self.files if file.name == name]
         if len(matched) == 0:
-            raise Exception(f'Could not find {name} in {self.path}.')
+            raise FileNotFoundError(f'Could not find {name} in {self.path}.')
         return matched[0]
 
     def create_file(self, name: str, content: bytes):
@@ -103,7 +103,7 @@ class Folder:
     def get_folder(self, name: str) -> Folder:
         matched = [file for file in self.subfolders if file.name == name]
         if len(matched) == 0:
-            raise Exception(f'Could not find folder {name}.')
+            raise FileNotFoundError(f'Could not find folder {name} in {self.path}.')
         return matched[0]
 
     def create_folder(self, name: str) -> Folder:

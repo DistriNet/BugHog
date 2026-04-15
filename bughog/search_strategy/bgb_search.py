@@ -118,7 +118,7 @@ class BiggestGapBisectionSearch(BiggestGapBisectionSequence):
         We assume there are no other clean states in this range.
         """
         return[
-            pair for pair in zip(states, states[1:])
+            pair for pair in zip(states, states[1:], strict=False)
             if not (pair[0].has_dirty_result() and pair[1].has_dirty_result())
         ]
 

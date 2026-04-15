@@ -1,4 +1,5 @@
 import pytest
+from packaging.version import InvalidVersion
 
 from bughog.version_control.version import Version
 
@@ -56,7 +57,7 @@ def test_padded_version():
 
 
 def test_invalid_version():
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidVersion):
         Version('not-a-version')
 
 
