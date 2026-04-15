@@ -86,7 +86,7 @@ jobs:
       - name: Generate badge
         if: always()
         run: |
-          VIOLATIONS=$(tail -1 ruff.txt | grep -oP '\d+')
+          VIOLATIONS=$(tail -1 ruff.txt | grep -oP '\d+' || echo 0)
           if [ "$VIOLATIONS" -eq 0 ]; then
             uv run anybadge --label=ruff --value=passing --color=green --file=ruff.svg
           else
