@@ -63,7 +63,7 @@ class ChromiumStateOracle(StateOracle):
     def get_release_executable_urls(self, version: Version) -> list[str]:
         # TODO: make more efficient (by possibly adding to bughog service)
         version_info = bughog_service.find_version_info('chromium', version, has_public_executable=True)
-        commit_nb = version_info['commit_nb']
+        commit_nb = version_info['commit_info']['nb']
         return self.get_commit_executable_urls(commit_nb)
 
     # @Cache.cache_in_db('web_browser', 'chromium')

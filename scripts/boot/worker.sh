@@ -13,6 +13,6 @@ if [ -n "$MANAGE_XVFB" ]; then
 fi
 
 if [ "$DEVELOPMENT" ]; then
-    uv sync --no-dev --frozen
+    uv sync --dev --frozen
 fi
 exec python3 /app/bughog/worker.py "$@"

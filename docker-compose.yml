@@ -43,11 +43,6 @@ services:
     ports:
       - "5000:5000"
     image: bughog/core_dev
-    build:
-      args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
-        DOCKER_GID: ${DOCKER_GID:-999}
     environment:
       - "DEVELOPMENT=1"
     volumes:
@@ -65,8 +60,6 @@ services:
     image: bughog/core:${BUGHOG_VERSION}
     hostname: bh_core
     container_name: bh_core
-    group_add:
-      - "${DOCKER_GID:-999}"
     init: true
     ports:
       - "5000:5000"

@@ -17,7 +17,7 @@ dependencies = [
     "pyvirtualdisplay==3.0",
     "requests==2.32.3",
     "rich==14.3.3",
-    "xlib==0.21",
+    "python-xlib==0.33",
 ]
 
 [dependency-groups]
