@@ -1,3 +1,4 @@
+import logging
 import os
 from urllib.parse import quote_plus
 
@@ -9,6 +10,8 @@ from bughog.parameters import ExperimentParameters
 from bughog.subject.simulation import Simulation
 from bughog.subject.web_browser.executable import BrowserExecutable
 
+logger = logging.getLogger(__name__)
+
 # TODO: all pyautogui are imported inside functions because the import needs DISPLAY var, while not all containers need and have that.
 
 
@@ -19,9 +22,12 @@ class BrowserSimulation(Simulation):
         super().__init__(executable, folder, params)
         disp = Display(visible=True, size=(1920, 1080), backend='xvfb', use_xauth=True)
         disp.start()
-        import pyautogui as gui
 
-        gui._pyautogui_x11._display = Xlib.display.Display(os.environ['DISPLAY'])  # ty: ignore (import will create error)
+        display = os.environ['DISPLAY']
+        logger.info(f'BrowserSimulation initialized with DISPLAY={display}')
+
+        import pyautogui as gui
+        gui._pyautogui_x11._display = Xlib.display.Display(display)  # ty: ignore (import will create error)
 
     def __del__(self):
         self.executable.terminate()

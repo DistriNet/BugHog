@@ -14,10 +14,10 @@ dependencies = [
     "pydantic==2.12.5",
     "pydantic-settings==2.13.1",
     "pymongo==4.16.0",
+    "python-xlib==0.33",
     "pyvirtualdisplay==3.0",
     "requests==2.32.3",
     "rich==14.3.3",
-    "python-xlib==0.33",
 ]
 
 [dependency-groups]
@@ -31,6 +31,11 @@ dev = [
     "ruff==0.15.10",
     "ty==0.0.30",
 ]
+
+[tool.uv]
+# Avoid translative dependencies to abandoned projects.
+# Source: https://stackoverflow.com/questions/74716030/what-is-the-difference-between-python-xlib-python3-xlib-pyxlib-and-xlib-in-pyt
+exclude-dependencies = ["python3-xlib", "xlib"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=bughog --cov-report=xml --cov-report=term --junitxml=junit.xml"

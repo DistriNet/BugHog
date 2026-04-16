@@ -13,7 +13,8 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --dev --frozen
+        # we use --locked instead of --frozen to elicit an error if pyproject.toml and uv.lock are not synced
+        run: uv sync --dev --locked
 
       - name: Run pytest
         run: uv run pytest --ignore=test/availability
