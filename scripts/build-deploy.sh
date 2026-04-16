@@ -15,8 +15,11 @@
 set -e
 
 export BUGHOG_VERSION=dev
-export GID=$(id -g)
-export DOCKER_GID=$(getent group docker | cut -d: -f3)
+if docker info 2>/dev/null | grep -q rootless; then
+    export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+else
+    export DOCKER_SOCKET="/var/run/docker.sock"
+fi
 
 echo "==> Building images from current codebase (tagged as dev)..."
 docker buildx bake all
