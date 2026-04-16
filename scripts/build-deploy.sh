@@ -15,6 +15,8 @@
 set -e
 
 export BUGHOG_VERSION=dev
+export GID=$(id -g)
+export DOCKER_GID=$(getent group docker | cut -d: -f3)
 
 echo "==> Building images from current codebase (tagged as dev)..."
 docker buildx bake all

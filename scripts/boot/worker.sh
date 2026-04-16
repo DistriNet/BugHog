@@ -12,9 +12,7 @@ if [ -n "$MANAGE_XVFB" ]; then
     service xvfb start
 fi
 
-if [ -n "$DEVELOPMENT" ]; then
-    uv sync --locked
-else
-    uv sync --no-dev --locked
+if [ "$DEVELOPMENT" ]; then
+    uv sync --no-dev --frozen
 fi
 exec python3 /app/bughog/worker.py "$@"

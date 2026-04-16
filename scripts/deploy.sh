@@ -37,6 +37,7 @@ else
 fi
 
 export BUGHOG_VERSION="$VERSION"
+export DOCKER_GID=$(getent group docker | cut -d: -f3)
 
 # Pull images before stopping to minimise downtime
 echo "==> Pulling images for $VERSION..."

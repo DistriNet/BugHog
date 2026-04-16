@@ -7,12 +7,8 @@ RUN npm run build
 
 
 FROM openresty/openresty:1.27.1.1-3-bullseye AS nginx
-RUN apt update -y && \
-    apt install -y curl && \
-    rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /www/data/js && \
-    curl https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js -o /www/data/js/bokeh.min.js && \
-    curl https://cdn.bokeh.org/bokeh/release/bokeh-api-3.8.2.min.js -o /www/data/js/bokeh-api.min.js
+ADD https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js /www/data/js/bokeh.min.js
+ADD https://cdn.bokeh.org/bokeh/release/bokeh-api-3.8.2.min.js /www/data/js/bokeh-api.min.js
 COPY ./nginx/start.sh /usr/local/bin/
 COPY ./nginx/config /etc/nginx/config
 COPY --from=ui-build-stage /app/dist /www/data
@@ -21,37 +17,52 @@ CMD ["start.sh"]
 
 
 FROM python:3.13-slim-bullseye AS base
-COPY --from=ghcr.io/astral-sh/uv:0.9.7 /uv /uvx /bin/
-RUN apt-get update
+
 WORKDIR /app
-ENV PATH="/app/.venv/bin:$PATH"
+
+ENV UV_COMPILE_BYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
+ARG UID=1000 \
+    GID=1000
+
+RUN apt-get update && \
+    groupadd -g $GID bughog && \
+    useradd -u $UID -g $GID -m bughog
+
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /bin/
+COPY pyproject.toml uv.lock /app/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --frozen
+
+COPY --chown=bughog:bughog --chmod=0755 scripts/ /app/scripts/
+COPY --chown=bughog:bughog bughog /app/bughog/
 
 
 FROM base AS core
-# Install Docker
-RUN apt install -y \
-    curl \
-    docker.io \
-    git \
-    procps
 
-RUN curl -sSLo builx-plugin.deb https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-buildx-plugin_0.31.1-1~debian.11~bullseye_amd64.deb &&\
-    dpkg -i builx-plugin.deb &&\
-    rm builx-plugin.deb
+# Install docker cli
+RUN apt-get install -y curl gnupg && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bullseye stable" \
+    > /etc/apt/sources.list.d/docker.list && \
+    apt-get update && \
+    apt-get install -y docker-ce-cli && \
+    apt-get remove -y --autoremove curl gnupg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY bughog pyproject.toml uv.lock /app/
-RUN uv sync --no-dev --locked
+# Give bughog access to the Docker socket (GID must match host's docker group)
+ARG DOCKER_GID=999
+RUN conflict=$(getent group ${DOCKER_GID} | cut -d: -f1); \
+    [ -n "$conflict" ] && [ "$conflict" != "docker" ] && groupmod -g 65534 "$conflict"; \
+    getent group docker > /dev/null || groupadd docker; \
+    groupmod -g ${DOCKER_GID} docker && usermod -aG docker bughog
 
-COPY --chmod=0755 scripts/ /app/scripts/
-COPY bughog /app/bughog
+USER bughog
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 
 FROM base AS worker
 
-COPY pyproject.toml uv.lock /app/
-RUN uv sync --no-dev --locked
-
-COPY bughog /app/bughog/
-COPY --chmod=0755 scripts/ /app/scripts/
+USER bughog
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

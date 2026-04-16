@@ -42,13 +42,14 @@ services:
     hostname: bh_core
     ports:
       - "5000:5000"
-    image: bh_core_dev
+    image: bughog/core_dev
+    build:
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-999}
     environment:
       - "DEVELOPMENT=1"
-      - "PYTHONPATH=/app:/root/.local/bin"
-      - "DISPLAY=:1"
-      - "MOZ_DISABLE_CONTENT_SANDBOX=1"
-      - "PATH=${PATH}:/$HOME/.local/bin"
     volumes:
       - .:/app:rw
     container_name: bh_core_dev
@@ -64,6 +65,8 @@ services:
     image: bughog/core:${BUGHOG_VERSION}
     hostname: bh_core
     container_name: bh_core
+    group_add:
+      - "${DOCKER_GID:-999}"
     init: true
     ports:
       - "5000:5000"
