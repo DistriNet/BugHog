@@ -38,10 +38,11 @@ fi
 
 export BUGHOG_VERSION="$VERSION"
 if docker info 2>/dev/null | grep -q rootless; then
-    export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+    DS="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
 else
-    export DOCKER_SOCKET="/var/run/docker.sock"
+    DS="/var/run/docker.sock"
 fi
+ln -sf "$DS" .docker.sock
 
 # Pull images before stopping to minimise downtime
 echo "==> Pulling images for $VERSION..."

@@ -18,7 +18,7 @@
 		"UV_PROJECT_ENVIRONMENT": "/app/.venv"
 	},
 
-	"initializeCommand": "if docker info 2>/dev/null | grep -q rootless; then DS=\"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock\"; else DS=\"/var/run/docker.sock\"; fi; if grep -q '^DOCKER_SOCKET=' .env; then sed -i \"s|^DOCKER_SOCKET=.*|DOCKER_SOCKET=$DS|\" .env; else echo \"DOCKER_SOCKET=$DS\" >> .env; fi",
+	"initializeCommand": "if docker info 2>/dev/null | grep -q rootless; then DS=\"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock\"; else DS=\"/var/run/docker.sock\"; fi; ln -sf \"$DS\" .docker.sock",
 
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
@@ -38,7 +38,7 @@
 		}
 	},
 
-	"postCreateCommand": "uv sync --dev --frozen",
+	"postCreateCommand": "uv sync --dev",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

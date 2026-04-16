@@ -27,7 +27,6 @@ services:
       - ./subject:/app/subject:rw
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
-      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:rw
     tmpfs:
       /memory:exec,size=3g,mode=1777
     profiles:
@@ -47,6 +46,7 @@ services:
       - "DEVELOPMENT=1"
     volumes:
       - .:/app:rw
+      - ./.docker.sock:/var/run/docker.sock:rw
     container_name: bh_core_dev
     profiles:
       - dev
@@ -63,6 +63,8 @@ services:
     init: true
     ports:
       - "5000:5000"
+    volumes:
+      - ./.docker.sock:/var/run/docker.sock:rw
     profiles:
       - prod
 

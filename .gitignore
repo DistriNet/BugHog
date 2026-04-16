@@ -1,3 +1,6 @@
+# Docker socket symlink
+.docker.sock
+
 database/data/
 
 nginx/ssl/certs/*

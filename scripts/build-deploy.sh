@@ -16,10 +16,11 @@ set -e
 
 export BUGHOG_VERSION=dev
 if docker info 2>/dev/null | grep -q rootless; then
-    export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+    DS="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
 else
-    export DOCKER_SOCKET="/var/run/docker.sock"
+    DS="/var/run/docker.sock"
 fi
+ln -sf "$DS" .docker.sock
 
 echo "==> Building images from current codebase (tagged as dev)..."
 docker buildx bake all
