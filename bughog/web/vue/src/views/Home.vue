@@ -142,6 +142,9 @@ export default {
     }
   },
   watch: {
+    "evalParams.version_range": function () {
+      this.update_versions();
+    },
     "evalParams.only_release_commits": function (val) {
       this.update_versions();
     },
