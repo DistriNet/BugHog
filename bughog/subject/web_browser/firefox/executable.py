@@ -9,6 +9,33 @@ from bughog.version_control.state.base import State
 
 SELENIUM_USED_FLAGS = ['--no-remote', '--new-instance']
 
+DEFAULT_PREFS = {
+    # Automation / testing setup
+    'app.update.enabled': False,
+    'browser.shell.checkDefaultBrowser': False,
+    'dom.push.enabled': False,
+    'browser.translation.detectLanguage': False,
+    'media.volume_scale': '0.0',
+
+    # Disable telemetry & crash reporting
+    'toolkit.telemetry.enabled': False,
+    'toolkit.telemetry.unified': False,
+    'datareporting.healthreport.uploadEnabled': False,
+    'datareporting.policy.dataSubmissionEnabled': False,
+    'breakpad.reportURL': '',
+    'browser.tabs.crashReporting.sendReport': False,
+
+    # Reduce background network activity
+    'browser.safebrowsing.malware.enabled': False,
+    'browser.safebrowsing.phishing.enabled': False,
+    'browser.safebrowsing.downloads.enabled': False,
+    'browser.safebrowsing.blockedURIs.enabled': False,
+    'browser.newtabpage.activity-stream.feeds.telemetry': False,
+    'browser.newtabpage.activity-stream.telemetry': False,
+    'browser.newtabpage.activity-stream.feeds.snippets': False,
+    'browser.newtabpage.activity-stream.feeds.section.topstories': False,
+}
+
 
 class FirefoxExecutable(BrowserExecutable):
     def __init__(self, config: SubjectConfiguration, state: State) -> None:
@@ -68,8 +95,9 @@ class FirefoxExecutable(BrowserExecutable):
             else:
                 user_prefs.append(f'user_pref("{key}", {value});'.lower())
 
-        add_user_pref('app.update.enabled', False)
-        add_user_pref('browser.shell.checkDefaultBrowser', False)
+        for key, value in DEFAULT_PREFS.items():
+            add_user_pref(key, value)
+
         if 'default' in self.config.subject_setting:
             pass
         elif 'btpc' in self.config.subject_setting:

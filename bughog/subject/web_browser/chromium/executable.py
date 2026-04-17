@@ -9,24 +9,36 @@ from bughog.util import fs
 from bughog.version_control.state.base import State
 
 DEFAULT_FLAGS = [
+    # Automation / testing setup
+    '--no-sandbox',
+    '--no-first-run',
+    '--no-default-browser-check',
     '--use-fake-ui-for-media-stream',
     '--ignore-certificate-errors',
-    '--disable-background-networking',
-    '--disable-client-side-phishing-detection',
-    '--disable-component-update',
-    '--disable-default-apps',
+    '--use-mock-keychain',
+    '--password-store=basic',
+    '--metrics-recording-only',
+    '--mute-audio',
     '--disable-gpu',
-    '--disable-hang-monitor',
     '--disable-popup-blocking',
     '--disable-prompt-on-repost',
+    # Reduce background network activity
+    '--disable-background-networking',
     '--disable-sync',
     '--disable-web-resources',
-    '--metrics-recording-only',
-    '--no-first-run',
-    '--password-store=basic',
+    '--disable-component-update',
+    '--disable-client-side-phishing-detection',
     '--safebrowsing-disable-auto-update',
-    '--use-mock-keychain',
-    '--no-sandbox',
+    '--disable-features=OptimizationGuide,OptimizationHints,OptimizationTargetPrediction,OptimizationGuideModelDownloading',
+    # Faster startup / skip unnecessary services
+    '--disable-default-apps',
+    '--disable-translate',
+    '--disable-breakpad',
+    '--disable-hang-monitor',
+    # Prevent throttling in automated/non-foreground context
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-ipc-flooding-protection',
 ]
 
 
