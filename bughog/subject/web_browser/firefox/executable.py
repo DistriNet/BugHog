@@ -16,7 +16,6 @@ DEFAULT_PREFS = {
     'dom.push.enabled': False,
     'browser.translation.detectLanguage': False,
     'media.volume_scale': '0.0',
-
     # Disable telemetry & crash reporting
     'toolkit.telemetry.enabled': False,
     'toolkit.telemetry.unified': False,
@@ -24,7 +23,6 @@ DEFAULT_PREFS = {
     'datareporting.policy.dataSubmissionEnabled': False,
     'breakpad.reportURL': '',
     'browser.tabs.crashReporting.sendReport': False,
-
     # Reduce background network activity
     'browser.safebrowsing.malware.enabled': False,
     'browser.safebrowsing.phishing.enabled': False,
