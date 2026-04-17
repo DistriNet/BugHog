@@ -19,23 +19,31 @@ CMD ["start.sh"]
 FROM python:3.13-slim-bullseye AS base
 
 WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH"
+
+
+FROM base AS python-app
+
 ENV UV_COMPILE_BYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH"
+    UV_LINK_MODE=copy
 
 COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /bin/
+
 COPY pyproject.toml uv.lock /app/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    apt-get update && \
-    uv sync --no-dev --frozen
+    uv sync --no-dev --frozen --no-install-project
 
 COPY --chmod=0755 scripts/ /app/scripts/
 COPY bughog /app/bughog/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --frozen
 
 
 FROM base AS core
 
 # Install docker cli, and git for development container
-RUN apt-get install -y curl git gnupg && \
+RUN apt-get update && \
+    apt-get install -y curl git gnupg && \
     curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bullseye stable" \
     > /etc/apt/sources.list.d/docker.list && \
@@ -45,9 +53,15 @@ RUN apt-get install -y curl git gnupg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+COPY --from=python-app /bin/uv /bin/uv
+COPY --from=python-app /app /app
+
 ENTRYPOINT [ "/app/scripts/boot/core.sh" ]
 
 
 FROM base AS worker
+
+COPY --from=python-app /bin/uv /bin/uv
+COPY --from=python-app /app /app
 
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

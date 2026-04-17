@@ -2,7 +2,6 @@ FROM python:3.13-slim-trixie
 
 WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH" \
-    UV_COMPILE_BYTECODE=1 \
     MANAGE_CERTS=1 \
     MANAGE_XVFB=1
 
@@ -14,14 +13,11 @@ RUN apt-get update && \
     touch /root/.Xauthority && \
     xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
 
-COPY --chmod=0755 scripts/ /app/scripts/
+COPY --from=python-app /bin/uv /bin/uv
+COPY --from=python-app /app /app
+COPY subject/web_browser/profiles /app/subject/web_browser/profiles
+
+# Configure xvfb
 RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
-
-COPY pyproject.toml uv.lock /app/
-COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /bin/
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --frozen
-
-COPY bughog /app/bughog/
 
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

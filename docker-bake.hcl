@@ -22,6 +22,12 @@ target "base" {
   target     = "base"
 }
 
+target "python-app" {
+  context    = "."
+  dockerfile = "Dockerfile"
+  target     = "python-app"
+}
+
 # ──────────────────────────────────────────────
 # Core images
 # ──────────────────────────────────────────────
@@ -55,7 +61,8 @@ target "worker-chromium" {
   context    = "."
   dockerfile = "subject/web_browser/docker/Dockerfile.chromium"
   contexts   = {
-    base = "target:base"
+    base       = "target:base"
+    python-app = "target:python-app"
   }
   tags       = tags("bughog/worker-chromium")
 }
@@ -64,7 +71,8 @@ target "worker-firefox" {
   context    = "."
   dockerfile = "subject/web_browser/docker/Dockerfile.firefox"
   contexts   = {
-    base = "target:base"
+    base       = "target:base"
+    python-app = "target:python-app"
   }
   tags       = tags("bughog/worker-firefox")
 }
@@ -72,12 +80,18 @@ target "worker-firefox" {
 target "worker-servo" {
   context    = "."
   dockerfile = "subject/web_browser/docker/Dockerfile.servo"
+  contexts   = {
+    python-app = "target:python-app"
+  }
   tags       = tags("bughog/worker-servo")
 }
 
 target "worker-wasmtime" {
   context    = "."
   dockerfile = "subject/wasm_runtime/docker/Dockerfile.wasmtime"
+  contexts   = {
+    python-app = "target:python-app"
+  }
   tags       = tags("bughog/worker-wasmtime")
 }
 

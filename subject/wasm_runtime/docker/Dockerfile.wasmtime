@@ -2,8 +2,7 @@
 FROM python:3.13-slim-bookworm
 
 WORKDIR /app
-ENV PATH="/app/.venv/bin:$PATH" \
-    UV_COMPILE_BYTECODE=1
+ENV PATH="/app/.venv/bin:$PATH"
 
 RUN apt-get update && \
     apt install -y \
@@ -11,12 +10,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /bin/
-COPY pyproject.toml uv.lock /app/
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --frozen
-
-COPY --chmod=0755 scripts/ /app/scripts/
-COPY bughog /app/bughog/
+COPY --from=python-app /bin/uv /bin/uv
+COPY --from=python-app /app /app
 
 ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]
