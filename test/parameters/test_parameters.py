@@ -194,18 +194,33 @@ class TestCreateExperimentParams:
     def test_with_major_version(self):
         data = {**self._base(), 'major_version': 100}
         params = create_experiment_params(data, _db())
-        assert params.state.type == 'version'
+        assert params.state.type == 'release'
         assert params.state.version is not None
         assert params.state.version.major == 100
 
     def test_with_full_version(self):
         data = {**self._base(), 'major_version': '100.0.1234'}
         params = create_experiment_params(data, _db())
-        assert params.state.type == 'version'
+        assert params.state.type == 'release'
         assert params.state.version is not None
         assert params.state.version.major == 100
         assert params.state.version.minor == 0
         assert params.state.version.patch == 1234
+
+    def test_major_version_state_type_is_release_not_version(self):
+        data = {**self._base(), 'major_version': 120}
+        params = create_experiment_params(data, _db())
+        assert params.state.type == 'release'
+
+    def test_state_type_is_valid_literal(self):
+        valid_types = {'release', 'commit'}
+        for data in [
+            {**self._base(), 'major_version': 100},
+            {**self._base(), 'commit_nb': 999},
+            {**self._base(), 'commit_id': 'abc123'},
+        ]:
+            params = create_experiment_params(data, _db())
+            assert params.state.type in valid_types
 
     def test_missing_state_raises(self):
         with pytest.raises(MissingParametersError):

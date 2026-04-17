@@ -218,7 +218,7 @@ def create_evaluation_params(
 def create_experiment_params(kwargs: dict, database_params: DatabaseParameters) -> ExperimentParameters:
     subject_configuration = SubjectConfiguration.from_dict(kwargs)
     if 'major_version' in kwargs:
-        state_type = 'version'
+        state_type = 'release'
         version = Version(str(kwargs['major_version']))
     elif 'commit_nb' in kwargs or 'commit_id' in kwargs:
         state_type = 'commit'
