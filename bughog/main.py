@@ -35,6 +35,8 @@ class Main:
         self.db_connection_params = config.get_database_params()
         self.connect_to_database(self.db_connection_params)
         factory.initialize_all_subject_folders()
+        # Preload all subject availability to speed up the UI (bughog service calls are cached)
+        factory.get_all_subject_availability()
 
         logger.info('BugHog is ready!')
         if config.settings.github_token is None:
