@@ -1,7 +1,9 @@
 # Overview support
 
 - [General installation and usage](/README.md)
-- [Wiki](https://github.com/DistriNet/BugHog/wiki)
+- [30-minute Tutorial](/docs/TUTORIAL.md)
+- [Configuration options](/docs/CONFIGURATION.md)
+- [Proof of Concept / Experiments documentation](/docs/experiments/README.md)
 
 
 ## Troubleshooting

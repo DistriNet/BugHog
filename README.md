@@ -69,10 +69,10 @@ If BugHog is started on a remote server, substitute 'localhost' with the appropr
 > Depending on your Docker configuration, you might have to use `sudo ./scripts/[..]`.
 >
 > BugHog in default configuration will spin up its own MongoDB container, which persists data in the [/database](/database/) folder.
-> Configuring BugHog to use your own MongoDB and other options are explained [here](https://github.com/DistriNet/BugHog/wiki/Configuration-options).
+> Configuring BugHog to use your own MongoDB and other options are explained [here](/docs/CONFIGURATION.md).
 
 > [!TIP]
-> Our [30-minute tutorial](https://github.com/DistriNet/BugHog/wiki/Tutorial) will guide you on how to use BugHog to trace a real bug's lifecycle!
+> Our [30-minute tutorial](/docs/TUTORIAL.md) will guide you on how to use BugHog to trace a real bug's lifecycle!
 
 To stop BugHog (including any running worker containers), run this in the project root:
 
