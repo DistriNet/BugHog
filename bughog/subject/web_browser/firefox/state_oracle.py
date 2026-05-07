@@ -1,8 +1,7 @@
-from typing import Literal
-
 from bughog.database.mongo.cache import Cache
 from bughog.subject.state_oracle import StateOracle
 from bughog.version_control.conversion import bughog_service
+from bughog.version_control.version import Version
 
 
 class FirefoxStateOracle(StateOracle):
@@ -14,40 +13,37 @@ class FirefoxStateOracle(StateOracle):
     def find_commit_id(self, commit_nb: int) -> str | None:
         return bughog_service.find_commit_id('firefox', commit_nb)
 
-    # @Cache.cache_in_db('web_browser', 'firefox')
-    def find_commit_of_release(self, release_version: int) -> tuple[int, str]:
-        return bughog_service.find_version_commit('firefox', release_version)
-
-    def get_most_recent_major_release_version(self) -> int:
-        return bughog_service.find_latest_major_version('firefox')
+    def get_earliest_supported_release_version(self) -> Version:
+        return Version('20.0')
 
     @Cache.cache_in_db('web_browser', 'firefox')
-    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
-        match state_type:
-            case 'release':
-                return True
-            case 'commit':
-                return bughog_service.find_commit_executable_info('firefox', state_index) is not None
+    def has_public_release_executable(self, version: Version) -> bool:
+        return True
 
-    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
-        match state_type:
-            case 'release':
-                return [
-                    f'https://ftp.mozilla.org/pub/firefox/releases/{state_index}.0/linux-x86_64/en-US/firefox-{state_index}.0.tar.bz2',
-                    f'https://ftp.mozilla.org/pub/firefox/releases/{state_index}.0/linux-x86_64/en-US/firefox-{state_index}.0.tar.xz',
-                ]
-            case 'commit':
-                info = bughog_service.find_commit_executable_info('firefox', state_index)
-                if info is None:
-                    raise AttributeError(f"Could not find binary url for '{state_index}'")
-                binary_base_url = info['base_url']
-                app_version = info['app_version']
-                return [
-                    f'{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.bz2',
-                    f'{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.xz',
-                ]
+    @Cache.cache_in_db('web_browser', 'firefox')
+    def has_public_commit_executable(self, commit_nb: int) -> bool:
+        return bughog_service.find_commit_executable_info('firefox', commit_nb) is not None
 
-    def get_nearest_commit_with_executable(self, target_commit_nb: int, lower_bound: int, upper_bound: int) -> int | None:
+    def get_release_executable_urls(self, version: Version) -> list[str]:
+        return [
+            f'https://ftp.mozilla.org/pub/firefox/releases/{version}.0/linux-x86_64/en-US/firefox-{version}.0.tar.bz2',
+            f'https://ftp.mozilla.org/pub/firefox/releases/{version}.0/linux-x86_64/en-US/firefox-{version}.0.tar.xz',
+        ]
+
+    def get_commit_executable_urls(self, commit_nb: int) -> list[str]:
+        info = bughog_service.find_commit_executable_info('firefox', commit_nb)
+        if info is None:
+            raise AttributeError(f"Could not find binary url for '{commit_nb}'")
+        binary_base_url = info['base_url']
+        app_version = info['app_version']
+        return [
+            f'{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.bz2',
+            f'{binary_base_url}firefox-{app_version}.en-US.linux-x86_64.tar.xz',
+        ]
+
+    def get_nearest_commit_with_executable(
+        self, target_commit_nb: int, lower_bound: int, upper_bound: int
+    ) -> int | None:
         NotImplementedError()
 
     def get_commit_url(self, commit_nb: int, commit_id: str | None) -> str | None:

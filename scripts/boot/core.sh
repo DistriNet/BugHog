@@ -8,12 +8,6 @@ chmod -R 777 /app/subject/web_browser/executable/firefox/artisanal
 /app/scripts/boot/generate_certs.sh
 /app/scripts/boot/manage_certs.sh
 
-rm -f /tmp/Xvfb.pid
-rm -f /tmp/.X1-lock
-service xvfb start
-
-uv sync --no-dev --locked
-
 if [[ "$DEVELOPMENT" == "1" ]]; then
     exec sleep infinity;
 else

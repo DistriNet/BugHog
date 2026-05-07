@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
-from bughog import util
 from bughog.parameters import SubjectConfiguration
 from bughog.subject.executable import Executable
+from bughog.util import fs
 from bughog.version_control.state.base import State
 
 
@@ -33,7 +33,7 @@ class BrowserExecutable(Executable):
 
     def __empty_downloads_folder(self):
         download_folder = '/root/Downloads'
-        util.remove_all_in_folder(download_folder)
+        fs.remove_all_in_folder(download_folder)
 
     def pre_experiment_setup(self):
         self.fetch()

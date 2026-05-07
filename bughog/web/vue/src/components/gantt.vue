@@ -1,6 +1,27 @@
 <script>
 import axios from 'axios'
+import { useDarkMode } from '../composables/useDarkMode'
+
+const DARK_THEME = {
+    background: '#20262B',
+    border: '#15191C',
+    text: '#e0e0e0',
+    axis_line: '#aaaaaa',
+    grid_line: '#3a3a3a',
+};
+const LIGHT_THEME = {
+    background: '#ffffff',
+    border: '#ffffff',
+    text: '#444444',
+    axis_line: '#000000',
+    grid_line: '#cccccc',
+};
+
 export default {
+    setup() {
+        const { darkMode } = useDarkMode();
+        return { darkMode };
+    },
     props: {
       eval_params: Object,
     },
@@ -20,7 +41,13 @@ export default {
             x_min: null,
             x_max: null,
             shift_down: false,
+            version_text_renderer: null,
         }
+    },
+    watch: {
+        darkMode() {
+            this.apply_theme();
+        },
     },
     created: function() {
         document.addEventListener("keydown", (e) => {
@@ -38,20 +65,24 @@ export default {
         init_plot() {
             console.log(`Initializing Gantt chart for ${this.subject_name}...`);
 
-            if (this.revision_source.length === 0 || this.version_source.length === 0) {
+            const has_revision_data = this.revision_source && this.revision_source.data && this.revision_source.data.commit_nb && this.revision_source.data.commit_nb.length > 0;
+            const has_version_data = this.version_source && this.version_source.data && this.version_source.data.commit_nb && this.version_source.data.commit_nb.length > 0;
+
+            if (!has_revision_data && !has_version_data) {
                 this.x_min = 1;
                 this.x_max = 1000000;
             } else {
-                this.x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
-                this.x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
+                const revision_commits = has_revision_data ? this.revision_source.data.commit_nb : [];
+                const version_commits = has_version_data ? this.version_source.data.commit_nb : [];
+                this.x_min = Math.min(...revision_commits.concat(version_commits));
+                this.x_max = Math.max(...revision_commits.concat(version_commits));
             }
 
             this.plot = Bokeh.Plotting.figure({
-                title: 'Gantt Chart with Points',
+                title: `Gantt Chart for ${this.subject_name}`,
                 x_range: [this.x_min, this.x_max],
                 y_range: ['Error', 'Not reproduced', 'Reproduced'],
-                height: 470,
-                width: 900,
+                sizing_mode: 'stretch_both',
                 tools: 'xwheel_zoom,pan',
                 active_scroll: 'xwheel_zoom'
             });
@@ -85,7 +116,7 @@ export default {
                 }
                 )
 
-                this.plot.text(
+                this.version_text_renderer = this.plot.text(
                 { field: 'commit_nb' },
                 { field: 'outcome' },
                 { field: 'major_version' },
@@ -94,7 +125,7 @@ export default {
                     x_offset: 0,
                     y_offset: -20,
                     text: { field: 'major_version' },
-                    text_color: "black",
+                    text_color: this.darkMode ? DARK_THEME.text : LIGHT_THEME.text,
                     text_align: 'center',
                     text_font_size: '14px',
                     angle: 45,
@@ -151,18 +182,21 @@ export default {
             });
             this.plot.add_tools(hover);
 
-            if (document.getElementById('gantt').childElementCount > 0) {
-                document.getElementById('gantt').children[0].remove();
+            const container = this.$el;
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
             }
-            Bokeh.Plotting.show(this.plot, document.getElementById('gantt'));
+            Bokeh.Plotting.show(this.plot, container);
+            this.apply_theme();
             console.log("Gantt chart initialized!");
         },
         update_plot(subject_name, revision_data, version_data, project, poc) {
             if (revision_data === null && version_data === null) {
+                this.clear_plot();
                 return;
             }
 
-            let init_required = this.revision_source === null || this.subject_name !== subject_name;
+            let init_required = this.plot === null || this.subject_name !== subject_name;
             this.subject_name = subject_name;
             this.project = project;
             this.poc = poc;
@@ -182,16 +216,27 @@ export default {
                 'commit_nb': [],
                 'outcome': [],
                 'major_version': [],
+                'version_printed_by_executable': [],
+                'commit_url': [],
             };
-            this.revision_source.data = empty_data;
-            this.version_source.data = empty_data;
+            if (this.revision_source && this.revision_source.data) {
+                this.revision_source.data = empty_data;
+            }
+            if (this.version_source && this.version_source.data) {
+                this.version_source.data = empty_data;
+            }
         },
         update_x_range(force_update) {
             console.log("Updating Gantt chart x range");
             if (this.plot !== null) {
-                if (this.revision_source.length !== 0 || this.version_source.length !== 0) {
-                    var new_x_min = Math.min(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
-                    var new_x_max = Math.max(...this.revision_source.data.commit_nb.concat(this.version_source.data.commit_nb));
+                const has_revision_data = this.revision_source && this.revision_source.data && this.revision_source.data.commit_nb && this.revision_source.data.commit_nb.length > 0;
+                const has_version_data = this.version_source && this.version_source.data && this.version_source.data.commit_nb && this.version_source.data.commit_nb.length > 0;
+
+                if (has_revision_data || has_version_data) {
+                    const revision_commits = has_revision_data ? this.revision_source.data.commit_nb : [];
+                    const version_commits = has_version_data ? this.version_source.data.commit_nb : [];
+                    var new_x_min = Math.min(...revision_commits.concat(version_commits));
+                    var new_x_max = Math.max(...revision_commits.concat(version_commits));
                     if (new_x_min != this.x_min || force_update === true) {
                         this.x_min = new_x_min;
                         this.plot.x_range.start = new_x_min;
@@ -201,6 +246,26 @@ export default {
                         this.plot.x_range.end = new_x_max;
                     }
                 }
+            }
+        },
+        apply_theme() {
+            if (!this.plot) return;
+            const t = this.darkMode ? DARK_THEME : LIGHT_THEME;
+            this.plot.background_fill_color = t.background;
+            this.plot.border_fill_color = t.border;
+            this.plot.title.text_color = t.text;
+            for (const axis of [...this.plot.xaxis, ...this.plot.yaxis]) {
+                axis.axis_label_text_color = t.text;
+                axis.major_label_text_color = t.text;
+                axis.axis_line_color = t.axis_line;
+                axis.major_tick_line_color = t.axis_line;
+                axis.minor_tick_line_color = t.axis_line;
+            }
+            for (const grid of this.plot.center.filter(r => r instanceof Bokeh.Grid)) {
+                grid.grid_line_color = t.grid_line;
+            }
+            if (this.version_text_renderer) {
+                this.version_text_renderer.glyph.text_color = t.text;
             }
         },
         remove_datapoint(type, index) {

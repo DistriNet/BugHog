@@ -43,7 +43,7 @@ class BiggestGapBisectionSequence(SequenceStrategy):
             self._add_state(self._upper_state)
             return self._upper_state
 
-        pairs = list(zip(self._considered_states, self._considered_states[1:]))
+        pairs = list(zip(self._considered_states, self._considered_states[1:], strict=False))
         while pairs:
             filtered_pairs = [pair for pair in pairs if not self._pair_is_in_unavailability_gap(pair)]
             furthest_pair = max(filtered_pairs, key=lambda x: x[1].index - x[0].index)

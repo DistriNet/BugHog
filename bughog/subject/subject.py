@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.file_structure import Folder
-from bughog.parameters import EvaluationParameters, SubjectConfiguration
+from bughog.parameters import ExperimentParameters, SubjectConfiguration
 from bughog.subject.executable import Executable
 from bughog.subject.simulation import Simulation
 from bughog.subject.state_oracle import StateOracle
@@ -44,14 +44,6 @@ class Subject(ABC):
         """
         pass
 
-    @property
-    @abstractmethod
-    def _state_oracle_class(self) -> type[StateOracle]:
-        """
-        Returns the state oracle class associated with this subject.
-        """
-        pass
-
     @abstractmethod
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> Executable:
         """
@@ -59,16 +51,9 @@ class Subject(ABC):
         """
         pass
 
-    @abstractmethod
-    def get_availability(self) -> dict:
-        """
-        Returns availability data (supported minimum and maximum release version) of this subject.
-        """
-        pass
-
     @staticmethod
     @abstractmethod
-    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> Simulation:
+    def create_simulation(executable: Executable, context: Folder, params: ExperimentParameters) -> Simulation:
         """
         Creates and returns the simulation object based on the given executable, experiment context and eval params.
         """
@@ -83,11 +68,12 @@ class Subject(ABC):
         pass
 
     @property
+    @abstractmethod
     def state_oracle(self) -> StateOracle:
         """
         Creates and returns the state oracle associated with this subject.
         """
-        return self._state_oracle_class(self.type, self.name)
+        pass
 
     @property
     def assets_folder_path(self) -> str:
@@ -95,3 +81,29 @@ class Subject(ABC):
         Returns the paths of the assets folder associated with this subject.
         """
         return os.path.join('/app/subject', self.type, self.name)
+
+    def get_availability(self) -> dict[str, str | int | list[str]]:
+        earliest_version = self.state_oracle.get_earliest_supported_release_version()
+        latest_version = self.state_oracle.get_latest_supported_release_version()
+
+        if earliest_version.major != 0 and latest_version.major != 0:
+            earliest_major_version = earliest_version.major
+            latest_major_version = latest_version.major
+            available_versions = [
+                str(version) for version in list(range(earliest_major_version, latest_major_version + 1))
+            ]
+        else:
+            earliest_major_version = earliest_version.base_version
+            latest_major_version = latest_version.base_version
+            available_versions = [str(version) for version in self.state_oracle.get_all_available_release_versions()]
+
+        earliest_commit_number = self.state_oracle.find_commit_of_release(earliest_version)[0]
+        latest_commit_number = self.state_oracle.find_commit_of_release(latest_version)[0]
+        return {
+            'name': self.name,
+            'min_version': earliest_major_version,
+            'max_version': latest_major_version,
+            'min_commit': earliest_commit_number,
+            'max_commit': latest_commit_number,
+            'available_versions': available_versions,
+        }

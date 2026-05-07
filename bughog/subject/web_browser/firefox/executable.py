@@ -9,6 +9,31 @@ from bughog.version_control.state.base import State
 
 SELENIUM_USED_FLAGS = ['--no-remote', '--new-instance']
 
+DEFAULT_PREFS = {
+    # Automation / testing setup
+    'app.update.enabled': False,
+    'browser.shell.checkDefaultBrowser': False,
+    'dom.push.enabled': False,
+    'browser.translation.detectLanguage': False,
+    'media.volume_scale': '0.0',
+    # Disable telemetry & crash reporting
+    'toolkit.telemetry.enabled': False,
+    'toolkit.telemetry.unified': False,
+    'datareporting.healthreport.uploadEnabled': False,
+    'datareporting.policy.dataSubmissionEnabled': False,
+    'breakpad.reportURL': '',
+    'browser.tabs.crashReporting.sendReport': False,
+    # Reduce background network activity
+    'browser.safebrowsing.malware.enabled': False,
+    'browser.safebrowsing.phishing.enabled': False,
+    'browser.safebrowsing.downloads.enabled': False,
+    'browser.safebrowsing.blockedURIs.enabled': False,
+    'browser.newtabpage.activity-stream.feeds.telemetry': False,
+    'browser.newtabpage.activity-stream.telemetry': False,
+    'browser.newtabpage.activity-stream.feeds.snippets': False,
+    'browser.newtabpage.activity-stream.feeds.section.topstories': False,
+}
+
 
 class FirefoxExecutable(BrowserExecutable):
     def __init__(self, config: SubjectConfiguration, state: State) -> None:
@@ -68,19 +93,23 @@ class FirefoxExecutable(BrowserExecutable):
             else:
                 user_prefs.append(f'user_pref("{key}", {value});'.lower())
 
-        add_user_pref('app.update.enabled', False)
-        add_user_pref('browser.shell.checkDefaultBrowser', False)
+        for key, value in DEFAULT_PREFS.items():
+            add_user_pref(key, value)
+
         if 'default' in self.config.subject_setting:
             pass
         elif 'btpc' in self.config.subject_setting:
             add_user_pref('network.cookie.cookieBehavior', 1)
             add_user_pref('browser.contentblocking.category', 'custom')
         elif 'tp' in self.config.subject_setting:
-            if int(self.version) >= 65:
+            assert self.version is not None
+            if self.version.major >= 65:
                 add_user_pref('privacy.trackingprotection.enabled', True)
                 add_user_pref('pref.privacy.disable_button.change_blocklis', False)
                 add_user_pref('pref.privacy.disable_button.tracking_protection_exceptions', False)
-                add_user_pref('urlclassifier.trackingTable', 'test-track-simple,base-track-digest256,content-track-digest256')
+                add_user_pref(
+                    'urlclassifier.trackingTable', 'test-track-simple,base-track-digest256,content-track-digest256'
+                )
             else:
                 add_user_pref('privacy.contentblocking.category', 'strict')
                 add_user_pref('privacy.trackingprotection.enabled', True)
@@ -124,10 +153,14 @@ class FirefoxExecutable(BrowserExecutable):
 
         # For newer Firefox versions (> 57):
         # Generate SQLite database: cert9.db  key4.db  pkcs11.txt
-        cli.execute(f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}')
+        cli.execute(
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d sql:{self._profile_path}'
+        )
         # For older Firefox versions (<= 57):
         # Generate in Berkeley DB database: cert8.db, key3.db, secmod.db
-        cli.execute(f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}')
+        cli.execute(
+            f'certutil -A -n bughog-ca -t CT,c -i /etc/nginx/ssl/certs/bughog_CA.crt -d dbm:{self._profile_path}'
+        )
 
         # More info:
         # - https://support.mozilla.org/en-US/questions/1207165

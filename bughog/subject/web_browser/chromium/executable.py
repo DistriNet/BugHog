@@ -1,31 +1,44 @@
 import os
 import re
 
-from bughog import cli, util
+from bughog import cli
 from bughog.parameters import SubjectConfiguration
 from bughog.subject.web_browser.executable import BrowserExecutable
 from bughog.subject.web_browser.profile import prepare_chromium_profile, remove_profile_execution_folder
+from bughog.util import fs
 from bughog.version_control.state.base import State
 
 DEFAULT_FLAGS = [
+    # Automation / testing setup
+    '--no-sandbox',
+    '--no-first-run',
+    '--no-default-browser-check',
     '--use-fake-ui-for-media-stream',
     '--ignore-certificate-errors',
-    '--disable-background-networking',
-    '--disable-client-side-phishing-detection',
-    '--disable-component-update',
-    '--disable-default-apps',
+    '--use-mock-keychain',
+    '--password-store=basic',
+    '--metrics-recording-only',
+    '--mute-audio',
     '--disable-gpu',
-    '--disable-hang-monitor',
     '--disable-popup-blocking',
     '--disable-prompt-on-repost',
+    # Reduce background network activity
+    '--disable-background-networking',
     '--disable-sync',
     '--disable-web-resources',
-    '--metrics-recording-only',
-    '--no-first-run',
-    '--password-store=basic',
+    '--disable-component-update',
+    '--disable-client-side-phishing-detection',
     '--safebrowsing-disable-auto-update',
-    '--use-mock-keychain',
-    '--no-sandbox',
+    '--disable-features=OptimizationGuide,OptimizationHints,OptimizationTargetPrediction,OptimizationGuideModelDownloading',
+    # Faster startup / skip unnecessary services
+    '--disable-default-apps',
+    '--disable-translate',
+    '--disable-breakpad',
+    '--disable-hang-monitor',
+    # Prevent throttling in automated/non-foreground context
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-ipc-flooding-protection',
 ]
 
 
@@ -50,7 +63,7 @@ class ChromiumExecutable(BrowserExecutable):
         # Remove unneccessary files
         locales_folder_path = os.path.join(self.staging_folder, 'locales')
         if os.path.isdir(locales_folder_path):
-            util.remove_all_in_folder(locales_folder_path, except_files=['en-GB.pak', 'en-US.pak'])
+            fs.remove_all_in_folder(locales_folder_path, except_files=['en-GB.pak', 'en-US.pak'])
 
     def _configure_executable(self):
         cli.execute_and_return_status(f'chmod -R a+x {self.staging_folder}')
@@ -96,19 +109,21 @@ class ChromiumExecutable(BrowserExecutable):
             case 'default':
                 profile_path = prepare_chromium_profile()
             case 'btpc':
-                if int(self.version) < 17:
+                assert self.version is not None
+                major = self.version.major
+                if major < 17:
                     profile_path = prepare_chromium_profile('6_btpc')
-                elif int(self.version) < 24:
+                elif major < 24:
                     profile_path = prepare_chromium_profile('17_btpc')
-                elif int(self.version) < 36:
+                elif major < 36:
                     profile_path = prepare_chromium_profile('24_btpc')
-                elif int(self.version) < 40:
+                elif major < 40:
                     profile_path = prepare_chromium_profile('36_btpc')
-                elif int(self.version) < 46:
+                elif major < 46:
                     profile_path = prepare_chromium_profile('40_btpc')
-                elif int(self.version) < 59:
+                elif major < 59:
                     profile_path = prepare_chromium_profile('46_btpc')
-                elif int(self.version) < 86:
+                elif major < 86:
                     profile_path = prepare_chromium_profile('59_btpc')
                 else:
                     raise AttributeError('Chrome 86 and up not supported yet')

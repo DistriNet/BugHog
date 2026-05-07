@@ -1,7 +1,8 @@
 import logging
-from typing import Literal
 
 from bughog.subject.js_engine.v8.state_oracle import V8StateOracle
+from bughog.version_control.conversion import bughog_service
+from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,20 @@ class V8SandboxStateOracle(V8StateOracle):
         # There are no public executables, only artisanal.
         super().__init__(subject_type, subject_name, only_artisanal=True)
 
-    def has_public_executable(self, state_index: int, state_type: Literal['release', 'commit']) -> bool:
+    def get_most_recent_commit_nb(self) -> int:
+        """
+        We override this method because we want to call the API for v8, not v8_sandbox.
+        """
+        return bughog_service.find_latest_commit_info('v8')['nb']
+
+    def has_public_release_executable(self, version: Version) -> bool:
         return False
 
-    def get_executable_download_urls(self, state_index: int, state_type: Literal['release', 'commit']) -> list[str]:
+    def has_public_commit_executable(self, commit_nb: int) -> bool:
+        return False
+
+    def get_release_executable_urls(self, version: Version) -> list[str]:
+        raise Exception('Only artisanal executables are available.')
+
+    def get_commit_executable_urls(self, commit_nb: int) -> list[str]:
         raise Exception('Only artisanal executables are available.')

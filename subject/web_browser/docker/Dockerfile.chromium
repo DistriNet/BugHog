@@ -1,0 +1,41 @@
+FROM base
+
+ENV MANAGE_CERTS=1 \
+    MANAGE_XVFB=1
+
+# `apt update` was already run in the base image
+RUN apt update && \
+    apt install -y curl gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libnspr4 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 libnss3-tools lsb-release xdg-utils libgbm-dev libcap-dev xvfb dbus-x11 python3-tk gnome-screenshot procps xxd &&\
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -sSLo multiarch-support.deb https://snapshot.debian.org/archive/debian-security/20240630T105336Z/pool/updates/main/g/glibc/multiarch-support_2.28-10%2Bdeb10u4_amd64.deb &&\
+    curl -sSLo libgcrypt11.deb https://snapshot.debian.org/archive/debian/20130820T215153Z/pool/main/libg/libgcrypt11/libgcrypt11_1.5.3-2_amd64.deb &&\
+    curl -sSLo libudev0.deb https://snapshot.debian.org/archive/debian/20111118T151858Z/pool/main/u/udev/libudev0_175-2_amd64.deb &&\
+    curl -sSLo libpng12.deb https://snapshot.debian.org/archive/debian/20151118T214328Z/pool/main/libp/libpng/libpng12-0_1.2.54-1_amd64.deb &&\
+    curl -sSLo pango1.0.deb https://snapshot.debian.org/archive/debian/20200504T084128Z/pool/main/p/pango1.0/libpango-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
+    curl -sSLo libpangocairo-1.deb https://snapshot.debian.org/archive/debian/20210326T204420Z/pool/main/p/pango1.0/libpangocairo-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
+    curl -sSLo libpangoft2.deb https://snapshot.debian.org/archive/debian/20210326T204420Z/pool/main/p/pango1.0/libpangoft2-1.0-0_1.42.4-8~deb10u1_amd64.deb &&\
+    curl -sSLo libgtk-3.deb https://snapshot.debian.org/archive/debian/20210326T204420Z/pool/main/g/gtk+3.0/libgtk-3-0_3.24.5-1_amd64.deb &&\
+    dpkg -i multiarch-support.deb &&\
+    dpkg -i libgtk-3.deb libpangoft2.deb libpangocairo-1.deb pango1.0.deb libgcrypt11.deb libudev0.deb libpng12.deb &&\
+    rm multiarch-support.deb libgtk-3.deb libpangoft2.deb libpangocairo-1.deb pango1.0.deb libgcrypt11.deb libudev0.deb libpng12.deb &&\
+# Stuff needed for chrome versions < 17
+    ln -s /usr/lib/x86_64-linux-gnu/libnss3.so /usr/lib/x86_64-linux-gnu/libnss3.so.1d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libnssutil3.so /usr/lib/x86_64-linux-gnu/libnssutil3.so.1d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libsmime3.so /usr/lib/x86_64-linux-gnu/libsmime3.so.1d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libssl3.so /usr/lib/x86_64-linux-gnu/libssl3.so.1d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libplds4.so /usr/lib/x86_64-linux-gnu/libplds4.so.0d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libplc4.so /usr/lib/x86_64-linux-gnu/libplc4.so.0d  &&\
+    ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.0d &&\
+    # Initiate PyAutoGUI
+    touch /root/.Xauthority && \
+    xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
+
+COPY --from=python-app /bin/uv /bin/uv
+COPY --from=python-app /app /app
+COPY subject/web_browser/profiles /app/subject/web_browser/profiles
+
+# Configure xvfb
+RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
+
+ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

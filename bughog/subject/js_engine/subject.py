@@ -1,7 +1,7 @@
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.logs import LogCollector
 from bughog.evaluation.file_structure import Folder
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.subject.executable import Executable
 from bughog.subject.js_engine.simulation import JSEngineSimulation
 from bughog.subject.subject import Subject
@@ -13,7 +13,7 @@ class JsEngine(Subject):
         return 'js_engine'
 
     @staticmethod
-    def create_simulation(executable: Executable, context: Folder, params: EvaluationParameters) -> JSEngineSimulation:
+    def create_simulation(executable: Executable, context: Folder, params: ExperimentParameters) -> JSEngineSimulation:
         return JSEngineSimulation(executable, context, params)
 
     @staticmethod

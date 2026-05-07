@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, current_app, redirect, request
 
 import bughog.parameters as application_logic
-from bughog import configuration
+from bughog import config
 from bughog.app import sock
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.integration_tests import evaluation_configurations, verify_results
@@ -13,9 +13,8 @@ from bughog.main import Main
 from bughog.parameters import MissingParametersError
 from bughog.subject import factory
 from bughog.subject.factory import get_all_subject_availability
-from bughog.version_control.state.base import ShallowState
 from bughog.web.clients import Clients
-from bughog.web.evaluation_thread import run_eval_thread
+from bughog.web.evaluation_thread import run_eval_thread, run_experiment_thread
 
 logger = logging.getLogger(__name__)
 api = Blueprint('api', __name__, url_prefix='/api')
@@ -34,7 +33,7 @@ def check_readiness():
         # _ = ____get_main()
     except Exception as e:
         logger.critical(e)
-        return {'status': 'NOK', 'msg': 'BugHog is not ready', 'info': {'log': configuration.Loggers.get_logs()}}
+        return {'status': 'NOK', 'msg': 'BugHog is not ready', 'info': {'log': config.Loggers.get_logs()}}
 
 
 @api.after_request
@@ -58,8 +57,8 @@ def start_evaluation():
 
     data = request.json.copy()
     try:
-        database_params = configuration.get_database_params()
-        params = application_logic.evaluation_factory(data, database_params)
+        database_params = config.get_database_params()
+        params = application_logic.create_evaluation_params(data, database_params)
         run_eval_thread(__get_main(), params)
         return {'status': 'OK'}
     except MissingParametersError:
@@ -78,6 +77,37 @@ def stop_evaluation():
     else:
         __get_main().activate_stop_gracefully()
     return {'status': 'OK'}
+
+
+@api.route('/experiment/start/', methods=['POST'])
+def start_experiment():
+    if request.json is None:
+        return {'status': 'NOK', 'msg': 'No experiment parameters found'}
+
+    data = request.json.copy()
+    try:
+        database_params = config.get_database_params()
+        params = application_logic.create_experiment_params(data, database_params)
+        __get_main().remove_datapoint(params)
+        run_experiment_thread(__get_main(), params)
+        return {'status': 'OK'}
+    except MissingParametersError:
+        return {'status': 'NOK', 'msg': 'Could not start experiment due to missing parameters.'}
+
+
+@api.route('/experiment/remove/', methods=['POST'])
+def remove_experiment_result():
+    if request.json is None:
+        return {'status': 'NOK', 'msg': 'No experiment parameters found'}
+
+    data = request.json.copy()
+    try:
+        database_params = config.get_database_params()
+        params = application_logic.create_experiment_params(data, database_params)
+        __get_main().remove_datapoint(params)
+        return {'status': 'OK'}
+    except MissingParametersError:
+        return {'status': 'NOK', 'msg': 'Could not remove experiment result due to missing parameters.'}
 
 
 """
@@ -100,6 +130,9 @@ def init_websocket(ws):
                 Clients.associate_params(ws, params)
             if requested_variables := message.get('get', []):
                 __get_main().push_info(ws, *requested_variables)
+            if params_dict := message.get('request_experiment_result', None):
+                params = application_logic.create_experiment_params(params_dict, config.get_database_params())
+                Clients.push_complete_experiment_result(params)
         except ValueError:
             logger.warning('Ignoring invalid message from client.')
 
@@ -107,6 +140,13 @@ def init_websocket(ws):
 @api.route('/subject/', methods=['GET'])
 def get_subjects():
     return {'status': 'OK', 'subject_availability': get_all_subject_availability()}
+
+
+@api.route('/subject/<string:subject_name>/versions/', methods=['GET'])
+def get_subject_versions(subject_name: str):
+    from bughog.version_control.conversion import bughog_service
+    versions = bughog_service.find_all_versions(subject_name)
+    return {'status': 'OK', 'versions': versions}
 
 
 @api.route('/system/', methods=['GET'])
@@ -201,7 +241,7 @@ def add_folder_or_file(subject_type: str, project: str, poc: str):
 
 @api.route('/poc/domain/', methods=['GET'])
 def get_available_domains():
-    return {'status': 'OK', 'domains': configuration.get_available_domains()}
+    return {'status': 'OK', 'domains': config.get_available_domains()}
 
 
 @api.route('/poc/<string:subject_type>/<string:project>/', methods=['POST'])
@@ -229,15 +269,12 @@ def remove_datapoint():
     data = request.json.copy()
     if not isinstance(data, dict):
         return {'status': 'NOK', 'msg': 'Received dataformat is not a dictionary.'}
-    if (type := data.get('type')) not in ['release', 'commit']:
+    if (data.get('type')) not in ['release', 'commit']:
         return {'status': 'NOK', 'msg': 'Type argument should be release or commit.'}
-    database_params = configuration.get_database_params()
+    database_params = config.get_database_params()
     try:
-        params_list = application_logic.evaluation_factory(data, database_params, only_to_plot=True)
-        if len(params_list) < 1:
-            return {'status': 'NOK', 'msg': 'Could not construct removal parameters.'}
-        state = ShallowState(type, data.get('major_version'), data.get('commit_nb'), data.get('commit_id'))
-        __get_main().remove_datapoint(params_list[0], state)
+        params = application_logic.create_experiment_params(data, database_params)
+        __get_main().remove_datapoint(params)
     except MissingParametersError:
         return {'status': 'NOK', 'msg': 'Could not remove datapoint due to missing parameters'}
     return {'status': 'OK'}

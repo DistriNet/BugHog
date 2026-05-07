@@ -1,9 +1,8 @@
 import logging
-import os
 import time
 
 import bughog.database.mongo.container as mongodb_container
-from bughog import configuration
+from bughog import config
 from bughog.database.mongo.executable_cache import ExecutableCache
 from bughog.database.mongo.mongodb import MongoDB, ServerException
 from bughog.distribution.worker_manager import WorkerManager
@@ -11,14 +10,14 @@ from bughog.exceptions import SystemError, UserError
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
+    ExperimentParameters,
 )
 from bughog.search_strategy.bgb_search import BiggestGapBisectionSearch
 from bughog.search_strategy.bgb_sequence import BiggestGapBisectionSequence
 from bughog.search_strategy.composite_search import CompositeSearch
 from bughog.search_strategy.sequence_strategy import SequenceFinished, SequenceStrategy
 from bughog.subject import factory
-from bughog.version_control.state.base import ShallowState
-from bughog.version_control.state_factory import StateFactory
+from bughog.version_control.state_factory import create_state_factory, create_state_from_shallow_state
 from bughog.web.clients import Clients
 
 logger = logging.getLogger(__name__)
@@ -33,14 +32,16 @@ class Main:
 
         self.eval_queue = []
 
-        self.db_connection_params = configuration.get_database_params()
+        self.db_connection_params = config.get_database_params()
         self.connect_to_database(self.db_connection_params)
         factory.initialize_all_subject_folders()
+        # Preload all subject availability to speed up the UI (bughog service calls are cached)
+        factory.get_all_subject_availability()
 
         logger.info('BugHog is ready!')
-        if os.getenv('GITHUB_TOKEN') is None:
+        if config.settings.github_token is None:
             logger.warning(
-                'GITHUB_TOKEN was not configured in ./config/.env. This might result in failed API requests.'
+                'BUGHOG_GITHUB_TOKEN was not configured in ./config/.env. This might result in failed API requests.'
             )
 
     def connect_to_database(self, db_connection_params: DatabaseParameters) -> None:
@@ -50,37 +51,48 @@ class Main:
             logger.error('Could not connect to database.', exc_info=True)
 
     def run(self, eval_params_list: list[EvaluationParameters]) -> None:
-        # Sequence_configuration settings are the same over evaluation parameters (quick fix)
         self.__update_state(is_running=True, reason='user', status='running')
-        worker_manager = WorkerManager(eval_params_list[0])
         self.stop_gracefully = False
         self.stop_forcefully = False
+
+        # Group evaluations by subject so each gets its own correctly-configured worker image.
+        groups: dict[tuple[str, str], list[EvaluationParameters]] = {}
+        for params in eval_params_list:
+            key = (params.subject_configuration.subject_type, params.subject_configuration.subject_name)
+            groups.setdefault(key, []).append(params)
+
         try:
             self.__init_eval_queue(eval_params_list)
-            for eval_params in eval_params_list:
+            for (subject_type, subject_name), group in groups.items():
                 if self.stop_gracefully or self.stop_forcefully:
                     break
-                self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'active')
-                self.__update_state(
-                    is_running=True,
-                    reason='user',
-                    status='running',
-                    queue=self.eval_queue,
+                worker_manager = WorkerManager(
+                    subject_type, subject_name, group[0].sequence_configuration.nb_of_containers
                 )
                 try:
-                    self.run_single_evaluation(eval_params, worker_manager)
-                except (UserError, SystemError) as e:
-                    # If we are running integration tests, we want to just continue with other subjects.
-                    unique_subjects = set(
-                        [eval_params.subject_configuration.subject_name for eval_params in eval_params_list]
-                    )
-                    if len(unique_subjects) == 1:
-                        raise e
-                except Exception:
-                    logger.error(
-                        f'Could not finish evaluation for {eval_params.subject_configuration.subject_name}.',
-                        exc_info=True,
-                    )
+                    for eval_params in group:
+                        if self.stop_gracefully or self.stop_forcefully:
+                            break
+                        self.__update_eval_queue(eval_params.experiment_name, 'active')
+                        self.__update_state(
+                            is_running=True,
+                            reason='user',
+                            status='running',
+                            queue=self.eval_queue,
+                        )
+                        try:
+                            self.run_single_evaluation(eval_params, worker_manager)
+                        except (UserError, SystemError) as e:
+                            # For a single subject, surface the error. For multiple subjects
+                            # (e.g. integration tests), log and continue with the next subject.
+                            if len(groups) == 1:
+                                raise e
+                            logger.error(f'Skipping remaining evaluations for {subject_name} due to error: {e}')
+                            break
+                        except Exception:
+                            logger.error(f'Could not finish evaluation for {subject_name}.', exc_info=True)
+                finally:
+                    worker_manager.wait_until_all_evaluations_are_done()
 
             # Exit handling
             if self.stop_gracefully:
@@ -89,7 +101,7 @@ class Main:
             elif self.stop_forcefully:
                 logger.info('Forcefully stopping experiment queue due to user end signal...')
                 self.state['reason'] = 'user'
-                worker_manager.forcefully_stop_all_running_containers()
+                WorkerManager.forcefully_stop_all_running_containers()
             else:
                 logger.info('Gracefully stopping experiment queue since last experiment started.')
 
@@ -100,8 +112,6 @@ class Main:
             logger.critical('A critical error occurred', exc_info=True)
             raise e
         finally:
-            logger.info('Waiting for remaining experiments to stop...')
-            worker_manager.wait_until_all_evaluations_are_done()
             logger.info('BugHog has finished the evaluation!')
             self.__update_state(is_running=False, status='idle', queue=self.eval_queue)
 
@@ -111,8 +121,8 @@ class Main:
         nb_of_iterations = 3
         for i in range(1, nb_of_iterations + 1):
             start_time = time.time()
-            subject = factory.get_subject_from_params(eval_params)
-            experiment_name = eval_params.evaluation_range.experiment_name
+            subject = factory.get_subject_from_params(eval_params.subject_configuration)
+            experiment_name = eval_params.experiment_name
             search_strategy = self.create_sequence_strategy(eval_params)
 
             logger.info(
@@ -125,7 +135,8 @@ class Main:
                     current_state = search_strategy.next(wait=False)
 
                     # Start worker to perform evaluation
-                    worker_manager.start_experiment(eval_params, current_state)
+                    experiment_params = eval_params.to_experiment_parameters(current_state.to_shallow_state())
+                    worker_manager.start_experiment(experiment_params, current_state)
 
             except SequenceFinished:
                 worker_manager.wait_until_all_evaluations_are_done()
@@ -141,37 +152,57 @@ class Main:
 
         worker_manager.wait_until_all_evaluations_are_done()
         self.state['reason'] = 'finished'
-        self.__update_eval_queue(eval_params.evaluation_range.experiment_name, 'done')
+        self.__update_eval_queue(eval_params.experiment_name, 'done')
         Clients.push_notification_to_all(f'Evaluation of {experiment_name} has finished.')
 
     def retry_dirty_tests(self, eval_params: EvaluationParameters, worker_manager: WorkerManager) -> None:
-        dirty_states = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
-        if (nb_of_dirty_states := len(dirty_states)) == 0:
+        state_factory = create_state_factory(eval_params)
+        nb_of_dirty_states = 0
+        for dirty_state in state_factory.create_evaluated_states(dirty=True):
+            if nb_of_dirty_states == 0:
+                experiment = eval_params.experiment_name
+                message = f'Retrying tests with a dirty result for {experiment}.'
+                logger.info(message)
+                Clients.push_notification_to_all(message)
+            nb_of_dirty_states += 1
+            if self.stop_gracefully or self.stop_forcefully:
+                return
+            experiment_params = eval_params.to_experiment_parameters(dirty_state.to_shallow_state())
+            MongoDB().remove_datapoint(experiment_params)
+            worker_manager.start_experiment(experiment_params, dirty_state)
+
+        if nb_of_dirty_states == 0:
             logger.info('No tests are associated with a dirty result.')
             return
 
-        experiment = eval_params.evaluation_range.experiment_name
-        message = f'Retrying {nb_of_dirty_states} tests with a dirty result for {experiment}.'
-        logger.info(message)
-
-        Clients.push_notification_to_all(message)
-        for dirty_state in dirty_states:
-            if self.stop_gracefully or self.stop_forcefully:
-                return
-            MongoDB().remove_datapoint(eval_params, dirty_state.to_shallow_state())
-            worker_manager.start_experiment(eval_params, dirty_state)
         worker_manager.wait_until_all_evaluations_are_done()
+        nb_after_retry = sum(1 for _ in state_factory.create_evaluated_states(dirty=True))
+        logger.info(f'Dirty test results reduced from {nb_of_dirty_states} to {nb_after_retry}.')
 
-        dirty_states_after_retry = MongoDB().get_evaluated_states(eval_params, None, dirty=True)
-        logger.info(f'Dirty test results reduced from {nb_of_dirty_states} to {len(dirty_states_after_retry)}.')
+    def run_single_experiment(self, params: ExperimentParameters) -> None:
+        try:
+            self.__update_state(is_running=True, reason='user', status='running')
+            subject_config = params.subject_configuration
+            state = create_state_from_shallow_state(
+                params.state, subject_config.subject_type, subject_config.subject_name
+            )
+            if not state.has_available_executable():
+                Clients.push_notification_to_all(f'No available executable for state {state.commit_nb}.', type='error')
+            else:
+                worker_manager = WorkerManager(subject_config.subject_type, subject_config.subject_name, 1)
+                worker_manager.start_experiment(params, state)
+                worker_manager.wait_until_all_evaluations_are_done()
+                Clients.push_complete_experiment_result(params)
+        finally:
+            # TODO: error handling
+            self.__update_state(is_running=False, reason='idle', status='idle')
 
     @staticmethod
-    def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy:
+    def create_sequence_strategy(eval_params: EvaluationParameters) -> SequenceStrategy | CompositeSearch:
         sequence_config = eval_params.sequence_configuration
         search_strategy = sequence_config.search_strategy
         sequence_limit = sequence_config.sequence_limit
-        subject = factory.get_subject_from_params(eval_params)
-        state_factory = StateFactory(subject.state_oracle, eval_params)
+        state_factory = create_state_factory(eval_params)
 
         if search_strategy == 'bgb_sequence':
             strategy = BiggestGapBisectionSequence(state_factory, sequence_limit)
@@ -224,13 +255,14 @@ class Main:
             if arg == 'db_info' or all:
                 update['db_info'] = MongoDB().get_info()
             if arg == 'logs' or all:
-                update['logs'] = configuration.Loggers.get_logs()
+                update['logs'] = config.Loggers.get_logs()
             if arg == 'state' or all:
+                self.state['nb_of_running_containers'] = WorkerManager.get_nb_of_running_worker_containers()
                 update['state'] = self.state
         Clients.push_info(ws, update)
 
-    def remove_datapoint(self, params: EvaluationParameters, state: ShallowState) -> None:
-        MongoDB().remove_datapoint(params, state)
+    def remove_datapoint(self, params: ExperimentParameters) -> None:
+        MongoDB().remove_datapoint(params)
         Clients.push_results_to_all()
 
     def remove_cached_executable(self, subject_type: str, subject_name: str, state_name: str) -> None:
@@ -239,6 +271,7 @@ class Main:
     def __update_state(self, **kwargs) -> None:
         for key, value in kwargs.items():
             self.state[key] = value
+        self.state['nb_of_running_containers'] = WorkerManager.get_nb_of_running_worker_containers()
         Clients.push_info_to_all({'state': self.state})
 
     def __init_eval_queue(self, eval_params_list: list[EvaluationParameters]) -> None:
@@ -246,7 +279,7 @@ class Main:
         for eval_params in eval_params_list:
             self.eval_queue.append(
                 {
-                    'experiment': eval_params.evaluation_range.experiment_name,
+                    'experiment': eval_params.experiment_name,
                     'state': 'pending',
                 }
             )

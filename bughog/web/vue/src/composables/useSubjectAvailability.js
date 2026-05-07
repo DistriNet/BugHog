@@ -62,6 +62,11 @@ export function useSubjectAvailability(post_init_callback) {
                 const subject = this.get_subject_by_name(subject_type, subject_name);
                 return subject === null ? [-1, -1] : [subject.min_version, subject.max_version];
             }
+        },
+
+        get_subject_available_versions(subject_type, subject_name) {
+            const subject = this.get_subject_by_name(subject_type, subject_name);
+            return subject === null ? [] : subject.available_versions;
         }
     }
 

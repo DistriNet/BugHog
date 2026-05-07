@@ -5,9 +5,10 @@ from typing import Literal
 
 from simple_websocket import Server
 
-from bughog import configuration
+from bughog import config
 from bughog.analysis.plot_factory import PlotFactory
-from bughog.parameters import MissingParametersError, evaluation_factory
+from bughog.database.mongo.mongodb import MongoDB
+from bughog.parameters import ExperimentParameters, MissingParametersError, create_evaluation_params
 from bughog.subject import factory
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ class Clients:
                 return
             params['experiments'] = [params['experiment_to_plot']]
             try:
-                eval_params = evaluation_factory(params, configuration.get_database_params())
+                eval_params = create_evaluation_params(params, config.get_database_params())
                 if len(eval_params) < 1:
                     return
                 plot_params = eval_params[0].to_plot_parameters(params['experiment_to_plot'])
@@ -79,6 +80,9 @@ class Clients:
                         {
                             'update': {
                                 'plot_data': {
+                                    'subject_name': params.get('subject_name'),
+                                    'project_name': params.get('project_name'),
+                                    'experiment_name': params.get('experiment_to_plot'),
                                     'revision_data': revision_data,
                                     'version_data': version_data,
                                 }
@@ -131,3 +135,20 @@ class Clients:
         Clients.__remove_disconnected_clients()
         for ws_client in Clients.__clients.keys():
             ws_client.send(json.dumps({'notification': {'message': message, 'type': type}}))
+
+    @staticmethod
+    def push_complete_experiment_result(params: ExperimentParameters) -> None:
+        Clients.__remove_disconnected_clients()
+
+        if params is None:
+            logger.error('Could not find any associated parameters for this client.')
+            return
+        result = MongoDB().get_result(params)
+
+        if result is None:
+            data = json.dumps({'update': {'experiment_result': None}})
+        else:
+            data = json.dumps({'update': {'experiment_result': result.to_dict()}})
+
+        for ws_client in Clients.__clients.keys():
+            ws_client.send(data)

@@ -27,7 +27,6 @@ services:
       - ./subject:/app/subject:rw
       - ./logs:/app/logs:rw
       - ./nginx/ssl/:/etc/nginx/ssl/:rw
-      - /var/run/docker.sock:/var/run/docker.sock:rw
     tmpfs:
       /memory:exec,size=3g,mode=1777
     profiles:
@@ -42,15 +41,12 @@ services:
     hostname: bh_core
     ports:
       - "5000:5000"
-    image: bh_core_dev
+    image: bughog/core_dev
     environment:
       - "DEVELOPMENT=1"
-      - "PYTHONPATH=/app:/root/.local/bin"
-      - "DISPLAY=:1"
-      - "MOZ_DISABLE_CONTENT_SANDBOX=1"
-      - "PATH=${PATH}:/$HOME/.local/bin"
     volumes:
       - .:/app:rw
+      - ./.docker.sock:/var/run/docker.sock:rw
     container_name: bh_core_dev
     profiles:
       - dev
@@ -67,6 +63,8 @@ services:
     init: true
     ports:
       - "5000:5000"
+    volumes:
+      - ./.docker.sock:/var/run/docker.sock:rw
     profiles:
       - prod
 

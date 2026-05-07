@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Iterator, Optional
 
 from gridfs import GridFS
 from pymongo import ASCENDING, MongoClient
@@ -14,9 +14,11 @@ from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.parameters import (
     DatabaseParameters,
     EvaluationParameters,
+    ExperimentParameters,
     SubjectConfiguration,
 )
 from bughog.version_control.state.base import ShallowState, State
+from bughog.version_control.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -139,23 +141,22 @@ class MongoDB:
             raise ServerException('Database server does not have a database')
         return GridFS(self._db)
 
-    def store_result(self, eval_params: EvaluationParameters, result: ExperimentResult):
+    def store_result(self, params: ExperimentParameters, result: ExperimentResult):
         """
         Upserts the result.
         """
-        subject_config = eval_params.subject_configuration
-        eval_params = eval_params
-        collection = self.__get_data_collection(eval_params)
+        subject_config = params.subject_configuration
+        collection = self.__get_data_collection(subject_config)
         query = {
-            'subject_version': result.executable_version,
+            'subject_version': str(result.executable_version) if result.executable_version else None,
             'executable_origin': result.executable_origin,
             'padded_subject_version': result.padded_subject_version,
             'subject_config': subject_config.subject_setting,
             'cli_options': subject_config.cli_options,
             'extensions': subject_config.extensions,
             'state': result.state,
-            'project': eval_params.evaluation_range.project_name,
-            'experiment': eval_params.evaluation_range.experiment_name,
+            'project': params.project_name,
+            'experiment': params.experiment_name,
         }
         # if browser_config.subject_name == 'firefox':
         #     build_id = self.get_build_id_firefox(result.params.state)
@@ -177,13 +178,13 @@ class MongoDB:
         }
         collection.update_one(query, update, upsert=True)
 
-    def get_result(self, params: EvaluationParameters, state: ShallowState) -> Optional[ExperimentResult]:
-        collection = self.__get_data_collection(params)
-        query = self.__to_experiment_query(params, state)
+    def get_result(self, params: ExperimentParameters) -> Optional[ExperimentResult]:
+        collection = self.__get_data_collection(params.subject_configuration)
+        query = self.__to_experiment_query(params, params.state)
         doc = collection.find_one(query)
         if doc:
             return ExperimentResult(
-                doc['executable_version'],
+                Version(doc['subject_version']),
                 doc['executable_origin'],
                 doc['state'],
                 doc['result']['raw'],
@@ -191,12 +192,12 @@ class MongoDB:
                 doc['dirty'],
             )
         else:
-            logger.error(f'Could not find document for query {query}.')
+            logger.info(f'Could not find document for query {query}.')
             return None
 
-    def has_result(self, params: EvaluationParameters, state: ShallowState) -> bool:
-        collection = self.__get_data_collection(params)
-        query = self.__to_experiment_query(params, state)
+    def has_result(self, params: ExperimentParameters) -> bool:
+        collection = self.__get_data_collection(params.subject_configuration)
+        query = self.__to_experiment_query(params, params.state)
         nb_of_documents = collection.count_documents(query)
         return nb_of_documents > 0
 
@@ -205,12 +206,12 @@ class MongoDB:
         params: EvaluationParameters,
         boundary_states: Optional[tuple[State, State]],
         dirty: Optional[bool] = None,
-    ) -> list[State]:
-        collection = self.__get_data_collection(params)
-        query = {
-            'project': params.evaluation_range.project_name,
+    ) -> Iterator[dict]:
+        collection = self.__get_data_collection(params.subject_configuration)
+        query: dict[str, Any] = {
+            'project': params.project_name,
             'subject_config': params.subject_configuration.subject_setting,
-            'experiment': params.evaluation_range.experiment_name,
+            'experiment': params.experiment_name,
             'result': {'$exists': True},
             'state.type': 'release' if params.evaluation_range.only_release_commits else 'commit',
         }
@@ -236,22 +237,21 @@ class MongoDB:
         if dirty is not None:
             query['dirty'] = dirty
         cursor = collection.find(query)
-        states = []
-        for doc in cursor:
-            subject_type = params.subject_configuration.subject_type
-            subject_name = params.subject_configuration.subject_name
-            state = State.from_dict(subject_type, subject_name, doc['state'])
-            state.result_variables = set(tuple(item) for item in doc['result']['variables'])
-            state.result_attempt = doc['result'].get('attempt', 1)
-            states.append(state)
-        return states
 
-    def __to_experiment_query(self, params: EvaluationParameters, state: ShallowState) -> dict:
-        state_query = {'state.' + k: v for k, v in state.dict.items()}
-        query = {
-            'project': params.evaluation_range.project_name,
+        for doc in cursor:
+            yield {
+                'subject_type': params.subject_configuration.subject_type,
+                'subject_name': params.subject_configuration.subject_name,
+                'state': doc['state'],
+                'result': doc['result'],
+            }
+
+    def __to_experiment_query(self, params: ExperimentParameters, state: ShallowState) -> dict:
+        state_query = {'state.' + k: v for k, v in state.to_dict().items()}
+        query: dict[str, Any] = {
+            'project': params.project_name,
             'subject_config': params.subject_configuration.subject_setting,
-            'experiment': params.evaluation_range.experiment_name,
+            'experiment': params.experiment_name,
         }
         query.update(state_query)
         if len(params.subject_configuration.extensions) > 0:
@@ -270,13 +270,11 @@ class MongoDB:
             query['cli_options'] = []
         return query
 
-    def __get_data_collection(self, eval_params: EvaluationParameters) -> Collection:
+    def __get_data_collection(self, subject_config: SubjectConfiguration) -> Collection:
         """
         Returns the data collection, of which the name is formatted as '{subject_type}_{subject_name}'.
         """
-        collection_name = (
-            f'{eval_params.subject_configuration.subject_type}_{eval_params.subject_configuration.subject_name}'
-        )
+        collection_name = f'{subject_config.subject_type}_{subject_config.subject_name}'
         return self.get_collection(collection_name, create_if_not_found=True)
 
     def get_binary_availability_collection(self, subject_config: SubjectConfiguration) -> Collection:
@@ -299,32 +297,38 @@ class MongoDB:
         return result
 
     def get_documents_for_plotting(self, params: EvaluationParameters, releases: bool = False) -> list:
-        collection = self.__get_data_collection(params)
+        collection = self.__get_data_collection(params.subject_configuration)
 
         evaluation_range = params.evaluation_range
         subject_config = params.subject_configuration
 
-        query = {
-            'project': evaluation_range.project_name,
-            'experiment': evaluation_range.experiment_name,
-            'subject_config': subject_config.subject_setting,
-            'state.type': 'release' if releases else 'commit',
-            'extensions': {'$size': len(subject_config.extensions) if subject_config.extensions else 0},
-            'cli_options': {'$size': len(subject_config.cli_options) if subject_config.cli_options else 0},
+        extensions_filter: dict[str, Any] = {
+            '$size': len(subject_config.extensions) if subject_config.extensions else 0
         }
         if subject_config.extensions:
-            query['extensions']['$all'] = subject_config.extensions
+            extensions_filter['$all'] = subject_config.extensions
+        cli_options_filter: dict[str, Any] = {
+            '$size': len(subject_config.cli_options) if subject_config.cli_options else 0
+        }
         if subject_config.cli_options:
-            query['cli_options']['$all'] = subject_config.cli_options
+            cli_options_filter['$all'] = subject_config.cli_options
+        query: dict[str, Any] = {
+            'project': params.project_name,
+            'experiment': params.experiment_name,
+            'subject_config': subject_config.subject_setting,
+            'state.type': 'release' if releases else 'commit',
+            'extensions': extensions_filter,
+            'cli_options': cli_options_filter,
+        }
         if evaluation_range.commit_nb_range:
             query['state.commit_nb'] = {
                 '$gte': evaluation_range.commit_nb_range[0],
                 '$lte': evaluation_range.commit_nb_range[1],
             }
-        elif evaluation_range.major_version_range:
+        elif evaluation_range.version_range:
             query['padded_subject_version'] = {
-                '$gte': str(evaluation_range.major_version_range[0]).zfill(4),
-                '$lte': str(evaluation_range.major_version_range[1] + 1).zfill(4),
+                '$gte': evaluation_range.version_range[0].padded(),
+                '$lte': evaluation_range.version_range[1].next_padded(),
             }
         docs = collection.aggregate(
             [
@@ -343,22 +347,22 @@ class MongoDB:
         )
         return list(docs)
 
-    def remove_datapoint(self, params: EvaluationParameters, state: ShallowState) -> None:
-        collection = self.__get_data_collection(params)
-        query = self.__to_experiment_query(params, state)
+    def remove_datapoint(self, params: ExperimentParameters) -> None:
+        collection = self.__get_data_collection(params.subject_configuration)
+        query = self.__to_experiment_query(params, params.state)
         count = collection.delete_one(query)
         if count.deleted_count == 0:
-            logger.error(f'Could not remove datapoint for {state}.')
+            logger.debug(f'Could not remove datapoint for {params.state} because it was not found.')
         else:
-            logger.debug(f'Removed datapoint for {state}.')
+            logger.debug(f'Removed datapoint for {params.state}.')
 
     def remove_all_data_for(self, params_list: list[EvaluationParameters]) -> None:
         for params in params_list:
-            collection = self.__get_data_collection(params)
+            collection = self.__get_data_collection(params.subject_configuration)
             collection.delete_many(
                 {
-                    'project': params.evaluation_range.project_name,
-                    'experiment': params.evaluation_range.experiment_name,
+                    'project': params.project_name,
+                    'experiment': params.experiment_name,
                 }
             )
 

@@ -1,6 +1,6 @@
 import os
 
-from bughog import configuration
+from bughog import config
 from bughog.integration_tests import verify_results
 from bughog.parameters import (
     EvaluationParameters,
@@ -9,6 +9,7 @@ from bughog.parameters import (
     SubjectConfiguration,
 )
 from bughog.subject import factory
+from bughog.version_control.version import Version
 
 
 def get_default_configuration(subject_type: str, subject_name: str) -> SubjectConfiguration:
@@ -24,11 +25,18 @@ def get_default_configuration(subject_type: str, subject_name: str) -> SubjectCo
 def get_default_evaluation_range(
     subject_type: str, subject_name: str, experiment: str, only_releases: bool
 ) -> EvaluationRange:
-    min_version, max_version = factory.get_subject_availability(subject_type, subject_name)
+    subject_availability = factory.get_subject_availability(subject_type, subject_name)
+    min_version = subject_availability['min_version']
+    max_version = subject_availability['max_version']
+    versions = subject_availability['available_versions']
+
+    assert isinstance(min_version, (str, int))
+    assert isinstance(max_version, (str, int))
+    assert isinstance(versions, list)
+
     return EvaluationRange(
-        verify_results.TEST_PROJECT_NAME,
-        experiment,
-        (min_version, max_version),
+        (Version(min_version), Version(max_version)),
+        [Version(v) for v in versions],
         None,
         only_releases,
     )
@@ -46,8 +54,10 @@ def get_default_sequence_config(sequence_limit: int) -> SequenceConfiguration:
 def get_default_evaluation_parameters(
     subject_type: str, subject_name: str, experiment: str, sequence_limit: int = 100, only_releases: bool = True
 ) -> EvaluationParameters:
-    database_params = configuration.get_database_params()
+    database_params = config.get_database_params()
     return EvaluationParameters(
+        verify_results.TEST_PROJECT_NAME,
+        experiment,
         get_default_configuration(subject_type, subject_name),
         get_default_evaluation_range(subject_type, subject_name, experiment, only_releases),
         get_default_sequence_config(sequence_limit),

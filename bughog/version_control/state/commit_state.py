@@ -29,9 +29,9 @@ class CommitState(State):
         if self._commit_nb is not None and not self.oracle.is_valid_commit_nb(self._commit_nb):
             raise ValueError(f"Invalid commit number '{self._commit_nb}'.")
 
-    @staticmethod
-    def get_name(index: int) -> str:
-        return f'c_{index}'
+    @property
+    def name(self) -> str:
+        return f'c_{self.index}'
 
     @property
     def type(self) -> Literal['commit']:
@@ -58,13 +58,13 @@ class CommitState(State):
         return {k: v for k, v in fields.items() if v is not None}
 
     def has_public_executable(self) -> bool:
-        # We ignore states without a commite id.
+        # We ignore states without a commit id.
         if self.commit_id is None:
             return False
-        return self.oracle.has_public_executable(self.commit_nb, 'commit')
+        return self.oracle.has_public_commit_executable(self.commit_nb)
 
     def get_executable_source_urls(self) -> list[str]:
-        return self.oracle.get_executable_download_urls(self.commit_nb, 'commit')
+        return self.oracle.get_commit_executable_urls(self.commit_nb)
 
     def to_shallow_state(self) -> ShallowState:
         return ShallowState('commit', None, self.commit_nb, self.commit_id)
@@ -74,3 +74,6 @@ class CommitState(State):
 
     def __repr__(self):
         return f'CommitState(number: {self.commit_nb}, id: {self.commit_id})'
+
+    def __hash__(self) -> int:
+        return hash((self.type, self.commit_id, self.commit_nb))

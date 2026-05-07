@@ -1,11 +1,12 @@
 import logging
 import time
 
+from bughog.config import settings
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.experiment_result import ExperimentResult
 from bughog.evaluation.interaction import Interaction
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.subject import factory
 from bughog.subject.executable import Executable, ExecutableStatus
 from bughog.subject.simulation import Simulation
@@ -20,16 +21,16 @@ class Evaluation:
         self.experiments = factory.create_experiments(subject_type)
         self.should_stop = False
 
-    def evaluate(self, params: EvaluationParameters, state: State, is_worker=False):
-        if MongoDB().has_result(params, state.to_shallow_state()):
+    def evaluate(self, params: ExperimentParameters, state: State, is_worker=False):
+        if MongoDB().has_result(params):
             logger.warning(
-                f"Experiment '{params.evaluation_range.experiment_name}' for '{state}' was already performed, skipping."
+                f"Experiment '{params.experiment_name}' for '{params.state}' was already performed, skipping."
             )
             return
 
-        subject = factory.get_subject_from_params(params)
+        subject = factory.get_subject_from_params(params.subject_configuration)
 
-        experiment_folder = self.experiments.get_experiment_folder(params)
+        experiment_folder = self.experiments.get_experiment_folder(params.project_name, params.experiment_name)
         executable = subject.create_executable(params.subject_configuration, state)
         runtime_flags = self.experiments.framework.get_runtime_flags(experiment_folder)
         runtime_env_vars = self.experiments.framework.get_runtime_env_vars(experiment_folder)
@@ -66,7 +67,7 @@ class Evaluation:
         self, executable: Executable, simulation: Simulation, collector: Collector, script: list[str]
     ) -> ExperimentResult:
         is_dirty = False
-        tries_left = 3
+        tries = 0
         collector.start()
         poc_was_reproduced = False
         intermediary_variables = None
@@ -74,8 +75,8 @@ class Evaluation:
         # Perform experiment with retries
         logger.info(f'Starting experiment for {executable.state}.')
         start_time = time.time()
-        while not poc_was_reproduced and tries_left > 0:
-            tries_left -= 1
+        while not poc_was_reproduced and tries < settings.experiment_tries:
+            tries += 1
             executable.pre_try_setup()
             try:
                 Interaction(script).do_experiment(simulation)
@@ -106,7 +107,7 @@ class Evaluation:
             result_variables.update(sanity_check_variables)
 
         elapsed_time = time.time() - start_time
-        logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s with {tries_left} tries left.')
+        logger.info(f'Experiment for {executable.state} finished in {elapsed_time:.2f}s after {tries} tries.')
         return ExperimentResult(
             executable.version, executable.origin, executable.state.to_dict(), raw_results, result_variables, is_dirty
         )

@@ -2,14 +2,14 @@ import logging
 import os
 import sys
 
-from bughog.configuration import Loggers
+from bughog.config import Loggers
 from bughog.database.mongo.mongodb import MongoDB
 from bughog.evaluation.evaluation import Evaluation
 from bughog.exceptions import SystemError, UserError
-from bughog.parameters import EvaluationParameters
+from bughog.parameters import ExperimentParameters
 from bughog.version_control.state.base import State
 
-# This logger argument is set explicitly so when this file is ran as a script, it will still use the logger configuration
+# This logger argument is set explicitly so when this file is ran as a script, it will still use the logger configuration.
 logger = logging.getLogger('bughog.worker')
 
 
@@ -19,11 +19,17 @@ def __run_by_worker() -> None:
     Should only be called by worker.
     """
     Loggers.configure_loggers()
+    if os.getenv('DEVELOPMENT'):
+        import debugpy
+        debugpy.listen(('0.0.0.0', 5678))
+        logger.info('Waiting for debugger to attach on port 5678...')
+        debugpy.wait_for_client()
+        logger.info('Debugger attached.')
     if len(sys.argv) < 3:
         logger.info('Worker did not receive enough arguments.')
         os._exit(0)
 
-    params = EvaluationParameters.deserialize(sys.argv[1])
+    params = ExperimentParameters.deserialize(sys.argv[1])
     state = State.deserialize(sys.argv[2])
 
     MongoDB().connect(params.database_params)
@@ -36,7 +42,7 @@ def __run_by_worker() -> None:
     os._exit(0)
 
 
-def run(params: EvaluationParameters, state: State):
+def run(params: ExperimentParameters, state: State):
     """
     Executes evaluation based on given parameters.
     """

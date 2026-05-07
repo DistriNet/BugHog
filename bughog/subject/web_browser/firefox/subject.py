@@ -1,8 +1,6 @@
 from bughog.parameters import SubjectConfiguration
-from bughog.subject.state_oracle import StateOracle
 from bughog.subject.web_browser.firefox.executable import FirefoxExecutable
 from bughog.subject.web_browser.firefox.state_oracle import FirefoxStateOracle
-from bughog.version_control.conversion import bughog_service
 from bughog.subject.web_browser.subject import WebBrowser
 from bughog.version_control.state.base import State
 
@@ -13,16 +11,8 @@ class Firefox(WebBrowser):
         return 'firefox'
 
     @property
-    def _state_oracle_class(self) -> type[StateOracle]:
-        return FirefoxStateOracle
+    def state_oracle(self) -> FirefoxStateOracle:
+        return FirefoxStateOracle(self.type, self.name)
 
     def create_executable(self, subject_configuration: SubjectConfiguration, state: State) -> FirefoxExecutable:
         return FirefoxExecutable(subject_configuration, state)
-
-    def get_availability(self) -> dict:
-        max_version = bughog_service.find_latest_major_version('firefox')
-        return {
-            'name': 'firefox',
-            'min_version': 20,
-            'max_version': max_version,
-        }

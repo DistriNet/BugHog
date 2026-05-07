@@ -1,11 +1,9 @@
-import unittest
-
 from bughog.evaluation.collectors.collector import Collector
 from bughog.evaluation.collectors.requests import RequestCollector
 from bughog.evaluation.experiment_result import ExperimentResult
 
 
-class TestCollector(unittest.TestCase):
+class TestCollector:
     @staticmethod
     def get_collector(request_urls: list[str]) -> Collector:
         collector = Collector([RequestCollector()])

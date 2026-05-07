@@ -1,4 +1,3 @@
-import unittest
 from typing import Callable, Optional
 from unittest.mock import MagicMock
 
@@ -6,9 +5,10 @@ from bughog.parameters import EvaluationParameters, EvaluationRange
 from bughog.search_strategy.sequence_strategy import SequenceStrategy
 from bughog.version_control.state.base import State
 from bughog.version_control.state_factory import StateFactory
+from bughog.version_control.version import Version
 
 
-class TestSequenceStrategy(unittest.TestCase):
+class TestSequenceStrategy:
     """
     Helper functions to create states and state factories for testing.
     """
@@ -30,7 +30,7 @@ class TestSequenceStrategy(unittest.TestCase):
     ) -> StateFactory:
         eval_params = MagicMock(spec=EvaluationParameters)
         eval_params.evaluation_range = MagicMock(spec=EvaluationRange)
-        eval_params.evaluation_range.major_version_range = [0, 99]
+        eval_params.evaluation_range.version_range = [Version('0'), Version('99')]
 
         factory = MagicMock(spec=StateFactory)
         factory.__eval_params = eval_params
@@ -75,6 +75,7 @@ class TestSequenceStrategy(unittest.TestCase):
         if pending_func and pending_func(index):
             state.result_variables = None
 
+        state.__hash__ = lambda *_: hash(index)
         state.__eq__ = State.__eq__
         state.__repr__ = State.__repr__
         state.find_nearest_state_with_executable = MagicMock(side_effect=NotImplementedError)

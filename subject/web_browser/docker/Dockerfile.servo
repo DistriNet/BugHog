@@ -1,0 +1,23 @@
+FROM python:3.13-slim-trixie
+
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH" \
+    MANAGE_CERTS=1 \
+    MANAGE_XVFB=1
+
+RUN apt-get update && \
+    apt install -y curl gnome-screenshot libgstreamer-plugins-bad1.0-0 libxcursor1 libxrandr2 libxi6 libxkbcommon0 libvulkan1 libegl1 python3-tk xvfb xxd &&\
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Initiate PyAutoGUI
+    touch /root/.Xauthority && \
+    xauth add ${HOST}:0 . $(xxd -l 16 -p /dev/urandom)
+
+COPY --from=python-app /bin/uv /bin/uv
+COPY --from=python-app /app /app
+COPY subject/web_browser/profiles /app/subject/web_browser/profiles
+
+# Configure xvfb
+RUN cp /app/scripts/daemon/xvfb /etc/init.d/xvfb
+
+ENTRYPOINT [ "/app/scripts/boot/worker.sh" ]

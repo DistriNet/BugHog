@@ -3,7 +3,6 @@ import os
 import shutil
 
 from bughog.evaluation.file_structure import Folder
-from bughog.parameters import EvaluationParameters
 from bughog.subject.evaluation_framework import EvaluationFramework
 
 logger = logging.getLogger(__name__)
@@ -104,7 +103,9 @@ class Experiments:
         poc_folder = project_folder.get_folder(poc)
         if folder_name is not None:
             if poc_folder.file_exists(folder_name):
-                raise Exception(f'Could not create {folder_name} in {poc_folder.path}, because a file with the same name exists.')
+                raise Exception(
+                    f'Could not create {folder_name} in {poc_folder.path}, because a file with the same name exists.'
+                )
             elif poc_folder.folder_exists(folder_name):
                 folder = poc_folder.get_folder(folder_name)
             else:
@@ -157,9 +158,7 @@ class Experiments:
                 return experiment
         raise Exception(f"Could not find experiment '{experiment_name}'")
 
-    def get_experiment_folder(self, params: EvaluationParameters) -> Folder:
-        project_name = params.evaluation_range.project_name
-        experiment_name = params.evaluation_range.experiment_name
+    def get_experiment_folder(self, project_name: str, experiment_name: str) -> Folder:
         return self.__get_experiment_folder(project_name, experiment_name)
 
     def get_experiment_dir_tree(self, project_name: str, experiment_name: str) -> dict:
