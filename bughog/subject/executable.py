@@ -228,6 +228,7 @@ class Executable(ABC):
                 text=True,
                 cwd=cwd.path if cwd else None,
                 env=self._runtime_env_vars if self._runtime_env_vars else None,
+                start_new_session=True,
             )
 
     def terminate(self, wait=False, timeout: int = 5):
@@ -241,9 +242,11 @@ class Executable(ABC):
         try:
             self.__process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
-            logger.info(f'Subject process did not terminate after {timeout}s. Killing process through pkill...')
-            cli_command = self._get_cli_command()
-            subprocess.run(['pkill', '-2', cli_command[0].split('/')[-1]])
+            logger.info(f'Subject process did not terminate after {timeout}s. Forcefully killing process group...')
+            try:
+                os.killpg(self.__process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                logger.debug(f'Process {self.__process.pid} already exited before SIGKILL could be sent.')
         self.__process.wait()
         logger.debug('Subject process terminated.')
 
