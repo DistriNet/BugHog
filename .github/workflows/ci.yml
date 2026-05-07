@@ -122,7 +122,7 @@ jobs:
 
   badges:
     needs: [pytest, ty, ruff]
-    if: always() && github.ref == 'refs/heads/main'
+    if: always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
