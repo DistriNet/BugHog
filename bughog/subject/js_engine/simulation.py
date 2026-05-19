@@ -19,4 +19,4 @@ class JSEngineSimulation(Simulation):
 
     def run(self, file_name: str):
         self.executable.run([file_name], cwd=self.context)
-        self.executable.terminate(wait=True)
+        self.executable.terminate(wait=True, timeout=30)

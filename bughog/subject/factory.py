@@ -8,6 +8,7 @@ from bughog.subject.evaluation_framework import EvaluationFramework
 from bughog.subject.js_engine.evaluation_framework import JSEngineEvaluationFramework
 from bughog.subject.js_engine.v8.subject import V8Subject
 from bughog.subject.js_engine.v8_sandbox.subject import V8SandboxSubject
+from bughog.subject.js_engine.v8_sandbox_testing.subject import V8SandboxTestingSubject
 from bughog.subject.subject import Subject
 from bughog.subject.wasm_runtime.evaluation_framework import (
     WasmRuntimeEvaluationFramework,
@@ -19,7 +20,7 @@ from bughog.subject.web_browser.firefox.subject import Firefox
 from bughog.subject.web_browser.servo.subject import Servo
 
 subjects: dict[str, Any] = {
-    'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject(), V8SandboxSubject()]},
+    'js_engine': {'evaluation_framework': JSEngineEvaluationFramework, 'subjects': [V8Subject(), V8SandboxSubject(), V8SandboxTestingSubject()]},
     'wasm_runtime': {'evaluation_framework': WasmRuntimeEvaluationFramework, 'subjects': [WasmtimeSubject()]},
     'web_browser': {
         'evaluation_framework': BrowserEvaluationFramework,
