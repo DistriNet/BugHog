@@ -98,6 +98,7 @@ class WorkerManager:
                     command=[params.serialize(), state.serialize()],
                     volumes=volumes,
                     tmpfs={'/memory': 'exec,size=3g,mode=1777'},
+                    environment=dict(os.environ),
                     **debug_kwargs,
                 )
                 result = container.wait()
